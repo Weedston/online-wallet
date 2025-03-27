@@ -373,4 +373,61 @@ table td button:hover {
     background-color: darkorange;
 }
 
+/* Контейнер для центрирования формы */
+.form-container {
+    display: flex;
+    justify-content: center; /* Выравнивание по горизонтали */
+    align-items: center; /* Выравнивание по вертикали */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Стили для формы */
+.login-form {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    width: 60%;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    border: 2px solid #FF9900; /* Оранжевая рамка */
+    text-align: center; /* Выравнивание текста по центру */
+}
+
+/* Поля ввода */
+.login-form input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #FF9900;
+    border-radius: 5px;
+    background: #2a2a2a;
+    color: white;
+}
+
+/* Кнопка */
+.btn {
+    background: orange;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: darkorange;
+}
+
+/* Ссылки */
+.login-form a {
+    color: #FF9900;
+    text-decoration: none;
+}
+
+.login-form a:hover {
+    text-decoration: underline;
+}
+
 

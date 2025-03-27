@@ -9,10 +9,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
 $passw = FormChars($_POST['sid']);
 
-$row = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE passw = '".$passw."';"));
+$stmt = $CONNECT->prepare("SELECT * FROM members WHERE passw = ?");
+$stmt->bind_param("s", $passw);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+
 if (!$row['id']) {
  echo 'Your SID is wrong. Please check this information.';
- echo "<script> location.href='/'; </script>";
+ echo '<script>
+    setTimeout(function(){ window.location.href = "/"; }, 2000);
+</script>';
 } else 
 {
 $user_id = $row['id'];
@@ -29,11 +36,11 @@ $wallet = $row['wallet'];
 }
 
 }
-$CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) ON DUPLICATE KEY UPDATE count = count + 1");
+$CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) 
+                 ON DUPLICATE KEY UPDATE count = LAST_INSERT_ID(count + 1)");
 
-// Получение общего количества посещений
-$visit_result = $CONNECT->query("SELECT count FROM visit_counter WHERE page = 'total'");
-$visit_count = $visit_result->fetch_assoc()['count'];
+$visit_count = $CONNECT->insert_id;
+
 
 ?>
 
@@ -81,15 +88,15 @@ $visit_count = $visit_result->fetch_assoc()['count'];
         </section>
 
       
-		<form method="post" name="mainform" onsubmit="return checkform()">
-		<input type="hidden" name="a" value="do_login">
-        <div class="card">
-            <h2>Sign In</h2>
-            <input type="text" name="sid" placeholder="Your SID Phrase">
-            <button class="btn">Log In</button>
-            <p>Don't have an account? <a href="/register">Sign Up</a></p>
-        </div>
+		<div class="form-container"> <!-- Контейнер для центрирования -->
+		<form method="post" name="mainform" onsubmit="return checkform()" class="login-form">
+			<h2>Sign In</h2>
+			<input type="text" name="sid" placeholder="Your SID Phrase">
+			<button class="btn">Log In</button>
+			<p>Don't have an account? <a href="/register">Sign Up</a></p>
 		</form>
+		</div>
+
 
 
     </div>

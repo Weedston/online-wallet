@@ -79,49 +79,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 
         <!-- Форма создания объявления -->
         <div class="ad-form">
-            <h2>Create a P2P Exchange Ad</h2>
-            <form method="POST">
-                <!-- Поля формы -->
-				<p>
-                <label for="trade_type">Trade Type:</label>
-                <select name="trade_type" id="trade_type" required>
-                    <option value="buy">Buy BTC</option>
-                    <option value="sell">Sell BTC</option>
-                </select>
-				</p><p>
-                
-				<label for="amount_btc">BTC Amount:</label>
-                <input type="number" name="amount_btc" id="amount_btc" step="0.00000001" required>
-				</p><p>
-				
-                <label for="rate">Rate (Fiat per BTC):</label>
-                <input type="number" name="rate" id="rate" step="0.01" required>
-				</p><p>
-                
-				<label for="fiat_currency">Fiat Currency:</label>
-                <select name="fiat_currency" id="fiat_currency" required>
-                    <?php while ($currency = mysqli_fetch_assoc($fiat_currencies)) { ?>
-                        <option value="<?php echo htmlspecialchars($currency['currency_code']); ?>">
-                            <?php echo htmlspecialchars($currency['currency_name']); ?>
-                        </option>
-                    <?php } ?>
-                </select>
-				</p><p>
-				
-                <label for="payment_method">Payment Method:</label>
-                <select name="payment_method" id="payment_method" required>
-                    <?php while ($method = mysqli_fetch_assoc($payment_methods)) { ?>
-                        <option value="<?php echo htmlspecialchars($method['method_name']); ?>">
-                            <?php echo htmlspecialchars($method['method_name']); ?>
-                        </option>
-                    <?php } ?>
-                </select>
-				</p>
-                <button type="submit" name="create_ad" class="btn">Create Ad</button>
-            </form>
+                <h2>Create a P2P Exchange Ad</h2>
+                <form method="POST">
+                    <!-- Поля формы -->
+                    <p>
+                    <label for="trade_type">Тип сделки:</label>
+                    <select name="trade_type" id="trade_type" required>
+                        <option value="buy">Купить BTC</option>
+                        <option value="sell">Продать BTC</option>
+                    </select>
+                    </p><p>
+                    
+                    <label for="amount_btc">Количество BTC:</label>
+                    <input type="number" name="amount_btc" id="amount_btc" step="0.00000001" required>
+                    </p><p>
+                    
+                    <label for="rate">Курс (Фиат за BTC):</label>
+                    <input type="number" name="rate" id="rate" step="0.01" required>
+                    </p><p>
+                    
+                    <label for="fiat_currency">Фиатная валюта:</label>
+                    <select name="fiat_currency" id="fiat_currency" required>
+                        <?php while ($currency = mysqli_fetch_assoc($fiat_currencies)) { ?>
+                            <option value="<?php echo htmlspecialchars($currency['currency_code']); ?>">
+                                <?php echo htmlspecialchars($currency['currency_name']); ?>
+                            </option>
+                        <?php } ?>
+                    </select>
+                    </p><p>
+                    
+                    <label for="payment_method">Метод оплаты:</label>
+                    <select name="payment_method" id="payment_method" required>
+                        <?php while ($method = mysqli_fetch_assoc($payment_methods)) { ?>
+                            <option value="<?php echo htmlspecialchars($method['method_name']); ?>">
+                                <?php echo htmlspecialchars($method['method_name']); ?>
+                            </option>
+                        <?php } ?>
+                    </select>
+                    </p>
+                    
+                    <!-- Новый блок для отображения информации о сделке -->
+                    <p id="trade_info" style="color: #FFD700;"></p>
+                    
+                    <button type="submit" name="create_ad" class="btn">Создать объявление</button>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
     <script>
         document.getElementById('trade_type').addEventListener('change', updateTradeInfo);
@@ -137,10 +141,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
             let infoText = '';
             if (tradeType === 'buy') {
                 const fiatAmount = amountBtc * rate;
-                infoText = `You will pay ${fiatAmount.toFixed(2)} in fiat currency for ${amountBtc.toFixed(8)} BTC.`;
+                infoText = `Вы заплатите ${fiatAmount.toFixed(2)} фиатной валюты за ${amountBtc.toFixed(8)} BTC.`;
             } else {
                 const fiatAmount = amountBtc * rate;
-                infoText = `You will receive ${fiatAmount.toFixed(2)} in fiat currency for ${amountBtc.toFixed(8)} BTC.`;
+                infoText = `Вы получите ${fiatAmount.toFixed(2)} фиатной валюты за ${amountBtc.toFixed(8)} BTC.`;
             }
 
             tradeInfo.textContent = infoText;

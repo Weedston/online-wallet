@@ -29,7 +29,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
     <?php include 'pages/p2p/menu.php'; ?>
     <div class="container">
         <h2>User Profile</h2>
-        <p><strong>Username:</strong> <?php echo htmlspecialchars($user['username']); ?></p>
+        <p><strong>Your ID:</strong> <?php echo htmlspecialchars($user_id); ?></p>
         <p><strong>Wallet:</strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
         <p><strong>Balance:</strong> <?php echo htmlspecialchars($user['balance']); ?></p>
 
