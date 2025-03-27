@@ -1,0 +1,21 @@
+AddDefaultCharset utf-8
+RewriteEngine on
+RewriteBase /
+Options All -Indexes
+RewriteCond %(REQUEST_FILENAME) -s [OR]
+RewriteCond %(REQUEST_FILENAME) -l [OR]
+RewriteCond %(REQUEST_FILENAME) -d [OR]
+RewriteCond $(REQUEST_URI) ^.+$
+RewriteRule ^resource/(.*)$ resource/$1 [L]
+RewriteRule ^images/(.*)$ images/$1 [L]
+RewriteRule ^css/(.*)$ css/$1 [L]
+RewriteRule ^js/(.*)$ js/$1 [L]
+RewriteRule ^vendor/(.*)$ js/$1 [L]
+RewriteRule ^fonts/(.*)$ fonts/$1 [L]
+RewriteRule ^banner/(.*)$ fonts/$1 [L]
+RewriteRule ^.*$ [NC,L]
+RewriteRule ^.*$ index.php [NC,L]
+
+php_value display_errors 1
+php_value display_startup_errors 1
+php_value error_reporting E_ALL

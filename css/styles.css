@@ -1,0 +1,376 @@
+body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* Контейнер для заголовков и сообщений поддержки */
+.hero {
+    margin-bottom: 30px;
+}
+
+
+/* Стиль для всех input */
+input {
+    display: block;
+    width: calc(100% - 20px);
+    margin: 10px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background: #2a2a2a;
+    color: white;
+    outline: none;
+}
+
+/* Кнопка отправки */
+.btn {
+    background: orange;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: darkorange;
+}
+
+/* Для отображения транзакций */
+.transaction {
+    border: 2px solid #ccc;  
+    padding: 15px;  
+    margin: 10px 0;  
+    border-radius: 5px;  
+    background-color: #f9f9f9;  
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);  
+    color: #003366;  
+}
+
+.transaction.received {
+    border-color: #4CAF50;  
+    background-color: #e8f5e9;  
+}
+
+.transaction.sent {
+    border-color: #f44336;  
+    background-color: #ffebee;  
+}
+
+/* Контейнер для страницы поддержки */
+.container {
+    width: 80%; /* Ширина контейнера будет 80% от ширины родительского элемента */
+    max-width: 1200px; /* Максимальная ширина, чтобы не становиться слишком широкой на больших экранах */
+    margin: 0 auto; /* Центрирование контейнера */
+    padding: 20px; /* Отступы внутри контейнера */
+    box-sizing: border-box; /* Чтобы padding не выходил за пределы */
+}
+
+
+/* Для страницы с формой отправки BTC */
+#btc-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Для полей формы */
+#btc-form input, #btc-form button {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* Дополнительные стили для кнопки */
+#btc-form button {
+    width: auto;
+    max-width: 200px;
+}
+
+/* Для навигационного меню */
+nav {
+    display: flex;
+    justify-content: center; 
+    width: 100%; 
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 15px;
+}
+
+nav ul li {
+    display: block; 
+}
+
+nav ul li a {
+    color: orange;
+    text-decoration: none;
+    font-size: 18px;
+    transition: text-decoration 0.3s ease; 
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Стиль для поля textarea */
+textarea {
+    display: block;
+    width: calc(100% - 20px);
+    height: 150px; /* Увеличим высоту поля */
+    margin: 10px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background: #2a2a2a;
+    color: white;
+    outline: none;
+}
+
+/* Единый стиль для всех кнопок */
+button, .btn {
+    background: orange;
+    color: black;
+    padding: 10px 20px; /* Сделаем кнопку компактной */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: auto; /* Кнопка будет подстраиваться под размер контента */
+    margin: 10px 0; /* Отступы вокруг кнопки */
+}
+
+button:hover, .btn:hover {
+    background: darkorange;
+}
+
+.card {
+    flex: 1 1 calc(33.333% - 15px); /* Три карточки в ряд */
+    margin: 5px; /* Отступы между элементами */
+    min-height: 100px; /* Минимальная высота для элементов */
+    min-width: 280px; /* Минимальная ширина карточки */
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    margin-bottom: 20px;
+    border: 2px solid #FF9900; /* Оранжевая рамка вокруг карточки */
+}
+
+/* Стиль для текста внутри карточек */
+.card p {
+    margin: 5px 0; /* Добавляем отступы между абзацами */
+}
+
+.card p strong {
+    color: #FF9900; /* Оранжевый цвет для выделенных частей */
+}
+
+.card small {
+    color: #999; /* Бледно-серый цвет для даты */
+}
+
+/* Стили для карточек, если ответ еще не получен */
+.card .response {
+    color: #999;
+}
+
+/* Стили для карточек с ответом */
+.card .response-answered {
+    color: #4CAF50; /* Зеленый для ответа */
+}
+
+.card-container {
+    display: flex;
+    gap: 10px; /* Отступы между карточками */
+    justify-content: space-between;
+    flex-wrap: wrap; /* Обеспечивает перенос карточек на новую строку */
+}
+
+.request-card {
+    background-color: #1e1e1e;
+    border: 2px solid #FF9900;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(255, 165, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
+    min-height: 100px;
+    width: 40%; /* Каждая карточка будет занимать 48% ширины контейнера */
+    color: #fff;
+}
+
+
+/* Стиль для текста внутри карточки */
+.request-card p {
+    margin: 10px 0; /* Отступы между абзацами */
+}
+
+/* Стиль для заголовка (запроса) */
+.request-card p strong {
+    color: #FF9900; /* Оранжевый цвет для выделенных частей текста */
+}
+
+/* Стиль для ответа в карточке */
+.request-card .response {
+    margin-top: 10px;
+    color: #4CAF50; /* Зеленый цвет для ответа */
+}
+
+/* Стиль для сообщений без ответа */
+.request-card .no-response {
+    color: #999; /* Светло-серый цвет для текста без ответа */
+}
+
+/* Стиль для даты создания запроса */
+.request-card small {
+    color: #999; /* Светло-серый цвет для даты */
+    font-size: 12px;
+}
+
+/* Горизонтальная полоска под меню */
+.nav-bar {
+    width: 100%;
+    height: 3px;
+    background-color: #FF9900; /* Оранжевая полоска */
+    margin-top: 10px; /* Отступ сверху, чтобы полоска не прилегала к меню */
+}
+
+/* Выделение ссылки P2P Exchange */
+nav ul li a.p2p-link {
+    color: #FFD700; /* Светлый золотой для выделения */
+    font-weight: bold; /* Сделаем текст жирным */
+}
+
+/* Состояние при наведении на ссылку P2P Exchange */
+nav ul li a.p2p-link:hover {
+    color: #FF8C00; /* Немного более насыщенный оранжевый при наведении */
+    text-decoration: underline;
+}
+
+/* Стиль для таблицы */
+table {
+    width: 100%;
+    border-collapse: collapse; /* Чтобы избежать двойных границ */
+    margin: 20px 0;
+    background-color: #1e1e1e; /* Тёмный фон для таблицы */
+    border-radius: 8px; /* Скруглим углы */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Тень для объема */
+}
+
+/* Стиль для ячеек таблицы */
+table th, table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #444; /* Тёмные линии между строками */
+}
+
+/* Стиль для заголовков таблицы */
+table th {
+    background-color: #333; /* Тёмный фон для заголовков */
+    color: #FFD700; /* Золотистый цвет для текста */
+    font-size: 18px;
+}
+
+/* Стиль для строк таблицы */
+table tr:nth-child(even) {
+    background-color: #2a2a2a; /* Чередование строк */
+}
+
+table tr:nth-child(odd) {
+    background-color: #1e1e1e; /* Чередование строк */
+}
+
+/* Стиль для кнопок в таблице */
+table td button {
+    background-color: #FF9900;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+table td button:hover {
+    background-color: darkorange;
+}
+
+.ad-container {
+    display: flex;
+    flex-wrap: wrap; /* Обеспечивает адаптивность */
+    justify-content: center; 
+    align-items: flex-start;
+    gap: 20px; /* Расстояние между блоками */
+    width: 100%;
+    margin-top: 50px;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.btc-price-box {
+    flex: 1;
+    min-width: 200px; /* Минимальная ширина */
+    max-width: 250px; /* Ограничение максимальной ширины */
+    background: #2c2c2c;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 165, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    text-align: center;
+}
+
+
+.ad-form {
+    flex: 2;
+    max-width: 500px;
+    background: #1e1e1e; /* Цвет фона */
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 165, 0, 0.5); /* Явная рамка */
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+}
+
+
+
+/* Заголовок внутри блока */
+.btc-price-box h2 {
+    color: #FFD700; /* Золотистый цвет заголовка */
+    margin-bottom: 15px;
+}
+
+/* Текст внутри блока */
+.btc-price-box p {
+    color: #fff; /* Белый цвет текста */
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Кнопки внутри блока */
+.btc-price-box button {
+    background-color: #FF9900;
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: block;
+    margin: 15px auto;
+}
+
+.btc-price-box button:hover {
+    background-color: darkorange;
+}
+
+
