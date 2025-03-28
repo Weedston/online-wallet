@@ -53,14 +53,7 @@ if (!$ad) {
 $seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$ad['user_id']}'"));
 $buyer_id = $_SESSION['user_id'];
 
-// Функция для добавления уведомлений
-function add_notification($user_id, $message) {
-    global $CONNECT;
-    $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
-    $stmt->bind_param("is", $user_id, $message);
-    $stmt->execute();
-    $stmt->close();
-}
+
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');

@@ -21,6 +21,25 @@ function FormChars($p1)
 	return nl2br(htmlspecialchars(trim($p1), ENT_QUOTES), false);
 }
 
+function add_notification($user_id, $message) {
+    global $CONNECT;
+
+    // Подключение к базе данных
+    if (!$CONNECT) {
+        $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+        if (!$CONNECT) {
+            die('Connection failed: ' . mysqli_connect_error());
+        }
+    }
+
+    // Добавление уведомления в базу данных
+    $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    $stmt->bind_param("is", $user_id, $message);
+    $stmt->execute();
+    $stmt->close();
+}
+
+
 if ($_SERVER['REQUEST_URI'] == '/') {
 	$Page = 'index';
 	$Module = 'index';
