@@ -1,30 +1,91 @@
 <?php
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../../index.php");
-    exit();
+// Удалена инициализация сессии, так как это уже делается в корневом index.php
+
+$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+if (!$CONNECT) {
+    die(json_encode(['error' => 'Connection failed: ' . mysqli_connect_error()]));
 }
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+if (isset($_POST['ad_id'])) {
+    $ad_id = intval($_POST['ad_id']);
 
-if (!$CONNECT) {
-    die('Connection failed: ' . mysqli_connect_error());
+} else {
+    // Проверка наличия ad_id в JSON RPC теле запроса
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+        $rawInput = file_get_contents('php://input');
+        error_log("Raw JSON input: " . $rawInput);
+        $jsonrpc = json_decode($rawInput, true);
+        error_log("Decoded JSON-RPC request: " . json_encode($jsonrpc));
+        
+        if ($jsonrpc !== null && isset($jsonrpc['params']['ad_id'])) {
+            $ad_id = intval($jsonrpc['params']['ad_id']);
+        }
+    }
 }
 
-$trade_id = intval($_GET['trade_id']);
-$trade = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM transactions WHERE id = '$trade_id'"));
+$ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
+$ad_result = mysqli_query($CONNECT, $ad_query);
 
-if (!$trade) {
-    echo "<p style='color:red;'>Trade not found</p>";
+if (!$ad_result) {
+    die(json_encode(['error' => 'Query failed', 'query' => $ad_query, 'mysqli_error' => mysqli_error($CONNECT)]));
+}
+
+$ad = mysqli_fetch_assoc($ad_result);
+
+if (!$ad) {
+    die(json_encode(['error' => 'Ad not found', 'ad_id' => $ad_id]));
+}
+
+$seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$ad['user_id']}'"));
+$buyer_id = $_SESSION['user_id'];
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+    header('Content-Type: application/json');
+    $rawInput = file_get_contents('php://input');
+    error_log("Raw JSON input: " . $rawInput); // Логирование сырых данных
+    $jsonrpc = json_decode($rawInput, true);
+    error_log("Decoded JSON-RPC request: " . json_encode($jsonrpc)); // Логирование декодированных данных
+    if ($jsonrpc === null) {
+        echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
+        exit();
+    }
+    if (!isset($jsonrpc['params']['ad_id'])) {
+        echo json_encode(['error' => 'ad_id is missing in params', 'jsonrpc' => $jsonrpc]);
+        exit();
+    }
+    $ad_id = intval($jsonrpc['params']['ad_id']);
+    if ($jsonrpc['method'] == 'sendMessage') {
+        $message = htmlspecialchars($jsonrpc['params']['message'], ENT_QUOTES, 'UTF-8');
+        $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
+        if (mysqli_query($CONNECT, $query)) {
+            echo json_encode(['result' => 'Message sent successfully']);
+        } else {
+            echo json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
+        }
+    } elseif ($jsonrpc['method'] == 'loadMessages') {
+        $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
+        $response = [];
+        while ($message = mysqli_fetch_assoc($messages)) {
+            $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Seller';
+            $response[] = ['username' => $username, 'message' => htmlspecialchars($message['message'])];
+        }
+        echo json_encode(['result' => $response]);
+    } else {
+        echo json_encode(['error' => 'Unknown method']);
+    }
     exit();
+} else {
+    error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . $_SERVER['CONTENT_TYPE']);
 }
-
-$ad = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM ads WHERE id = '{$trade['ad_id']}'"));
-$seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$trade['seller_id']}'"));
-
 ?>
 
 <!DOCTYPE html>
@@ -34,37 +95,79 @@ $seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trade Details</title>
     <link rel="stylesheet" href="../../css/styles.css">
+    <style>
+        .trade-details-table th {
+            text-align: left;
+        }
+        .chat-box {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 100px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <?php include 'menu.php'; ?>
         <h2>Trade Details</h2>
-        <div class="trade-info">
-            <p><strong>Trade ID:</strong> <?php echo htmlspecialchars($trade_id); ?></p>
-            <p><strong>User ID:</strong> <?php echo htmlspecialchars($trade['buyer_id']); ?></p>
-            <p><strong>Seller ID:</strong> <?php echo htmlspecialchars($trade['seller_id']); ?></p>
-            <p><strong>BTC Amount:</strong> <?php echo htmlspecialchars($trade['btc_amount']); ?></p>
-            <p><strong>Fiat Amount:</strong> <?php echo htmlspecialchars($trade['fiat_amount']); ?></p>
-            <p><strong>Rate:</strong> <?php echo htmlspecialchars($ad['rate']); ?></p>
-            <p><strong>Payment Methods:</strong> 
-                <?php
-                $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '{$trade['ad_id']}'");
-                $payment_methods = [];
-                while ($row = mysqli_fetch_assoc($payment_methods_result)) {
-                    $payment_methods[] = $row['payment_method'];
-                }
-                echo htmlspecialchars(implode(', ', $payment_methods));
-                ?>
-            </p>
-            <p><strong>Fiat Currency:</strong> <?php echo htmlspecialchars($ad['fiat_currency']); ?></p>
-            <p><strong>Trade Type:</strong> <?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></p>
-            <p><strong>Comment:</strong> <?php echo htmlspecialchars($ad['comment']); ?></p>
-        </div>
+        <table class="trade-details-table">
+            <tr>
+                <th>Trade ID</th>
+                <td><?php echo htmlspecialchars($ad_id); ?></td>
+            </tr>
+            <tr>
+                <th>User ID</th>
+                <td><?php echo htmlspecialchars($buyer_id); ?></td>
+            </tr>
+            <tr>
+                <th>Seller ID</th>
+                <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
+            </tr>
+            <tr>
+                <th>BTC Amount</th>
+                <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
+            </tr>
+            <tr>
+                <th>Fiat Amount</th>
+                <td><?php echo htmlspecialchars($ad['rate'] * $ad['amount_btc']); ?></td>
+            </tr>
+            <tr>
+                <th>Rate</th>
+                <td><?php echo htmlspecialchars($ad['rate']); ?></td>
+            </tr>
+            <tr>
+                <th>Payment Methods</th>
+                <td>
+                    <?php
+                    $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '$ad_id'");
+                    $payment_methods = [];
+                    while ($row = mysqli_fetch_assoc($payment_methods_result)) {
+                        $payment_methods[] = $row['payment_method'];
+                    }
+                    echo htmlspecialchars(implode(', ', $payment_methods));
+                    ?>
+                </td>
+            </tr>
+            <tr>
+                <th>Fiat Currency</th>
+                <td><?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
+            </tr>
+            <tr>
+                <th>Trade Type</th>
+                <td><?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></td>
+            </tr>
+            <tr>
+                <th>Comment</th>
+                <td><?php echo htmlspecialchars($ad['comment']); ?></td>
+            </tr>
+        </table>
         <div class="chat">
             <h3>Chat with Seller</h3>
             <div class="chat-box" id="chat-box"></div>
             <form id="chat-form">
-                <input type="hidden" name="trade_id" value="<?php echo htmlspecialchars($trade_id); ?>">
+                <input type="hidden" name="ad_id" value="<?php echo htmlspecialchars($ad_id); ?>">
                 <input type="text" name="message" placeholder="Type your message...">
                 <button type="submit">Send</button>
             </form>
@@ -74,32 +177,72 @@ $seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE
     <script>
         document.getElementById('chat-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            var ad_id = this.querySelector('input[name="ad_id"]').value;
             var message = this.message.value;
+            console.log("ad_id:", ad_id);  // Добавлено отладочное сообщение
             if (message.trim() === '') return;
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'send_message.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.open('POST', 'p2p-trade_details', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    var chatBox = document.getElementById('chat-box');
-                    chatBox.innerHTML += '<p>' + message + '</p>';
-                    chatBox.scrollTop = chatBox.scrollHeight;
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var chatBox = document.getElementById('chat-box');
+                            chatBox.innerHTML += '<p>You: ' + message + '</p>';
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        } else {
+                            alert(response.error);
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
                 }
             };
-            xhr.send('trade_id=' + <?php echo htmlspecialchars($trade_id); ?> + '&message=' + encodeURIComponent(message));
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "sendMessage",
+                params: { message: message, ad_id: ad_id },
+                id: 1
+            }));
             this.message.value = '';
         });
 
         function loadMessages() {
+            var ad_id = document.querySelector('input[name="ad_id"]').value;
+            console.log("Loading messages for ad_id:", ad_id);  // Добавлено отладочное сообщение
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'load_messages.php?trade_id=' + <?php echo htmlspecialchars($trade_id); ?>, true);
+            xhr.open('POST', 'p2p-trade_details', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    document.getElementById('chat-box').innerHTML = xhr.responseText;
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var chatBox = document.getElementById('chat-box');
+                            chatBox.innerHTML = '';
+                            response.result.forEach(function(message) {
+                                chatBox.innerHTML += '<p>' + message.username + ': ' + message.message + '</p>';
+                            });
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        } else {
+                            alert(response.error);
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
                 }
             };
-            xhr.send();
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "loadMessages",
+                params: { ad_id: ad_id },
+                id: 1
+            }));
         }
 
         setInterval(loadMessages, 3000);
