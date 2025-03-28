@@ -287,9 +287,9 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
     </style>
 </head>
 <body>
-    <?php include 'pages/p2p/menu.php'; ?>
     <div class="container">
-        <h2>User Profile</h2>
+        <?php include 'pages/p2p/menu.php'; ?>
+		<h2>User Profile</h2>
         <p><strong>Your ID:</strong> <?php echo htmlspecialchars($user_id); ?></p>
         <p><strong>Wallet:</strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
         <p><strong>Balance:</strong> <?php echo htmlspecialchars($user['balance']); ?></p>
