@@ -22,7 +22,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
 <body>
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
-		<h2>Active P2P Exchange Ads</h2>
+        <h2>Active P2P Exchange Ads</h2>
         <table>
             <thead>
                 <tr>
@@ -30,16 +30,22 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     <th>BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Method</th>
+                    <th>Fiat Amount</th>
+                    <th>Trade Type</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while ($ad = mysqli_fetch_assoc($ads)) { ?>
+                <?php while ($ad = mysqli_fetch_assoc($ads)) { 
+                    $fiat_amount = $ad['amount_btc'] * $ad['rate'];
+                ?>
                     <tr>
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate']); ?></td>
                         <td><?php echo htmlspecialchars($ad['payment_method']); ?></td>
+                        <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
+                        <td><?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></td>
                         <td>
                             <form method="POST" action="process_offer.php">
                                 <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
