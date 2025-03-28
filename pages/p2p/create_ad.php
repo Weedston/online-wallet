@@ -5,8 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
-
 function getBtcRates() {
     $apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur,rub';
     $response = file_get_contents($apiUrl);
@@ -32,23 +30,41 @@ $payment_methods = mysqli_query($CONNECT, "SELECT * FROM payment_methods");
 $btcRates = getBtcRates();
 
 // Обработка формы создания объявления
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) { 
     $user_id = $_SESSION['user_id'];
-    $amount_btc = floatval($_POST['amount_btc']);
-    $rate = floatval($_POST['rate']);
-    $payment_method = FormChars($_POST['payment_method']);
-    $fiat_currency = FormChars($_POST['fiat_currency']);
-    $trade_type = FormChars($_POST['trade_type']);
+    $amount_btc = number_format(floatval($_POST['amount_btc']), 8, '.', '');
+    $rate = number_format(floatval($_POST['rate']), 2, '.', '');
+    $payment_method = htmlspecialchars($_POST['payment_method'], ENT_QUOTES, 'UTF-8');
+    $fiat_currency = htmlspecialchars($_POST['fiat_currency'], ENT_QUOTES, 'UTF-8');
+    $trade_type = htmlspecialchars($_POST['trade_type'], ENT_QUOTES, 'UTF-8');
     $status = 'active';
+	
+if (!$CONNECT) {
+    die('Connection failed: ' . mysqli_connect_error());
+}
 
-    $query = "INSERT INTO ads (user_id, amount_btc, rate, payment_method, fiat_currency, trade_type, status) VALUES ('$user_id', '$amount_btc', '$rate', '$payment_method', '$fiat_currency', '$trade_type', '$status')";
+    // Подготовленный запрос
+    $query = "INSERT INTO ads (user_id, amount_btc, rate, payment_method, fiat_currency, trade_type, status) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($CONNECT, $query);
 
-    if (mysqli_query($CONNECT, $query)) {
-        echo "<p style='color:green;'>Ad created successfully!</p>";
+    if ($stmt) {
+        // Привязка параметров: "i" - integer, "d" - double, "s" - string
+        mysqli_stmt_bind_param($stmt, "iddssss", $user_id, $amount_btc, $rate, $payment_method, $fiat_currency, $trade_type, $status);
+
+        if (mysqli_stmt_execute($stmt)) {
+            echo "<p style='color:green;'>Ad created successfully!</p>";
+        } else {
+            echo "<p style='color:red;'>Error: " . mysqli_stmt_error($stmt) . "</p>"; // Используем mysqli_stmt_error
+        }
+
+        mysqli_stmt_close($stmt);
     } else {
         echo "<p style='color:red;'>Error: " . mysqli_error($CONNECT) . "</p>";
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
