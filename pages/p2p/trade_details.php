@@ -4,6 +4,10 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
 if (!$CONNECT) {
