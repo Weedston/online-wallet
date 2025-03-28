@@ -5,8 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
-
 $user_id = $_SESSION['user_id'];
 
 // Обработка удаления объявления через JSON-RPC
