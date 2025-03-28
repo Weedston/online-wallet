@@ -125,7 +125,7 @@ else if ($Page == 'p2p') include 'pages/p2p/index.php';
 else if ($Page == 'p2p-create') include 'pages/p2p/create_ad.php';
 else if ($Page == 'p2p-history') include 'pages/p2p/history.php';
 else if ($Page == 'p2p-profile') include 'pages/p2p/profile.php';
-
+else if ($Page == 'p2p-trade_details') include 'pages/p2p/trade_details.php';
 
 else include 'pages/index.php';
 

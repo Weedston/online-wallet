@@ -121,7 +121,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                             <?php if ($ad['user_id'] == $_SESSION['user_id']) { ?>
                                 My ad
                             <?php } else { ?>
-                                <form method="POST" action="process_offer">
+                                <form method="POST" action="p2p-trade_details">
                                     <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
                                     <button type="submit" name="accept_ad" class="btn">Accept</button>
                                 </form>
@@ -148,7 +148,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
             <div class="modal-buttons">
                 <button class="btn cancel" onclick="closeModal()">Cancel</button>
-                <form method="POST" action="process_offer" style="display:inline;">
+                <form method="POST" action="p2p-trade_details" style="display:inline;">
                     <input type="hidden" id="modal-ad-id" name="ad_id" value="">
                     <button type="submit" name="accept_ad" class="btn">Accept</button>
                 </form>
