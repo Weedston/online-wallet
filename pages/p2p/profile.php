@@ -5,6 +5,10 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
 $user_id = $_SESSION['user_id'];
@@ -26,8 +30,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($request['method'] == 'deleteAd') {
             $ad_id = intval($request['params']['ad_id']);
             $delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
+            $delete_payment_methods_query = "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'";
 
-            if (mysqli_query($CONNECT, $delete_query)) {
+            if (mysqli_query($CONNECT, $delete_query) && mysqli_query($CONNECT, $delete_payment_methods_query)) {
                 $response = [
                     'jsonrpc' => '2.0',
                     'result' => 'Ad successfully deleted!',
@@ -47,12 +52,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $ad_id = intval($request['params']['ad_id']);
             $amount_btc = floatval($request['params']['amount_btc']);
             $rate = floatval($request['params']['rate']);
-            $payment_method = mysqli_real_escape_string($CONNECT, $request['params']['payment_method']);
+            $payment_methods = $request['params']['payment_methods'];
             $trade_type = mysqli_real_escape_string($CONNECT, $request['params']['trade_type']);
-            $fiat_amount = round($amount_btc * $rate);
-            $update_query = "UPDATE ads SET amount_btc = '$amount_btc', rate = '$rate', payment_method = '$payment_method', fiat_amount = '$fiat_amount', trade_type = '$trade_type' WHERE id = '$ad_id' AND user_id = '$user_id'";
+            $comment = mysqli_real_escape_string($CONNECT, $request['params']['comment']);
+            $update_query = "UPDATE ads SET amount_btc = '$amount_btc', rate = '$rate', trade_type = '$trade_type', comment = '$comment' WHERE id = '$ad_id' AND user_id = '$user_id'";
 
             if (mysqli_query($CONNECT, $update_query)) {
+                // Удаляем старые методы оплаты
+                mysqli_query($CONNECT, "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'");
+                // Вставляем новые методы оплаты
+                foreach ($payment_methods as $method) {
+                    $method = mysqli_real_escape_string($CONNECT, $method);
+                    mysqli_query($CONNECT, "INSERT INTO ad_payment_methods (ad_id, payment_method) VALUES ('$ad_id', '$method')");
+                }
                 $response = [
                     'jsonrpc' => '2.0',
                     'result' => 'Ad successfully updated!',
@@ -72,7 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         header('Content-Type: application/json');
         echo json_encode($response);
-        error_log('Response: ' . json_encode($response)); // Log the response
         exit();
     }
 
@@ -86,7 +97,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         ]
     ];
     echo json_encode($error_response);
-    error_log('Error Response: ' . json_encode($error_response)); // Log the error response
     exit();
 }
 
@@ -135,9 +145,17 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             document.getElementById('edit-date').value = currentData.date;
             document.getElementById('edit-amount').value = currentData.amountBtc;
             document.getElementById('edit-rate').value = currentData.rate;
-            document.getElementById('edit-payment-method').value = currentData.paymentMethod;
-            document.getElementById('edit-fiat-amount').value = Math.round(currentData.amountBtc * currentData.rate);
+            const paymentMethodsSelect = document.getElementById('edit-payment-methods');
+            paymentMethodsSelect.innerHTML = ''; // Clear existing options
+            currentData.paymentMethods.split(',').forEach(method => {
+                const option = document.createElement('option');
+                option.value = method.trim();
+                option.text = method.trim();
+                option.selected = true;
+                paymentMethodsSelect.appendChild(option);
+            });
             document.getElementById('edit-trade-type').value = currentData.tradeType;
+            document.getElementById('edit-comment').value = currentData.comment;
             document.getElementById('edit-id').innerText = adId;
             document.getElementById('editModal').style.display = 'block';
         }
@@ -147,9 +165,9 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             const date = document.getElementById('edit-date').value;
             const amount_btc = document.getElementById('edit-amount').value;
             const rate = document.getElementById('edit-rate').value;
-            const payment_method = document.getElementById('edit-payment-method').value;
+            const payment_methods = Array.from(document.getElementById('edit-payment-methods').selectedOptions).map(option => option.value);
             const trade_type = document.getElementById('edit-trade-type').value;
-            const fiat_amount = Math.round(amount_btc * rate);
+            const comment = document.getElementById('edit-comment').value;
 
             try {
                 const response = await fetch('', {
@@ -160,29 +178,29 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     body: JSON.stringify({
                         jsonrpc: '2.0',
                         method: 'editAd',
-                        params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_method: payment_method, fiat_amount: fiat_amount, trade_type: trade_type },
+                        params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_methods: payment_methods, trade_type: trade_type, comment: comment },
                         id: Date.now()
                     })
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-
                 const text = await response.text();
-                console.log('Response text:', text);
+
+                if (!text) {
+                    throw new Error('Empty response text');
+                }
 
                 const result = JSON.parse(text);
                 if (result.error) {
                     alert(result.error.message);
                 } else {
                     alert(result.result);
-                    document.getElementById('id-' + adId).innerText = adId;
+                    // Обновить данные объявления на странице без перезагрузки
                     document.getElementById('date-' + adId).innerText = date;
                     document.getElementById('amount-' + adId).innerText = amount_btc;
                     document.getElementById('rate-' + adId).innerText = rate;
-                    document.getElementById('payment-method-' + adId).innerText = payment_method;
-                    document.getElementById('fiat-amount-' + adId).innerText = fiat_amount;
+                    document.getElementById('payment-methods-' + adId).innerText = payment_methods.join(', ');
                     document.getElementById('trade-type-' + adId).innerText = trade_type;
+                    document.getElementById('comment-' + adId).innerText = comment;
                     document.getElementById('editModal').style.display = 'none';
                 }
             } catch (error) {
@@ -201,6 +219,18 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             const fiat_amount = Math.round(amount_btc * rate);
             document.getElementById('edit-fiat-amount').value = fiat_amount;
         }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const paymentMethodsSelect = document.getElementById('edit-payment-methods');
+            const response = await fetch('path/to/api/for/payment_methods');
+            const paymentMethods = await response.json();
+            paymentMethods.forEach(method => {
+                const option = document.createElement('option');
+                option.value = method;
+                option.text = method;
+                paymentMethodsSelect.appendChild(option);
+            });
+        });
     </script>
     <style>
         /* Модальное окно */
@@ -236,7 +266,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             text-decoration: none;
             cursor: pointer;
         }
-        .modal-content input, .modal-content select {
+        .modal-content input, .modal-content textarea, .modal-content select {
             width: calc(100% - 20px);
             padding: 10px;
             margin: 10px 0;
@@ -275,32 +305,46 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     <th>Date</th>
                     <th>BTC Amount</th>
                     <th>Rate</th>
-                    <th>Payment Method</th>
+                    <th>Payment Methods</th>
                     <th>Fiat Amount</th>
                     <th>Trade Type</th>
+                    <th>Comment</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
                     $fiat_amount = round($ad['amount_btc'] * $ad['rate']);
+                    // Получение методов оплаты для этого объявления
+                    $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '{$ad['id']}'");
+                    $payment_methods = [];
+                    while ($row = mysqli_fetch_assoc($payment_methods_result)) {
+                        $payment_methods[] = $row['payment_method'];
+                    }
+					if (empty($payment_methods)) {
+						$payment_methods_new = mysqli_query($CONNECT, "SELECT method_name FROM payment_methods");
+						while ($row = mysqli_fetch_assoc($payment_methods_new)) {
+							$payment_methods[] = $row['method_name'];
+						}
+					}
                 ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
                         <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']); ?></td>
                         <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
                         <td id="amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td id="payment-method-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['payment_method']); ?></td>
+                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $payment_methods)); ?></td>
                         <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($fiat_amount); ?></td>
                         <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']); ?></td>
+                        <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment']); ?></td>
                         <td>
                             <button onclick="openEditModal(<?php echo $ad['id']; ?>, {
                                 date: '<?php echo htmlspecialchars($ad['created_at']); ?>',
                                 amountBtc: '<?php echo htmlspecialchars($ad['amount_btc']); ?>',
                                 rate: '<?php echo htmlspecialchars($ad['rate']); ?>',
-                                paymentMethod: '<?php echo htmlspecialchars($ad['payment_method']); ?>',
-                                fiatAmount: '<?php echo htmlspecialchars($fiat_amount); ?>',
-                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>'
+                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $payment_methods)); ?>',
+                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>',
+                                comment: '<?php echo htmlspecialchars($ad['comment']); ?>'
                             })" class="btn">Edit</button>
                             <button onclick="deleteAd(<?php echo $ad['id']; ?>)" class="btn">Delete</button>
                         </td>
@@ -324,8 +368,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <input type="number" id="edit-amount" step="0.00000001" required oninput="calculateFiatAmount()">
                 <label for="edit-rate">Rate:</label>
                 <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
-                <label for="edit-payment-method">Payment Method:</label>
-                <select id="edit-payment-method" required>
+                <label for="edit-payment-methods">Payment Methods:</label>
+                <select id="edit-payment-methods" multiple required>
                     <?php foreach ($payment_methods as $method) { ?>
                         <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
                     <?php } ?>
@@ -334,6 +378,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <input type="number" id="edit-fiat-amount" readonly>
                 <label for="edit-trade-type">Trade Type:</label>
                 <input type="text" id="edit-trade-type" readonly>
+                <label for="edit-comment">Comment:</label>
+                <textarea id="edit-comment" rows="4"></textarea>
                 <button type="submit" class="btn">Save</button>
             </form>
         </div>
