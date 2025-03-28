@@ -2,11 +2,11 @@
 
 if ($_POST['a'] == 'do_login')
 {
-$passw = FormChars($_POST['username']);
+$passw = FormChars($_POST['sid']);
 
 $row = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE passw = '".$passw."';"));
 if (!$row['id']) {
- echo 'Your login or password is wrong. Please check this information.';
+ echo 'Your SID is wrong. Please check this information.';
  echo "<script> location.href='/'; </script>";
 } else 
 {

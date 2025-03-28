@@ -9,17 +9,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
 $passw = FormChars($_POST['sid']);
 
-$stmt = $CONNECT->prepare("SELECT * FROM members WHERE passw = ?");
-$stmt->bind_param("s", $passw);
-$stmt->execute();
-$result = $stmt->get_result();
-$row = $result->fetch_assoc();
-
+$row = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE passw = '".$passw."';"));
 if (!$row['id']) {
  echo 'Your SID is wrong. Please check this information.';
- echo '<script>
-    setTimeout(function(){ window.location.href = "/"; }, 2000);
-</script>';
+ echo "<script> location.href='/'; </script>";
 } else 
 {
 $user_id = $row['id'];
@@ -36,11 +29,11 @@ $wallet = $row['wallet'];
 }
 
 }
-$CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) 
-                 ON DUPLICATE KEY UPDATE count = LAST_INSERT_ID(count + 1)");
+$CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) ON DUPLICATE KEY UPDATE count = count + 1");
 
-$visit_count = $CONNECT->insert_id;
-
+// Получение общего количества посещений
+$visit_result = $CONNECT->query("SELECT count FROM visit_counter WHERE page = 'total'");
+$visit_count = $visit_result->fetch_assoc()['count'];
 
 ?>
 
@@ -57,20 +50,6 @@ $visit_count = $CONNECT->insert_id;
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<style>
-        .message-box {
-            border: 2px solid green;
-            color: green;
-            padding: 15px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 5px;
-            width: 50%;
-            margin: 20px auto;
-            background-color: #f0fff0;
-        }
-    </style>
 <div class="container">
      
         <section class="hero">
@@ -82,21 +61,18 @@ $visit_count = $CONNECT->insert_id;
             <p>In our anonymous Bitcoin wallet service, there are no minimum and maximum restrictions on deposits and withdrawals.</p>
 			<p>All transactions are performed automatically without human intervention. <br> And also - fast support!</p>
 			<p>Total number of successful service transactions: <?php echo $visit_count; ?></p>
-			 <div class="message-box1">
-				
-			</div>
         </section>
 
       
-		<div class="form-container"> <!-- Контейнер для центрирования -->
-		<form method="post" name="mainform" onsubmit="return checkform()" class="login-form">
-			<h2>Sign In</h2>
-			<input type="text" name="sid" placeholder="Your SID Phrase">
-			<button class="btn">Log In</button>
-			<p>Don't have an account? <a href="/register">Sign Up</a></p>
+		<form method="post" name="mainform" onsubmit="return checkform()">
+		<input type="hidden" name="a" value="do_login">
+        <div class="card">
+            <h2>Sign In</h2>
+            <input type="text" name="sid" placeholder="Your SID Phrase">
+            <button class="btn">Log In</button>
+            <p>Don't have an account? <a href="/register">Sign Up</a></p>
+        </div>
 		</form>
-		</div>
-
 
 
     </div>

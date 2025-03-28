@@ -16,29 +16,13 @@ function generateSidPhrase($wordCount = 18) {
 $sidPhrase = generateSidPhrase();
 
 try {
-    $newAddress = bitcoinRPC('getnewaddress');
+    $newAddress = $client->execute('getnewaddress');
     
 } catch (Exception $e) {
     echo 'Error: ' . $e->getMessage();
 }
 
 mysqli_query($CONNECT, "INSERT INTO members SET passw = '".$sidPhrase."', wallet = '".$newAddress."';");
-
-$row = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE passw = '".$sidPhrase."';"));
-if (!$row['id']) {
-
-} else 
-{
-$user_id = $row['id'];
-$wallet = $row['wallet'];
-
-
-		setcookie("id", $user_id, time()+60*60*24*30);
-        setcookie("hash", $hash, time()+60*60*24*30);
-		$_SESSION['user_id'] = $user_id;
-		$_SESSION['wallet'] = $wallet;
-		
-}
 
 ?>
 
@@ -61,7 +45,7 @@ $wallet = $row['wallet'];
     <div class="phrase" Style="color: red;"><?php echo htmlspecialchars($sidPhrase); ?></div>
 	<h1>Attention! This is your passphrase to access your wallet. Write it down and don't lose it. Recovery is not possible. Use it to log in and manage your BTC wallet.</h1>
 		
-	<p><a href="/" class="btn">Log in to your personal account. </a></p>
+	<p>Go back to the login page <a href="/">Log IN</a></p>
 		
 </body>
 

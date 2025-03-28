@@ -5,34 +5,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+//error_reporting(E_ALL);
+//ini_set('display_errors', 1);
 
 $wallet_address = $_SESSION['wallet'];
 
 // 1️⃣ Получаем баланс
-$utxos = bitcoinRPC('listunspent', [1, 9999999, [$btc_address]]);
-	$balance = 0;
-	foreach ($utxos as $utxo) {
-		$balance += $utxo['amount'];
-	}
-//$received_balance = bitcoinRPC("getreceivedbyaddress", [$wallet_address]);
-//$balance = $received_balance; 
+$received_balance = bitcoinRPC("getreceivedbyaddress", [$wallet_address]);
+$balance = $received_balance; 
 
 // 2️⃣ Получаем комиссию сети
-$fee_response = bitcoinRPC("estimatesmartfee", [6]); // Запрашиваем комиссию
-
-// Проверяем, вернул ли RPC корректный массив с feerate
-if (!is_array($fee_response) || !isset($fee_response['feerate']) || $fee_response['feerate'] <= 0) {
-    $fee_response['feerate'] = 0.00001000; // Устанавливаем значение по умолчанию
-}
-
-// Теперь можно использовать $fee_response['feerate']
-$feerate = $fee_response['feerate'];
-
+$fee_response = bitcoinRPC("estimatesmartfee", [6]); // Комиссия для 6 блоков
 $fee_per_kb = $fee_response["result"]["feerate"] ?? 0.0001; // Если нет данных, ставим 0.0001 BTC
 $tx_size_kb = 0.0002; // Примерный размер транзакции (200 байт = 0.0002 КБ)
-$network_fee = $feerate * $tx_size_kb; // Итоговая комиссия сети
+$network_fee = $fee_per_kb * $tx_size_kb; // Итоговая комиссия сети
 
 // 3️⃣ Рассчитываем максимальную сумму
 $site_fee_percentage = 0.01; // 1% комиссия сайта
@@ -56,99 +42,79 @@ if (isset($_GET['ajax'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = floatval($_POST['amount']);
     $recipient = $_POST['recipient'];
-    $wallet_address = $_SESSION['wallet'];
+    $fee = $amount * 0.01; // 1% комиссия
+    $totalAmount = $amount + $fee;
 
-    // Запрашиваем UTXO
-    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$wallet_address]]);
+	$fee_norm = number_format($fee, 8);
 
-    if (!is_array($utxos) || empty($utxos)) {
-        die("<p style='color:red;'>Error: No available UTXOs!</p>");
-    }
+	$fee_sys = number_format($amount * 0.01, 8);
 
-    $serviceWallet = "bc1qq00pgwy3mleht2ts3yz99k5u7zr76fylek9sad";
+	//Получение UTXO (непотраченных выходов)
+	$utxos = $client->execute('listunspent', [1, 9999999, [$wallet_address]]);
 
-    // Запрашиваем комиссию
-    $feeEstimate = bitcoinRPC("estimatesmartfee", [6]);
-    if (!is_array($feeEstimate) || !isset($feeEstimate['feerate']) || $feeEstimate['feerate'] <= 0) {
-        $feeEstimate['feerate'] = 0.00001000;
-    }
+	if (empty($utxos)) {
+		die("<p style='color:red;'>Error: There are no available UTXOs!
+		<script>
+        setTimeout(function() {
+            window.location.href = 'dashboard';
+        }, 3000);
+		</script>");
 
-    $feeRatePerKb = $feeEstimate['feerate'];
-    $feeRatePerByte = $feeRatePerKb / 1000;
+	}
 
-    // Выбираем UTXO (суммируем баланс)
-    $totalInputAmount = 0;
-    $inputs = [];
-    
-    foreach ($utxos as $utxo) {
-        if (!isset($utxo['spendable']) || !$utxo['spendable']) {
-            continue; // Пропускаем UTXO, если он не тратимый
-        }
+		// Выбираем первый UTXO
+	$input = [
+		"txid" => $utxos[0]['txid'],
+		"vout" => $utxos[0]['vout']
+	];
+	$inputAmount = $utxos[0]['amount']; // Количество BTC в UTXO
+	$inputAddress = $utxos[0]['address']; // Адрес, с которого отправляем
+		//Шаг 2: Расчёт комиссий
+	$recipient = $recipient; // Адрес получателя
+	$serviceWallet = "bc1qq00pgwy3mleht2ts3yz99k5u7zr76fylek9sad"; // Кошелек сервиса
+	$amountToSend = $amount; // Сумма перевода BTC
 
-        $inputs[] = [
-            "txid" => $utxo['txid'],
-            "vout" => $utxo['vout']
-        ];
+	// 1. Запрашиваем комиссию сети (за 3 подтверждений)
+	$feeData = $client->execute('estimatesmartfee', [3]);
+	$networkFee = $feeData['feerate'] ?? 0.00001; // BTC/KB
 
-        $totalInputAmount += $utxo['amount'];
+	// 2. Комиссия сервиса (например, 1%)
+	$serviceFee = $amountToSend * 0.01; 
 
-        // Останавливаем, если собрали нужную сумму
-        if ($totalInputAmount >= ($amount + ($amount * 0.01) + 0.0001)) {
-            break;
-        }
-    }
+	// 3. Рассчитываем сдачу
+	$change = $inputAmount - $amountToSend - $serviceFee - $networkFee;
 
-    if ($totalInputAmount < ($amount + ($amount * 0.01))) {
-        die("<p style='color:red;'>Error: Not enough available UTXOs!</p>");
-    }
+	if ($change < 0) {
 
-    // Формируем выходные адреса
-    $serviceFee = round($amount * 0.01, 8);
-    $outputs = [
-        $recipient => round($amount, 8),
-        $serviceWallet => $serviceFee
-    ];
+    die("Mistake: there are not enough funds to cover the fees!
+		<script>
+        setTimeout(function() {
+            window.location.href = 'dashboard';
+        }, 3000);
+		</script>");
+	
+	}
+		//Создание raw транзакции
+	$outputs = [
+    $recipient => $amountToSend,  // Получатель
+    $serviceWallet => $serviceFee // Кошелек сервиса
+	];
 
-    // Оцениваем размер транзакции (примерно)
-    $rawTxSize = 250;
-    $fee = round($rawTxSize * $feeRatePerByte, 8);
+	if ($change > 0) {
+		$outputs[$inputAddress] = $change; // Отправляем сдачу обратно
+	}
 
-    $change = round($totalInputAmount - $amount - $serviceFee - $fee, 8);
+	// Создаём "сырую" транзакцию
+	$rawTx = $client->execute('createrawtransaction', [[$input], $outputs]);
 
-    $balanceFormatted = number_format($totalInputAmount, 8, '.', '');
-    $neededFormatted = number_format($amount + $serviceFee + $fee, 8, '.', '');
-    $feeFormatted = number_format($fee, 8, '.', '');
+	$fundedTx = $client->execute('fundrawtransaction', [$rawTx, ["feeRate" => $networkFee]]);
+	$signedTx = $client->execute('signrawtransactionwithwallet', [$fundedTx['hex']]);
 
-    if ($change < 0) {
-        die("<p style='color:red;'>Error: Not enough funds including fee! Balance: $balanceFormatted, Needed: $neededFormatted, Fee: $feeFormatted</p>");
-    }
+	$txid = $client->execute('sendrawtransaction', [$signedTx['hex']]);
+	//echo "Транзакция отправлена! TXID: " . $txid;
+	echo "<p style='color:green;'>Transaction sent: $amount BTC to $recipient.</p>";
 
-    if ($change > 0) {
-        $outputs[$wallet_address] = round($change, 8);
-    }
-
-    // Создаём raw-транзакцию
-    $rawTx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-
-    // Подписываем транзакцию
-    $signedTx = bitcoinRPC('signrawtransactionwithwallet', [$rawTx]);
-
-    if (!isset($signedTx['hex']) || empty($signedTx['hex'])) {
-        die("<p style='color:red;'>Error: Failed to sign transaction! Response: " . json_encode($signedTx) . "</p>");
-    }
-
-    // Отправляем транзакцию
-    $txid = bitcoinRPC('sendrawtransaction', [$signedTx['hex']]);
-
-    echo "<script>alert('Transaction sent: $amount BTC to $recipient. TXID: $txid');</script>";
-}
-
-
-
-
-
-
-
+	}
 
 ?>
 <!DOCTYPE html>
@@ -203,7 +169,7 @@ function fetchMaxWithdrawable() {
 
 function calculateTotalDeduction() {
     let amount = parseFloat(document.getElementById('amount').value) || 0;
-    let networkFee = parseFloat(document.getElementById('maxAmount').textContent) * 0.01; // Комиссия сайта 1%
+    let networkFee = parseFloat(document.getElementById('maxAmount').textContent) * 0.01; 
     let totalDeduction = amount + networkFee;
     document.getElementById('totalDeduction').textContent = totalDeduction.toFixed(8);
 }
@@ -245,7 +211,7 @@ document.getElementById('recipient').addEventListener('input', function() {
     const input = this;
     const errorMessage = document.getElementById('address-error');
 
-    const btcRegex = /^(1|3|bc1|tb1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
+    const btcRegex = /^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
 
     if (btcRegex.test(input.value)) {
         input.classList.remove("invalid");
@@ -261,7 +227,7 @@ document.getElementById('recipient').addEventListener('input', function() {
 document.getElementById('btc-form').addEventListener('submit', function(event) {
     const addressInput = document.getElementById('recipient');
     const amountInput = document.getElementById('amount');
-    const btcRegex = /^(1|3|bc1|tb1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
+    const btcRegex = /^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
     const amountRegex = /^[0-9]+(\.[0-9]{1,8})?$/;
 
     let valid = true;
