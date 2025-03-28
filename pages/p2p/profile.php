@@ -5,19 +5,15 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
 $user_id = $_SESSION['user_id'];
 
 // Получение методов оплаты
-$payment_methods_result = mysqli_query($CONNECT, "SELECT method FROM payment_methods");
+$payment_methods_result = mysqli_query($CONNECT, "SELECT method_name FROM payment_methods");
 $payment_methods = [];
 while ($row = mysqli_fetch_assoc($payment_methods_result)) {
-    $payment_methods[] = $row['method'];
+    $payment_methods[] = $row['method_name'];
 }
 
 // Обработка удаления и редактирования объявления через JSON-RPC
@@ -76,8 +72,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         header('Content-Type: application/json');
         echo json_encode($response);
+        error_log('Response: ' . json_encode($response)); // Log the response
         exit();
     }
+
+    // If the request is not a valid JSON-RPC request, return an error response
+    header('Content-Type: application/json');
+    $error_response = [
+        'jsonrpc' => '2.0',
+        'error' => [
+            'code' => -32600,
+            'message' => 'Invalid Request'
+        ]
+    ];
+    echo json_encode($error_response);
+    error_log('Error Response: ' . json_encode($error_response)); // Log the error response
+    exit();
 }
 
 // Получение информации о пользователе
@@ -128,6 +138,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             document.getElementById('edit-payment-method').value = currentData.paymentMethod;
             document.getElementById('edit-fiat-amount').value = Math.round(currentData.amountBtc * currentData.rate);
             document.getElementById('edit-trade-type').value = currentData.tradeType;
+            document.getElementById('edit-id').innerText = adId;
             document.getElementById('editModal').style.display = 'block';
         }
 
@@ -140,30 +151,43 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             const trade_type = document.getElementById('edit-trade-type').value;
             const fiat_amount = Math.round(amount_btc * rate);
 
-            const response = await fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    method: 'editAd',
-                    params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_method: payment_method, fiat_amount: fiat_amount, trade_type: trade_type },
-                    id: Date.now()
-                })
-            });
-            const result = await response.json();
-            if (result.error) {
-                alert(result.error.message);
-            } else {
-                alert(result.result);
-                document.getElementById('date-' + adId).innerText = date;
-                document.getElementById('amount-' + adId).innerText = amount_btc;
-                document.getElementById('rate-' + adId).innerText = rate;
-                document.getElementById('payment-method-' + adId).innerText = payment_method;
-                document.getElementById('fiat-amount-' + adId).innerText = fiat_amount;
-                document.getElementById('trade-type-' + adId).innerText = trade_type;
-                document.getElementById('editModal').style.display = 'none';
+            try {
+                const response = await fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'editAd',
+                        params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_method: payment_method, fiat_amount: fiat_amount, trade_type: trade_type },
+                        id: Date.now()
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                const result = JSON.parse(text);
+                if (result.error) {
+                    alert(result.error.message);
+                } else {
+                    alert(result.result);
+                    document.getElementById('id-' + adId).innerText = adId;
+                    document.getElementById('date-' + adId).innerText = date;
+                    document.getElementById('amount-' + adId).innerText = amount_btc;
+                    document.getElementById('rate-' + adId).innerText = rate;
+                    document.getElementById('payment-method-' + adId).innerText = payment_method;
+                    document.getElementById('fiat-amount-' + adId).innerText = fiat_amount;
+                    document.getElementById('trade-type-' + adId).innerText = trade_type;
+                    document.getElementById('editModal').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while saving the ad. Please try again.');
             }
         }
 
@@ -247,6 +271,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         <table>
             <thead>
                 <tr>
+                    <th>Ad ID</th>
                     <th>Date</th>
                     <th>BTC Amount</th>
                     <th>Rate</th>
@@ -261,6 +286,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     $fiat_amount = round($ad['amount_btc'] * $ad['rate']);
                 ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
+                        <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']); ?></td>
                         <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
                         <td id="amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
@@ -289,12 +315,13 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h2>Edit Ad</h2>
+            <p><strong>Ad ID:</strong> <span id="edit-id"></span></p>
             <form onsubmit="event.preventDefault(); editAd();">
                 <input type="hidden" id="edit-ad-id">
                 <label for="edit-date">Date:</label>
                 <input type="text" id="edit-date" readonly>
                 <label for="edit-amount">BTC Amount:</label>
-                <input type="number" id="edit-amount" step="0.01" required oninput="calculateFiatAmount()">
+                <input type="number" id="edit-amount" step="0.00000001" required oninput="calculateFiatAmount()">
                 <label for="edit-rate">Rate:</label>
                 <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
                 <label for="edit-payment-method">Payment Method:</label>
