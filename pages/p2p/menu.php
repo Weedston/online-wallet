@@ -1,3 +1,34 @@
+<?php
+// Обработка AJAX-запросов из JavaScript
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    if ($_GET['action'] == 'check_notifications') {
+        $user_id = $_SESSION['user_id'];
+        $unread_notifications_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
+        $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'];
+        echo json_encode(['new_notifications' => $unread_notifications > 0]);
+        exit();
+    }
+
+    if ($_GET['action'] == 'load_notifications') {
+        $user_id = $_SESSION['user_id'];
+        $notifications_result = mysqli_query($CONNECT, "SELECT * FROM notifications WHERE user_id = '$user_id' AND is_read = 0 ORDER BY created_at DESC");
+        $notifications = [];
+        while ($notification = mysqli_fetch_assoc($notifications_result)) {
+            $notifications[] = $notification;
+        }
+        // Отметим уведомления как прочитанные
+        mysqli_query($CONNECT, "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0");
+        echo json_encode(['notifications' => $notifications]);
+        exit();
+    }
+}
+
+$user_id = $_SESSION['user_id'];
+$unread_notifications_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
+$unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'];
+?>
+
 <nav>
     <ul>
         <li><a href="dashboard">Dashboard</a></li>
@@ -118,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error checking notifications:', error));
     }
 });
+</script>
 
-// Добавим CSS для моргающего эффекта
 <style>
 @keyframes blink {
     50% {
@@ -130,4 +161,3 @@ document.addEventListener('DOMContentLoaded', function() {
     animation: blink 1s infinite;
 }
 </style>
-</script>
