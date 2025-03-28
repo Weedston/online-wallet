@@ -5,10 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
 $user_id = $_SESSION['user_id'];
@@ -147,12 +143,15 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             document.getElementById('edit-rate').value = currentData.rate;
             const paymentMethodsSelect = document.getElementById('edit-payment-methods');
             paymentMethodsSelect.innerHTML = ''; // Clear existing options
-            currentData.paymentMethods.split(',').forEach(method => {
-                const option = document.createElement('option');
-                option.value = method.trim();
-                option.text = method.trim();
-                option.selected = true;
-                paymentMethodsSelect.appendChild(option);
+            const allPaymentMethods = <?php echo json_encode($payment_methods); ?>;
+            allPaymentMethods.forEach(method => {
+                let optionElement = document.createElement('option');
+                optionElement.value = method;
+                optionElement.text = method;
+                if (currentData.paymentMethods.includes(method)) {
+                    optionElement.selected = true;
+                }
+                paymentMethodsSelect.appendChild(optionElement);
             });
             document.getElementById('edit-trade-type').value = currentData.tradeType;
             document.getElementById('edit-comment').value = currentData.comment;
@@ -220,16 +219,14 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             document.getElementById('edit-fiat-amount').value = fiat_amount;
         }
 
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const paymentMethodsSelect = document.getElementById('edit-payment-methods');
-            const response = await fetch('path/to/api/for/payment_methods');
-            const paymentMethods = await response.json();
-            paymentMethods.forEach(method => {
-                const option = document.createElement('option');
-                option.value = method;
-                option.text = method;
-                paymentMethodsSelect.appendChild(option);
-            });
+            <?php foreach ($payment_methods as $index => $method) { ?>
+                let optionElement<?php echo $index; ?> = document.createElement('option');
+                optionElement<?php echo $index; ?>.value = '<?php echo htmlspecialchars($method); ?>';
+                optionElement<?php echo $index; ?>.text = '<?php echo htmlspecialchars($method); ?>';
+                paymentMethodsSelect.appendChild(optionElement<?php echo $index; ?>);
+            <?php } ?>
         });
     </script>
     <style>
@@ -316,24 +313,22 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
                     $fiat_amount = round($ad['amount_btc'] * $ad['rate']);
                     // Получение методов оплаты для этого объявления
-                    $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '{$ad['id']}'");
-                    $payment_methods = [];
-                    while ($row = mysqli_fetch_assoc($payment_methods_result)) {
-                        $payment_methods[] = $row['payment_method'];
+                    $ad_payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '{$ad['id']}'");
+                    $ad_payment_methods = [];
+                    while ($row = mysqli_fetch_assoc($ad_payment_methods_result)) {
+                        $ad_payment_methods[] = $row['payment_method'];
                     }
-					if (empty($payment_methods)) {
-						$payment_methods_new = mysqli_query($CONNECT, "SELECT method_name FROM payment_methods");
-						while ($row = mysqli_fetch_assoc($payment_methods_new)) {
-							$payment_methods[] = $row['method_name'];
-						}
-					}
+                    // Если методов оплаты нет, получаем весь список
+                    if (empty($ad_payment_methods)) {
+                        $ad_payment_methods = $payment_methods;
+                    }
                 ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
                         <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']); ?></td>
                         <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
                         <td id="amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $payment_methods)); ?></td>
+                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $ad_payment_methods)); ?></td>
                         <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($fiat_amount); ?></td>
                         <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']); ?></td>
                         <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment']); ?></td>
@@ -342,7 +337,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                                 date: '<?php echo htmlspecialchars($ad['created_at']); ?>',
                                 amountBtc: '<?php echo htmlspecialchars($ad['amount_btc']); ?>',
                                 rate: '<?php echo htmlspecialchars($ad['rate']); ?>',
-                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $payment_methods)); ?>',
+                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $ad_payment_methods)); ?>',
                                 tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>',
                                 comment: '<?php echo htmlspecialchars($ad['comment']); ?>'
                             })" class="btn">Edit</button>
@@ -381,6 +376,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <label for="edit-comment">Comment:</label>
                 <textarea id="edit-comment" rows="4"></textarea>
                 <button type="submit" class="btn">Save</button>
+                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
             </form>
         </div>
     </div>
