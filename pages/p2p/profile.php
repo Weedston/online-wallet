@@ -5,34 +5,73 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+
 $user_id = $_SESSION['user_id'];
 
-// Обработка удаления объявления через JSON-RPC
+// Получение методов оплаты
+$payment_methods_result = mysqli_query($CONNECT, "SELECT method FROM payment_methods");
+$payment_methods = [];
+while ($row = mysqli_fetch_assoc($payment_methods_result)) {
+    $payment_methods[] = $row['method'];
+}
+
+// Обработка удаления и редактирования объявления через JSON-RPC
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = file_get_contents('php://input');
     $request = json_decode($input, true);
 
-    if (isset($request['jsonrpc']) && $request['jsonrpc'] == '2.0' && isset($request['method']) && $request['method'] == 'deleteAd') {
-        $ad_id = intval($request['params']['ad_id']);
-        $delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
-
+    if (isset($request['jsonrpc']) && $request['jsonrpc'] == '2.0') {
         $response = [];
+        if ($request['method'] == 'deleteAd') {
+            $ad_id = intval($request['params']['ad_id']);
+            $delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
 
-        if (mysqli_query($CONNECT, $delete_query)) {
-            $response = [
-                'jsonrpc' => '2.0',
-                'result' => 'Ad successfully deleted!',
-                'id' => $request['id']
-            ];
-        } else {
-            $response = [
-                'jsonrpc' => '2.0',
-                'error' => [
-                    'code' => -32000,
-                    'message' => 'Error deleting ad: ' . mysqli_error($CONNECT)
-                ],
-                'id' => $request['id']
-            ];
+            if (mysqli_query($CONNECT, $delete_query)) {
+                $response = [
+                    'jsonrpc' => '2.0',
+                    'result' => 'Ad successfully deleted!',
+                    'id' => $request['id']
+                ];
+            } else {
+                $response = [
+                    'jsonrpc' => '2.0',
+                    'error' => [
+                        'code' => -32000,
+                        'message' => 'Error deleting ad: ' . mysqli_error($CONNECT)
+                    ],
+                    'id' => $request['id']
+                ];
+            }
+        } elseif ($request['method'] == 'editAd') {
+            $ad_id = intval($request['params']['ad_id']);
+            $amount_btc = floatval($request['params']['amount_btc']);
+            $rate = floatval($request['params']['rate']);
+            $payment_method = mysqli_real_escape_string($CONNECT, $request['params']['payment_method']);
+            $trade_type = mysqli_real_escape_string($CONNECT, $request['params']['trade_type']);
+            $fiat_amount = round($amount_btc * $rate);
+            $update_query = "UPDATE ads SET amount_btc = '$amount_btc', rate = '$rate', payment_method = '$payment_method', fiat_amount = '$fiat_amount', trade_type = '$trade_type' WHERE id = '$ad_id' AND user_id = '$user_id'";
+
+            if (mysqli_query($CONNECT, $update_query)) {
+                $response = [
+                    'jsonrpc' => '2.0',
+                    'result' => 'Ad successfully updated!',
+                    'id' => $request['id']
+                ];
+            } else {
+                $response = [
+                    'jsonrpc' => '2.0',
+                    'error' => [
+                        'code' => -32000,
+                        'message' => 'Error updating ad: ' . mysqli_error($CONNECT)
+                    ],
+                    'id' => $request['id']
+                ];
+            }
         }
 
         header('Content-Type: application/json');
@@ -80,7 +119,121 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 document.getElementById('ad-row-' + adId).remove();
             }
         }
+
+        function openEditModal(adId, currentData) {
+            document.getElementById('edit-ad-id').value = adId;
+            document.getElementById('edit-date').value = currentData.date;
+            document.getElementById('edit-amount').value = currentData.amountBtc;
+            document.getElementById('edit-rate').value = currentData.rate;
+            document.getElementById('edit-payment-method').value = currentData.paymentMethod;
+            document.getElementById('edit-fiat-amount').value = Math.round(currentData.amountBtc * currentData.rate);
+            document.getElementById('edit-trade-type').value = currentData.tradeType;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        async function editAd() {
+            const adId = document.getElementById('edit-ad-id').value;
+            const date = document.getElementById('edit-date').value;
+            const amount_btc = document.getElementById('edit-amount').value;
+            const rate = document.getElementById('edit-rate').value;
+            const payment_method = document.getElementById('edit-payment-method').value;
+            const trade_type = document.getElementById('edit-trade-type').value;
+            const fiat_amount = Math.round(amount_btc * rate);
+
+            const response = await fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'editAd',
+                    params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_method: payment_method, fiat_amount: fiat_amount, trade_type: trade_type },
+                    id: Date.now()
+                })
+            });
+            const result = await response.json();
+            if (result.error) {
+                alert(result.error.message);
+            } else {
+                alert(result.result);
+                document.getElementById('date-' + adId).innerText = date;
+                document.getElementById('amount-' + adId).innerText = amount_btc;
+                document.getElementById('rate-' + adId).innerText = rate;
+                document.getElementById('payment-method-' + adId).innerText = payment_method;
+                document.getElementById('fiat-amount-' + adId).innerText = fiat_amount;
+                document.getElementById('trade-type-' + adId).innerText = trade_type;
+                document.getElementById('editModal').style.display = 'none';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function calculateFiatAmount() {
+            const amount_btc = document.getElementById('edit-amount').value;
+            const rate = document.getElementById('edit-rate').value;
+            const fiat_amount = Math.round(amount_btc * rate);
+            document.getElementById('edit-fiat-amount').value = fiat_amount;
+        }
     </script>
+    <style>
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #1e1e1e;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 30%;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover, .close:focus {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content input, .modal-content select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #FF9900;
+            border-radius: 5px;
+            background: #2a2a2a;
+            color: white;
+        }
+        .modal-content button {
+            background-color: #FF9900;
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .modal-content button:hover {
+            background-color: darkorange;
+        }
+    </style>
 </head>
 <body>
     <?php include 'pages/p2p/menu.php'; ?>
@@ -98,29 +251,65 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     <th>BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Method</th>
-                    <th>Status</th>
+                    <th>Fiat Amount</th>
+                    <th>Trade Type</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while ($ad = mysqli_fetch_assoc($ads)) { ?>
+                <?php while ($ad = mysqli_fetch_assoc($ads)) { 
+                    $fiat_amount = round($ad['amount_btc'] * $ad['rate']);
+                ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
-						<td><?php echo htmlspecialchars($ad['created_at']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['payment_method']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['status']); ?></td>
+                        <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
+                        <td id="amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
+                        <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
+                        <td id="payment-method-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['payment_method']); ?></td>
+                        <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($fiat_amount); ?></td>
+                        <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']); ?></td>
                         <td>
-                            <form method="POST" action="edit_ad.php" style="display:inline;">
-                                <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
-                                <button type="submit" name="edit_ad" class="btn">Edit</button>
-                            </form>
+                            <button onclick="openEditModal(<?php echo $ad['id']; ?>, {
+                                date: '<?php echo htmlspecialchars($ad['created_at']); ?>',
+                                amountBtc: '<?php echo htmlspecialchars($ad['amount_btc']); ?>',
+                                rate: '<?php echo htmlspecialchars($ad['rate']); ?>',
+                                paymentMethod: '<?php echo htmlspecialchars($ad['payment_method']); ?>',
+                                fiatAmount: '<?php echo htmlspecialchars($fiat_amount); ?>',
+                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>'
+                            })" class="btn">Edit</button>
                             <button onclick="deleteAd(<?php echo $ad['id']; ?>)" class="btn">Delete</button>
                         </td>
                     </tr>
                 <?php } ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Модальное окно для редактирования объявления -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Edit Ad</h2>
+            <form onsubmit="event.preventDefault(); editAd();">
+                <input type="hidden" id="edit-ad-id">
+                <label for="edit-date">Date:</label>
+                <input type="text" id="edit-date" readonly>
+                <label for="edit-amount">BTC Amount:</label>
+                <input type="number" id="edit-amount" step="0.01" required oninput="calculateFiatAmount()">
+                <label for="edit-rate">Rate:</label>
+                <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
+                <label for="edit-payment-method">Payment Method:</label>
+                <select id="edit-payment-method" required>
+                    <?php foreach ($payment_methods as $method) { ?>
+                        <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
+                    <?php } ?>
+                </select>
+                <label for="edit-fiat-amount">Fiat Amount:</label>
+                <input type="number" id="edit-fiat-amount" readonly>
+                <label for="edit-trade-type">Trade Type:</label>
+                <input type="text" id="edit-trade-type" readonly>
+                <button type="submit" class="btn">Save</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
