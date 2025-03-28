@@ -46,11 +46,15 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                         <td><?php echo htmlspecialchars($ad['payment_method']); ?></td>
                         <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
                         <td><?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></td>
-                        <td>
-                            <form method="POST" action="process_offer.php">
-                                <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
-                                <button type="submit" name="accept_ad" class="btn">Accept</button>
-                            </form>
+						<td>
+                            <?php if ($ad['user_id'] == $_SESSION['user_id']) { ?>
+                                My ad
+                            <?php } else { ?>
+                                <form method="POST" action="process_offer">
+                                    <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
+                                    <button type="submit" name="accept_ad" class="btn">Accept</button>
+                                </form>
+                            <?php } ?>
                         </td>
                     </tr>
                 <?php } ?>
