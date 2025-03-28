@@ -10,7 +10,7 @@ use JsonRPC\Client;
 $rpcUser = 'wikly';
 $rpcPassword = '8A08d423';
 $rpcHost = '127.0.0.1';
-$rpcPort = 48332;
+$rpcPort = 8332;
 
 // Подключаемся к bitcoind
 $client = new Client("http://$rpcHost:$rpcPort/");
@@ -20,25 +20,6 @@ function FormChars($p1)
 {
 	return nl2br(htmlspecialchars(trim($p1), ENT_QUOTES), false);
 }
-
-function add_notification($user_id, $message) {
-    global $CONNECT;
-
-    // Подключение к базе данных
-    if (!$CONNECT) {
-        $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
-        if (!$CONNECT) {
-            die('Connection failed: ' . mysqli_connect_error());
-        }
-    }
-
-    // Добавление уведомления в базу данных
-    $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
-    $stmt->bind_param("is", $user_id, $message);
-    $stmt->execute();
-    $stmt->close();
-}
-
 
 if ($_SERVER['REQUEST_URI'] == '/') {
 	$Page = 'index';
@@ -66,12 +47,12 @@ $btc_address = $_SESSION['wallet'];
 	
 function bitcoinRPC($method, $params = []) {
 
-    $rpc_user = 'wikly';
-    $rpc_password = '8A08d423';
-    $rpc_host = '127.0.0.1';
-    $rpc_port = 48332;
+	$rpc_user = 'wikly';
+	$rpc_password = '8A08d423';
+	$rpc_host = '127.0.0.1';
+	$rpc_port = 8332;
 
-    // Данные для аутентификации и запроса
+// Данные для аутентификации и запроса
     $data = json_encode([
         'jsonrpc' => '1.0',
         'id' => 'phpRPC',
@@ -109,24 +90,14 @@ function bitcoinRPC($method, $params = []) {
     // Декодирование ответа от сервера
     $response_data = json_decode($response, true);
 
-    // Отладка - выводим полный ответ
-    // var_dump($response_data);
-
-    // Проверка на наличие ошибок в ответе
-    if (isset($response_data['error'])) {
-        // Если ошибка в ответе, возвращаем её
-        return 'Error: ' . $response_data['error']['message'];
-    }
-
-    // Если результат существует, возвращаем его
+    // Возвращаем результат или ошибку
     if (isset($response_data['result'])) {
         return $response_data['result']; // Возвращаем результат выполнения запроса
+    } else {
+        // В случае ошибки выводим сообщение
+        return isset($response_data['error']) ? $response_data['error']['message'] : 'Unknown ERROR';
     }
-
-    // Если нет результата и нет ошибки, возвращаем неизвестную ошибку
-    return 'Unknown ERROR: ' . $response;
 }
-
 
 
 //include 'pages/top.php';
@@ -139,12 +110,8 @@ else if ($Page == 'logout') include 'pages/logout.php';
 else if ($Page == 'transfer') include 'pages/send.php';
 else if ($Page == 'support') include 'pages/support.php';
 else if ($Page == 'adm_support') include 'pages/admin_support.php';
-else if ($Page == 'profile') include 'pages/profile.php';
-else if ($Page == 'p2p') include 'pages/p2p/index.php';
-else if ($Page == 'p2p-create') include 'pages/p2p/create_ad.php';
-else if ($Page == 'p2p-history') include 'pages/p2p/history.php';
-else if ($Page == 'p2p-profile') include 'pages/p2p/profile.php';
-else if ($Page == 'p2p-trade_details') include 'pages/p2p/trade_details.php';
+
+
 
 else include 'pages/index.php';
 
