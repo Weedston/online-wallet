@@ -8,52 +8,65 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 if (!$CONNECT) {
-    die(json_encode(['error' => 'Connection failed: ' . mysqli_connect_error()]));
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Connection failed: ' . mysqli_connect_error()]);
+    exit();
 }
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 if (isset($_POST['ad_id'])) {
     $ad_id = intval($_POST['ad_id']);
-
 } else {
     // Проверка наличия ad_id в JSON RPC теле запроса
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
         $rawInput = file_get_contents('php://input');
-        error_log("Raw JSON input: " . $rawInput);
         $jsonrpc = json_decode($rawInput, true);
-        error_log("Decoded JSON-RPC request: " . json_encode($jsonrpc));
-        
+
         if ($jsonrpc !== null && isset($jsonrpc['params']['ad_id'])) {
             $ad_id = intval($jsonrpc['params']['ad_id']);
         }
     }
 }
 
+if (!isset($ad_id)) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'ad_id is missing']);
+    exit();
+}
+
 $ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
 $ad_result = mysqli_query($CONNECT, $ad_query);
 
 if (!$ad_result) {
-    die(json_encode(['error' => 'Query failed', 'query' => $ad_query, 'mysqli_error' => mysqli_error($CONNECT)]));
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Query failed', 'query' => $ad_query, 'mysqli_error' => mysqli_error($CONNECT)]);
+    exit();
 }
 
 $ad = mysqli_fetch_assoc($ad_result);
 
 if (!$ad) {
-    die(json_encode(['error' => 'Ad not found', 'ad_id' => $ad_id]));
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Ad not found', 'ad_id' => $ad_id]);
+    exit();
 }
 
 $seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$ad['user_id']}'"));
 $buyer_id = $_SESSION['user_id'];
 
+// Функция для добавления уведомлений
+function add_notification($user_id, $message) {
+    global $CONNECT;
+    $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    $stmt->bind_param("is", $user_id, $message);
+    $stmt->execute();
+    $stmt->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $rawInput = file_get_contents('php://input');
-    error_log("Raw JSON input: " . $rawInput); // Логирование сырых данных
     $jsonrpc = json_decode($rawInput, true);
-    error_log("Decoded JSON-RPC request: " . json_encode($jsonrpc)); // Логирование декодированных данных
+
     if ($jsonrpc === null) {
         echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
         exit();
@@ -67,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $message = htmlspecialchars($jsonrpc['params']['message'], ENT_QUOTES, 'UTF-8');
         $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
         if (mysqli_query($CONNECT, $query)) {
+            // Создание уведомления для владельца объявления
+            add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
         } else {
             echo json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
@@ -179,26 +194,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             e.preventDefault();
             var ad_id = this.querySelector('input[name="ad_id"]').value;
             var message = this.message.value;
-            console.log("ad_id:", ad_id);  // Добавлено отладочное сообщение
             if (message.trim() === '') return;
 
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'p2p-trade_details', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var chatBox = document.getElementById('chat-box');
-                            chatBox.innerHTML += '<p>You: ' + message + '</p>';
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                        } else {
-                            alert(response.error);
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML += '<p>You: ' + message + '</p>';
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            } else {
+                                alert(response.error);
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
                         }
-                    } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
                     }
                 }
             };
@@ -213,27 +231,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
         function loadMessages() {
             var ad_id = document.querySelector('input[name="ad_id"]').value;
-            console.log("Loading messages for ad_id:", ad_id);  // Добавлено отладочное сообщение
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'p2p-trade_details', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var chatBox = document.getElementById('chat-box');
-                            chatBox.innerHTML = '';
-                            response.result.forEach(function(message) {
-                                chatBox.innerHTML += '<p>' + message.username + ': ' + message.message + '</p>';
-                            });
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                        } else {
-                            alert(response.error);
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML = '';
+                                response.result.forEach(function(message) {
+                                    chatBox.innerHTML += '<p>' + message.username + ': ' + message.message + '</p>';
+                                });
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            } else {
+                                alert(response.error);
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
                         }
-                    } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
                     }
                 }
             };
