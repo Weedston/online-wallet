@@ -26,7 +26,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         <table>
             <thead>
                 <tr>
-                    <th>Username</th>
+                    <th>User ID</th>
                     <th>BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Method</th>
@@ -36,7 +36,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($ad['username']); ?></td>
+                        <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate']); ?></td>
                         <td><?php echo htmlspecialchars($ad['payment_method']); ?></td>
