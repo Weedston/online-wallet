@@ -96,22 +96,22 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         <table>
             <thead>
                 <tr>
+                    <th>Date</th>
                     <th>BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Method</th>
                     <th>Status</th>
-                    <th>Date</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
+						<td><?php echo htmlspecialchars($ad['created_at']); ?></td>
                         <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate']); ?></td>
                         <td><?php echo htmlspecialchars($ad['payment_method']); ?></td>
                         <td><?php echo htmlspecialchars($ad['status']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['created_at']); ?></td>
                         <td>
                             <form method="POST" action="edit_ad.php" style="display:inline;">
                                 <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
