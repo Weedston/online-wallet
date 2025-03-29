@@ -25,7 +25,7 @@ $notification_unread_count = mysqli_fetch_assoc($notification_unread_count_resul
                     <span class="notification-badge"><?php echo $notification_unread_count; ?></span>
                 <?php endif; ?>
             </a>
-            <div id="notification-popup" class="notification-popup" style="display: none;">
+            <div id="notification-popup" class="notification-popup">
                 <h4>Уведомления</h4>
                 <ul id="notification-list">
                     <!-- Уведомления будут загружены тут -->
@@ -34,35 +34,6 @@ $notification_unread_count = mysqli_fetch_assoc($notification_unread_count_resul
         </li>
     </ul>
 </nav>
-
-<style>
-/* Стиль для колокольчика уведомлений */
-#notification-bell {
-    position: relative;
-    display: inline-block;
-}
-#notification-bell .notification-badge {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background-color: red;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-}
-.notification-popup {
-    position: absolute;
-    top: 40px;
-    right: 0;
-    background-color: white;
-    border: 1px solid #ccc;
-    padding: 10px;
-    width: 300px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    z-index: 1000;
-    display: none;
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -100,25 +71,3 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error("Error: " + response.error);
                         }
                     } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
-                    }
-                } else {
-                    console.error("Request failed with status:", xhr.status);
-                }
-            }
-        };
-        xhr.onerror = function() {
-            console.error("Request failed");
-        };
-        xhr.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: "getNotifications",
-            params: { user_id: <?php echo $user_id; ?> },
-            id: 1
-        }));
-    }
-
-    setInterval(fetchNotifications, 5000);
-});
-</script>
