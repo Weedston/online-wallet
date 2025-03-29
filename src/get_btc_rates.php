@@ -1,5 +1,5 @@
 <?php
-require_once '../../config.php';
+require_once '../config.php';
 
 function getBtcRates() {
     $apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur,rub';
@@ -9,6 +9,10 @@ function getBtcRates() {
     }
 
     $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null;
+    }
+
     if (isset($data['bitcoin'])) {
         return $data['bitcoin'];
     }

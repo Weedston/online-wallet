@@ -75,17 +75,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
     <script>
         function fetchBtcRates() {
             fetch('../../src/get_btc_rates.php')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    document.getElementById('usd-rate').textContent = `1 BTC = ${data.usd.toFixed(2)} USD`;
-                    document.getElementById('eur-rate').textContent = `1 BTC = ${data.eur.toFixed(2)} EUR`;
-                    document.getElementById('rub-rate').textContent = `1 BTC = ${data.rub.toFixed(2)} RUB`;
+                    if (data) {
+                        document.getElementById('usd-rate').textContent = `1 BTC = ${data.usd.toFixed(2)} USD`;
+                        document.getElementById('eur-rate').textContent = `1 BTC = ${data.eur.toFixed(2)} EUR`;
+                        document.getElementById('rub-rate').textContent = `1 BTC = ${data.rub.toFixed(2)} RUB`;
+                    } else {
+                        console.error('BTC rates data is null');
+                    }
                 })
                 .catch(error => console.error('Error fetching BTC rates:', error));
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            setInterval(fetchBtcRates, 60000); // Обновление каждые 60 секунд
+            setInterval(fetchBtcRates, 10000); // Обновление каждые 60 секунд
             fetchBtcRates(); // Первоначальная загрузка курсов
         });
     </script>
