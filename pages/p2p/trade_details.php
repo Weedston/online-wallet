@@ -203,6 +203,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     </div>
 
     <script>
+function displayMessage(username, message) {
+    var chatBox = document.getElementById('chat-box');
+    var messageElement = document.createElement('div');
+    messageElement.textContent = username + ': ' + message;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var sendMessageButton = document.querySelector("#chat-form button");
     var messageInput = document.querySelector("#chat-form input[name='message']");
