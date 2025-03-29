@@ -49,7 +49,7 @@ $result = $stmt->get_result();
     <div class="card-container">
         <?php while ($row = $result->fetch_assoc()): ?>
             <div class="request-card">
-                <p><strong>Request:</strong> <?php echo htmlspecialchars($row['message']); ?></p>
+                <p><strong>Request:</strong> <?php echo $row['message'] ? htmlspecialchars($row['message']) : 'No message'; ?></p>
                 <p><strong>Response:</strong> <?php echo $row['response'] ? htmlspecialchars($row['response']) : 'No response yet'; ?></p>
                 <p><small><?php echo $row['created_at']; ?></small></p>
             </div>
