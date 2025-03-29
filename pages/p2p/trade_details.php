@@ -6,7 +6,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-
 // Убедитесь, что переменная ad_id передается и обрабатывается правильно
 if (isset($_GET['ad_id'])) {
     $ad_id = intval($_GET['ad_id']);
@@ -68,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
         if (mysqli_query($CONNECT, $query)) {
             // Создание уведомления для владельца объявления
-            //add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
+            add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
         } else {
             echo json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
@@ -99,12 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
         .trade-details-table {
-            width: 75%;
+            width: 95%;
             margin: 0 auto;
-            font-size: 75%;
+            font-size: 95%;
         }
-        .trade-details-table th {
-            text-align: left;
+        .trade-details-table th, .trade-details-table td {
+            font-size: 95%;
+            height: auto;
         }
         .chat-box {
             border: 1px solid #ddd;
