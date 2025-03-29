@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     }
     exit();
 } else {
-    error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . $_SERVER['CONTENT_TYPE']);
+    error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
 }
 ?>
 

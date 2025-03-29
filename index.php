@@ -156,7 +156,7 @@ else if ($Page == 'adm_support') include 'pages/admin_support.php';
 else if ($Page == 'profile') include 'pages/profile.php';
 else if ($Page == 'p2p') include 'pages/p2p/index.php';
 else if ($Page == 'p2p-create') include 'pages/p2p/create_ad.php';
-else if ($Page == 'p2p-history') include 'pages/p2p/history.php';
+else if ($Page == 'p2p-trade_history') include 'pages/p2p/trade_history.php';
 else if ($Page == 'p2p-profile') include 'pages/p2p/profile.php';
 else if ($Page == 'p2p-trade_details') include 'pages/p2p/trade_details.php';
 
