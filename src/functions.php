@@ -12,6 +12,12 @@ function add_notification($user_id, $message) {
         return false;
     }
 
+    // Проверка параметров
+    if (empty($user_id) || empty($message)) {
+        error_log("Error: user_id or message is empty.");
+        return false;
+    }
+
     $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
     
     if (!$stmt) {
