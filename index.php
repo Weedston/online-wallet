@@ -24,7 +24,7 @@ function FormChars($p1)
 	return nl2br(htmlspecialchars(trim($p1), ENT_QUOTES), false);
 }
 
-function add_notification($user_id, $message) {
+//function add_notification($user_id, $message) {
     global $CONNECT; // Declare global variable
 
     if (!$CONNECT) {

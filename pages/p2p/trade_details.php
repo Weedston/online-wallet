@@ -7,7 +7,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 $ad_id = null;
-
+require_once '../src/functions.php';
 // Убедитесь, что переменная ad_id передается и обрабатывается правильно
 if (isset($_GET['ad_id'])) {
     $ad_id = intval($_GET['ad_id']);
