@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json');
 
 require_once '../config.php';
+require_once 'functions.php'; // Подключаем файл с функцией add_notification
 
 session_start(); // Начинаем сессию
 
@@ -30,8 +31,12 @@ if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $message = mysqli_real_escape_string($CONNECT, $message);
     $query = "INSERT INTO messages (ad_id, user_id, recipient_id, message, created_at) VALUES ('$ad_id', '$sender_id', '$recipient_id', '$message', NOW())";
     $result = mysqli_query($CONNECT, $query);
-    
     if ($result) {
+		if (add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id")) {
+            error_log("Уведомление успешно добавлено для пользователя ID: $recipient_id");
+        } else {
+            error_log("Ошибка добавления уведомления для пользователя ID: $recipient_id");
+        }
         echo json_encode(['success' => true]);
     } else {
         error_log("Ошибка SQL: " . mysqli_error($CONNECT));

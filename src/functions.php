@@ -2,10 +2,9 @@
 require_once __DIR__ . '/../config.php';
 
 function add_notification($user_id, $message) {
-    global $CONNECT; // Declare global variable
-
+	global $CONNECT; // Declare global variable
     // Добавление логов для проверки параметров
-    error_log("add_notification called with user_id: $user_id, message: $message");
+	error_log("add_notification called with user_id: $user_id, message: $message");
     
     if (!$CONNECT) {
         error_log("Error: Database connection is missing.");
@@ -19,7 +18,7 @@ function add_notification($user_id, $message) {
     }
 
     $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
-    
+   
     if (!$stmt) {
         error_log("Error preparing statement: " . $CONNECT->error);
         return false;
@@ -29,6 +28,13 @@ function add_notification($user_id, $message) {
     
     if (!$stmt->execute()) {
         error_log("Error executing statement: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+
+    // Проверка количества затронутых строк
+    if ($stmt->affected_rows === 0) {
+        error_log("Error: No rows affected.");
         $stmt->close();
         return false;
     }
