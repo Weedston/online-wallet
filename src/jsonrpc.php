@@ -1,34 +1,39 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-header('Content-Type: application/json');
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+require_once '../config.php';
+
+header('Content-Type: application/json');
+
+// Подключение к базе данных
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+if (!$CONNECT) {
+    echo json_encode(['error' => 'Failed to connect to database']);
+    exit();
+}
 
 $request = json_decode(file_get_contents('php://input'), true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['error' => 'Invalid JSON']);
+    exit();
+}
 
-if ($request['method'] == 'getUnreadNotificationsCount') {
-    $user_id = intval($request['params']['user_id']);
-    $unread_notifications_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
-    $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'];
+$method = $request['method'] ?? '';
+$params = $request['params'] ?? [];
+$user_id = intval($params['user_id'] ?? 0);
 
-    $response = [
-        'jsonrpc' => '2.0',
-        'result' => ['unread_count' => $unread_notifications],
-        'id' => $request['id']
-    ];
-    echo json_encode($response);
+if ($method === 'getUnreadNotificationsCount' && $user_id > 0) {
+    $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
+    $result = mysqli_query($CONNECT, $query);
+    if ($result) {
+        $count = mysqli_fetch_assoc($result)['count'];
+        echo json_encode(['result' => ['unread_count' => $count]]);
+    } else {
+        echo json_encode(['error' => 'Query failed: ' . mysqli_error($CONNECT)]);
+    }
 } else {
-    echo json_encode([
-        'jsonrpc' => '2.0',
-        'error' => ['code' => -32601, 'message' => 'Method not found'],
-        'id' => $request['id']
-    ]);
+    echo json_encode(['error' => 'Invalid method or missing parameters']);
 }
 ?>
