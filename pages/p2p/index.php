@@ -101,6 +101,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
                     $ad_id = $ad['id'];
                     $fiat_amount = $ad['amount_btc'] * $ad['rate'];
+                    $comment = isset($ad['comment']) ? htmlspecialchars($ad['comment']) : '';
 
                     // Получение методов оплаты для этого объявления
                     $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '$ad_id'");
@@ -110,7 +111,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
+                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?>', '<?php echo $comment; ?>')">
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate']); ?></td>
@@ -166,7 +167,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('modal-fiat-amount').innerText = fiatAmount;
             document.getElementById('modal-fiat-currency').innerText = fiatCurrency;
             document.getElementById('modal-trade-type').innerText = tradeType;
-            document.getElementById('modal-comment').innerText = comment;
+            document.getElementById('modal-comment').innerText = comment || ''; // Use empty string if comment is null
             document.getElementById('adModal').style.display = 'block';
 
             // Hide Accept button if the ad belongs to the current user

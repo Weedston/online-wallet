@@ -11,7 +11,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -35,7 +34,7 @@ CREATE TABLE `ads` (
   `payment_method` varchar(255) DEFAULT NULL,
   `fiat_currency` varchar(255) NOT NULL,
   `trade_type` enum('buy','sell') NOT NULL,
-  `status` enum('active','inactive') NOT NULL,
+  `status` enum('active','inactive','pending') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `comment` text
@@ -131,8 +130,8 @@ CREATE TABLE `members` (
 --
 
 INSERT INTO `members` (`id`, `passw`, `wallet`, `balance`, `username`, `role`) VALUES
-(182, 'motors whimpering titanate trumpet redeclares lobsters spouses combinator different magnificent recoil airfoils stammers Buchwald tentacled rarety-s rose-s murmured', 'tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn', '0.00000535', '', 'user'),
-(184, 'chinquapin absentia missionaries milky pirate-s midband audiovisual continuities tableaux nowadays tamed protestant falsified Fredericksburg watchword directory-s uproots thermistor', 'tb1qfzxhvj6a6tf0cujun67wyr4m98q0danqftcl7x', '0.00020850', '', 'user');
+(182, 'motors whimpering titanate trumpet redeclares lobsters spouses combinator different magnificent recoil airfoils stammers Buchwald tentacled rarety-s rose-s murmured', 'tb1qtdxq5dzdv29tkw7t6a3k8y7w8zj5qd4lhxw5d', '0.00000000', 'user1', 'user'),
+(184, 'chinquapin absentia missionaries milky pirate-s midband audiovisual continuities tableaux nowadays tamed protestant falsified Fredericksburg watchword directory-s uproots thermistor', 'tb1q5xkg9g6v7q9ww5t4x8k5d4r7f3c2w3n9l6y8y', '0.00000000', 'user2', 'user');
 
 -- --------------------------------------------------------
 

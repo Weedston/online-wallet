@@ -20,7 +20,7 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
         <li><a href="logout">Logout</a></li>
         <li>
             <a href="#" id="notification-bell">
-                Уведомления
+                <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
                 <?php if ($unread_notifications > 0): ?>
                     <span class="badge"><?php echo $unread_notifications; ?></span>
                 <?php endif; ?>
@@ -45,4 +45,20 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
     position: absolute;
     top: -10px;
     right: -10px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+}
+.notification-popup {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 300px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
 </style>
