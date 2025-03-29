@@ -49,6 +49,7 @@
 │   ├── jsonrpc.php
 │   ├── send_message.php
 │   ├── functions.php
+│   ├── get_btc_rates.php
 ├── update_readme.py
 ├── wallet_btc.sql
 ├── wordlist.txt
