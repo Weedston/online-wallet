@@ -26,18 +26,20 @@ $id = $request['id'];
 
 $response = [
     'jsonrpc' => '2.0',
-    'id' => $id
+    'id' => $id,
+    'result' => null,
+    'error' => null
 ];
 
 switch ($method) {
     case 'getNotifications':
-        getNotifications($params);
+        $response['result'] = getNotifications($params);
         break;
     case 'markNotificationsAsRead':
-        markNotificationsAsRead($params);
+        $response['result'] = markNotificationsAsRead($params);
         break;
     case 'getUnreadNotificationCount':
-        getUnreadNotificationCount($params);
+        $response['result'] = getUnreadNotificationCount($params);
         break;
     default:
         $response['error'] = [
@@ -57,14 +59,14 @@ function getNotifications($params) {
     while ($row = mysqli_fetch_assoc($result)) {
         $notifications[] = $row;
     }
-    echo json_encode(['result' => ['notifications' => $notifications]]);
+    return ['notifications' => $notifications];
 }
 
 function markNotificationsAsRead($params) {
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
     mysqli_query($CONNECT, "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0");
-    echo json_encode(['result' => 'success']);
+    return 'success';
 }
 
 function getUnreadNotificationCount($params) {
@@ -72,6 +74,6 @@ function getUnreadNotificationCount($params) {
     $user_id = $params['user_id'] ?? 0;
     $result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
     $count = mysqli_fetch_assoc($result)['count'];
-    echo json_encode(['result' => ['count' => $count]]);
+    return ['count' => $count];
 }
 ?>

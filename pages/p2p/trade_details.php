@@ -203,98 +203,137 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     </div>
 
     <script>
-function displayMessage(username, message) {
-    var chatBox = document.getElementById('chat-box');
-    var messageElement = document.createElement('div');
-    messageElement.textContent = username + ': ' + message;
-    chatBox.appendChild(messageElement);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    var sendMessageButton = document.querySelector("#chat-form button");
-    var messageInput = document.querySelector("#chat-form input[name='message']");
-
-    document.getElementById("chat-form").addEventListener("submit", function(event) {
-        event.preventDefault(); // Останавливаем стандартное поведение формы
-
-        var message = messageInput.value.trim();
-        var recipientId = document.getElementById('recipient-id').value;
-        var senderId = document.getElementById('user-id').value;
-
-        console.log("Отправка сообщения: ", { senderId, recipientId, message }); // Дебаг
-
-        if (!message || senderId == "0" || recipientId == "0") {
-            console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
-            return;
-        }
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/send_message.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                console.log("Ответ сервера:", xhr.responseText); // Дебаг ответа сервера
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            displayMessage('You', message);
-                            messageInput.value = ""; // Очистка поля ввода
-                        } else {
-                            console.error("Ошибка сервера:", response.error);
-                        }
-                    } catch (e) {
-                        console.error("Ошибка парсинга JSON:", e, xhr.responseText);
-                    }
-                }
-            }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            sender_id: senderId,
-            recipient_id: recipientId,
-            message: message
-        }));
-    });
-
-    // Загружаем сообщения при загрузке страницы
-    function loadMessages() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/send_message.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var chatBox = document.getElementById('chat-box');
-                            chatBox.innerHTML = ''; // Очистить чат перед загрузкой сообщений
-                            response.result.forEach(function(message) {
-                                displayMessage(message.username, message.message);
-                            });
-                        } else {
-                            console.error("Ошибка загрузки сообщений:", response.error);
-                        }
-                    } catch (e) {
-                        console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
-                    }
-                }
-            }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            method: 'loadMessages'
-        }));
+    function displayMessage(username, message) {
+        var chatBox = document.getElementById('chat-box');
+        var messageElement = document.createElement('div');
+        messageElement.textContent = username + ': ' + message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    loadMessages(); // Загрузить сообщения при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        var sendMessageButton = document.querySelector("#chat-form button");
+        var messageInput = document.querySelector("#chat-form input[name='message']");
 
-    // Обновляем сообщения каждые 5 секунд
-    setInterval(loadMessages, 5000);
-});
-</script>
+        document.getElementById("chat-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // Останавливаем стандартное поведение формы
+
+            var message = messageInput.value.trim();
+            var recipientId = document.getElementById('recipient-id').value;
+            var senderId = document.getElementById('user-id').value;
+
+            console.log("Отправка сообщения: ", { senderId, recipientId, message }); // Дебаг
+
+            if (!message || senderId == "0" || recipientId == "0") {
+                console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/send_message.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log("Ответ сервера:", xhr.responseText); // Дебаг ответа сервера
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                displayMessage('You', message);
+                                messageInput.value = ""; // Очистка поля ввода
+                            } else {
+                                console.error("Ошибка сервера:", response.error);
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON:", e, xhr.responseText);
+                        }
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                sender_id: senderId,
+                recipient_id: recipientId,
+                message: message
+            }));
+        });
+
+        // Загружаем сообщения при загрузке страницы
+        function loadMessages() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/send_message.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML = ''; // Очистить чат перед загрузкой сообщений
+                                response.result.forEach(function(message) {
+                                    displayMessage(message.username, message.message);
+                                });
+                            } else {
+                                console.error("Ошибка загрузки сообщений:", response.error);
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
+                        }
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                method: 'loadMessages'
+            }));
+        }
+
+        loadMessages(); // Загрузить сообщения при загрузке страницы
+
+        // Обновляем сообщения каждые 5 секунд
+        setInterval(loadMessages, 5000);
+
+        // Функция для получения количества непрочитанных уведомлений
+        function fetchUnreadNotificationCount() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var count = response.result.count;
+                                document.getElementById('notification-count').textContent = count;
+                            } else if (response.error) {
+                                console.error("Error: " + response.error.message);
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
+                        }
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
+                    }
+                }
+            };
+            xhr.onerror = function() {
+                console.error("Request failed");
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "getUnreadNotificationCount",
+                params: { user_id: <?php echo $sender_id; ?> },
+                id: 1
+            }));
+        }
+
+        fetchUnreadNotificationCount();
+        setInterval(fetchUnreadNotificationCount, 5000);
+    });
+    </script>
 
 </body>
 </html>
