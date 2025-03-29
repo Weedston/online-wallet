@@ -3,8 +3,15 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../../index.php");
     exit();
 }
+require_once 'src/functions.php';
+
+require_once __DIR__ . '/../../config.php';  // Убедитесь, что путь к файлу конфигурации правильный
 
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+
+if (!$CONNECT) {
+    die("Connection failed: " . mysqli_connect_error());
+}
 
 // Проверяем, была ли нажата кнопка "Accept"
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
