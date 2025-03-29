@@ -1,5 +1,8 @@
 <?php
+require_once '../config.php';
+
 function add_notification($user_id, $message) {
+	
     global $CONNECT; // Declare global variable
 
     if (!$CONNECT) {
