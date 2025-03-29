@@ -98,9 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
         <div class="btc-price-box">
             <p>Current BTC Rates:</p>
             <ul>
-                <li id="usd-rate">1 BTC = <?php echo number_format($btcRates['usd'], 2, '.', ' '); ?> USD</li>
-                <li id="eur-rate">1 BTC = <?php echo number_format($btcRates['eur'], 2, '.', ' '); ?> EUR</li>
-                <li id="rub-rate">1 BTC = <?php echo number_format($btcRates['rub'], 2, '.', ' '); ?> RUB</li>
+                <li id="usd-rate">1 BTC = N/A USD</li>
+                <li id="eur-rate">1 BTC = N/A EUR</li>
+                <li id="rub-rate">1 BTC = N/A RUB</li>
             </ul>
         </div>
 
