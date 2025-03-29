@@ -1,12 +1,28 @@
 <?php
-function add_notification($recipient_id, $message) {
-    global $CONNECT; // Используем глобальное подключение к базе данных
+function add_notification($user_id, $message) {
+    global $CONNECT; // Declare global variable
+
+    if (!$CONNECT) {
+        error_log("Error: Database connection is missing.");
+        return false;
+    }
 
     $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
-    $stmt->bind_param("is", $recipient_id, $message);
-
-    if (!$stmt->execute()) {
-        error_log("Ошибка при добавлении уведомления: " . $stmt->error);
+    
+    if (!$stmt) {
+        error_log("Error preparing statement: " . $CONNECT->error);
+        return false;
     }
+
+    $stmt->bind_param("is", $user_id, $message);
+    
+    if (!$stmt->execute()) {
+        error_log("Error executing statement: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+
+    $stmt->close();
+    return true; // Successful execution
 }
 ?>
