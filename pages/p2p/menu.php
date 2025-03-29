@@ -70,25 +70,39 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.open('POST', '/src/jsonrpc.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.result) {
-                    var unreadCount = response.result.unread_count;
-                    var badge = document.querySelector('#notification-bell .badge');
-                    if (unreadCount > 0) {
-                        if (!badge) {
-                            badge = document.createElement('span');
-                            badge.className = 'badge';
-                            document.getElementById('notification-bell').appendChild(badge);
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var unreadCount = response.result.unread_count;
+                            var badge = document.querySelector('#notification-bell .badge');
+                            if (unreadCount > 0) {
+                                if (!badge) {
+                                    badge = document.createElement('span');
+                                    badge.className = 'badge';
+                                    document.getElementById('notification-bell').appendChild(badge);
+                                }
+                                badge.textContent = unreadCount;
+                            } else {
+                                if (badge) {
+                                    badge.remove();
+                                }
+                            }
+                        } else if (response.error) {
+                            console.error("Error: " + response.error);
                         }
-                        badge.textContent = unreadCount;
-                    } else {
-                        if (badge) {
-                            badge.remove();
-                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
                     }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
                 }
             }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
         };
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
