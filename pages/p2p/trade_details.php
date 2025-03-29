@@ -6,6 +6,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+$ad_id = null;
+
 // Убедитесь, что переменная ad_id передается и обрабатывается правильно
 if (isset($_GET['ad_id'])) {
     $ad_id = intval($_GET['ad_id']);
@@ -25,6 +27,14 @@ if (isset($_GET['ad_id'])) {
 if (!isset($ad_id)) {
     header('Content-Type: application/json');
     echo json_encode(['error' => 'ad_id is missing']);
+    exit();
+}
+
+$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
+
+if (!$CONNECT) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Failed to connect to database']);
     exit();
 }
 
@@ -215,6 +225,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
                     }
                 }
             };
+            xhr.onerror = function() {
+                console.error("Request failed");
+            };
             xhr.send(JSON.stringify({
                 jsonrpc: "2.0",
                 method: "sendMessage",
@@ -252,6 +265,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
                         console.error("Request failed with status:", xhr.status);
                     }
                 }
+            };
+            xhr.onerror = function() {
+                console.error("Request failed");
             };
             xhr.send(JSON.stringify({
                 jsonrpc: "2.0",
