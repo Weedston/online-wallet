@@ -30,7 +30,7 @@ switch ($method) {
 function getNotifications($params) {
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
-    $result = mysqli_query($CONNECT, "SELECT * FROM notifications WHERE user_id = '$user_id' ORDER BY created_at DESC");
+    $result = mysqli_query($CONNECT, "SELECT * FROM notifications WHERE user_id = '$user_id' AND is_read = 0 ORDER BY created_at DESC");
     $notifications = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $notifications[] = $row;
