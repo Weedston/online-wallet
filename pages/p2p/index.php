@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
 
-    // Обновляем статус объявления на "ожидание"
-    $update_query = "UPDATE ads SET status = 'pending' WHERE id = '$ad_id'";
+    // Обновляем статус объявления на "ожидание" и сохраняем информацию о покупателе
+    $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id' WHERE id = '$ad_id'";
     if (mysqli_query($CONNECT, $update_query)) {
         // Получаем информацию о создателе объявления
         $ad_query = "SELECT user_id FROM ads WHERE id = '$ad_id'";
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         add_notification($seller_id, "Ваше объявление #$ad_id было принято и находится в статусе ожидания.");
 
         // Перенаправляем пользователя на страницу деталей сделки
-        header("Location: p2p-trade_details?ad_id=$ad_id");
+        header("Location: p2p-trade_details.php?ad_id=$ad_id");
         exit();
     } else {
         echo "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
