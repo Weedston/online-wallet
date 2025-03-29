@@ -45,7 +45,7 @@ if (!$ad) {
     exit();
 }
 
-$seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$ad['user_id']}'"));
+$seller_id = $ad['user_id'];
 $buyer_id = $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
@@ -66,8 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $message = htmlspecialchars($jsonrpc['params']['message'], ENT_QUOTES, 'UTF-8');
         $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
         if (mysqli_query($CONNECT, $query)) {
-            // Создание уведомления для владельца объявления
-            add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
+            // Создание уведомления для собеседника в чате
+            $recipient_id = ($buyer_id === $_SESSION['user_id']) ? $seller_id : $buyer_id;
+            add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
         } else {
             echo json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             </tr>
             <tr>
                 <th>Seller ID</th>
-                <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
+                <td><?php echo htmlspecialchars($seller_id); ?></td>
             </tr>
             <tr>
                 <th>BTC Amount</th>

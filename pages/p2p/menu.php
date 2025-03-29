@@ -67,7 +67,7 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
 document.addEventListener('DOMContentLoaded', function() {
     function fetchNotifications() {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'jsonrpc.php', true);
+        xhr.open('POST', '/pages/p2p/jsonrpc.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4 && xhr.status === 200) {
