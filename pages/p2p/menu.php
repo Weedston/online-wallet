@@ -8,8 +8,6 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 $user_id = $_SESSION['user_id'];
-$notification_unread_count_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
-$notification_unread_count = mysqli_fetch_assoc($notification_unread_count_result)['count'];
 ?>
 
 <nav>
@@ -25,9 +23,7 @@ $notification_unread_count = mysqli_fetch_assoc($notification_unread_count_resul
         <li>
             <a href="#" id="notification-bell">
                 <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
-                <?php if ($notification_unread_count > 0): ?>
-                    <span class="notification-badge"><?php echo $notification_unread_count; ?></span>
-                <?php endif; ?>
+                <span class="notification-badge" id="notification-count"></span>
             </a>
             <div id="notification-popup" class="notification-popup">
                 <h4>Уведомления</h4>
@@ -71,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 listItem.textContent = notification.message;
                                 notificationList.appendChild(listItem);
                             });
-                            markNotificationsAsRead();
                         } else if (response.error) {
                             console.error("Error: " + response.error.message);
                         }
@@ -95,19 +90,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
     }
 
-    // Функция для отметки уведомлений как прочитанных
-    function markNotificationsAsRead() {
+    // Функция для получения количества непрочитанных уведомлений
+    function fetchUnreadNotificationCount() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/src/jsonrpc.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var count = response.result.count;
+                            document.getElementById('notification-count').textContent = count;
+                        } else if (response.error) {
+                            console.error("Error: " + response.error.message);
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
+                }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
-            method: "markNotificationsAsRead",
+            method: "getUnreadNotificationCount",
             params: { user_id: <?php echo $user_id; ?> },
-            id: 2
+            id: 1
         }));
     }
 
-    setInterval(fetchNotifications, 5000);
+    fetchUnreadNotificationCount();
+    setInterval(fetchUnreadNotificationCount, 5000);
 });
 </script>
