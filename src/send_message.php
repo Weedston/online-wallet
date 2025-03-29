@@ -17,15 +17,16 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
+$ad_id = intval($request['ad_id'] ?? 0);
 $sender_id = intval($request['sender_id'] ?? 0);
 $recipient_id = intval($request['recipient_id'] ?? 0);
 $message = trim($request['message'] ?? '');
 
-error_log("ПАРАМЕТРЫ: sender_id=$sender_id, recipient_id=$recipient_id, message=$message");
+error_log("ПАРАМЕТРЫ: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message");
 
-if ($sender_id > 0 && $recipient_id > 0 && !empty($message)) {
+if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $message = mysqli_real_escape_string($CONNECT, $message);
-    $query = "INSERT INTO messages (user_id, recipient_id, message, created_at) VALUES ('$sender_id', '$recipient_id', '$message', NOW())";
+    $query = "INSERT INTO messages (ad_id, user_id, recipient_id, message, created_at) VALUES ('$ad_id', '$sender_id', '$recipient_id', '$message', NOW())";
     $result = mysqli_query($CONNECT, $query);
     
     if ($result) {
