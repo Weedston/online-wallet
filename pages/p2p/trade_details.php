@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
                 <td><?php echo htmlspecialchars($ad_id); ?></td>
             </tr>
             <tr>
-                <th>User ID</th>
+                <th>Buyer ID</th>
                 <td><?php echo htmlspecialchars($buyer_id); ?></td>
             </tr>
             <tr>
@@ -189,4 +189,80 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             e.preventDefault();
             var ad_id = this.querySelector('input[name="ad_id"]').value;
             var message = this.message.value;
-            if (message.trim() === '')
+            if (message.trim() === '') return;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '?action=send_message', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML += '<p>You: ' + message + '</p>';
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            } else {
+                                alert(response.error);
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
+                        }
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "sendMessage",
+                params: { message: message, ad_id: ad_id },
+                id: 1
+            }));
+            this.message.value = '';
+        });
+
+        function loadMessages() {
+            var ad_id = document.querySelector('input[name="ad_id"]').value;
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '?action=load_messages', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML = '';
+                                response.result.forEach(function(message) {
+                                    chatBox.innerHTML += '<p>' + message.username + ': ' + message.message + '</p>';
+                                });
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            } else {
+                                alert(response.error);
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
+                        }
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "loadMessages",
+                params: { ad_id: ad_id },
+                id: 1
+            }));
+        }
+
+        setInterval(loadMessages, 3000);
+        loadMessages();
+    </script>
+</body>
+</html>
