@@ -15,7 +15,7 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
         <li><a href="support">Support</a></li>
         <li><a href="p2p">P2P Exchange</a></li>
         <li><a href="p2p-create">Create Ad</a></li>
-		<li><a href="p2p-trade_history">Trade History</a></li>
+        <li><a href="p2p-trade_history">Trade History</a></li>
         <li><a href="p2p-profile">Profile</a></li>
         <li><a href="logout">Logout</a></li>
         <li>
@@ -62,3 +62,42 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
     z-index: 1000;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function fetchNotifications() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.result) {
+                    var unreadCount = response.result.unread_count;
+                    var badge = document.querySelector('#notification-bell .badge');
+                    if (unreadCount > 0) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'badge';
+                            document.getElementById('notification-bell').appendChild(badge);
+                        }
+                        badge.textContent = unreadCount;
+                    } else {
+                        if (badge) {
+                            badge.remove();
+                        }
+                    }
+                }
+            }
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "getUnreadNotificationsCount",
+            params: { user_id: <?php echo $user_id; ?> },
+            id: 1
+        }));
+    }
+
+    setInterval(fetchNotifications, 5000);
+});
+</script>
