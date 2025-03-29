@@ -434,7 +434,7 @@ table td button:hover {
     font-size: 95%;
 }
 
-#notification-bell .badge {
+#notification-bell .notification-badge {
     position: absolute;
     top: -10px;
     right: -10px;
@@ -442,6 +442,19 @@ table td button:hover {
     color: white;
     border-radius: 50%;
     padding: 2px 6px;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+#notification-bell.blinking .notification-badge {
+    animation: blink 1s infinite;
 }
 
 .notification-popup {
