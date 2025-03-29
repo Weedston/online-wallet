@@ -4,8 +4,8 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 $user_id = $_SESSION['user_id'];
-$unread_notifications_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
-$unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'];
+$notification_unread_count_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
+$notification_unread_count = mysqli_fetch_assoc($notification_unread_count_result)['count'];
 ?>
 
 <nav>
@@ -21,8 +21,8 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
         <li>
             <a href="#" id="notification-bell">
                 <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
-                <?php if ($unread_notifications > 0): ?>
-                    <span class="badge"><?php echo $unread_notifications; ?></span>
+                <?php if ($notification_unread_count > 0): ?>
+                    <span class="notification-badge"><?php echo $notification_unread_count; ?></span>
                 <?php endif; ?>
             </a>
             <div id="notification-popup" class="notification-popup" style="display: none;">
@@ -41,7 +41,7 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
     position: relative;
     display: inline-block;
 }
-#notification-bell .badge {
+#notification-bell .notification-badge {
     position: absolute;
     top: -10px;
     right: -10px;
@@ -60,11 +60,24 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
     width: 300px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     z-index: 1000;
+    display: none;
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для значка уведомлений
+    document.getElementById('notification-bell').addEventListener('click', function() {
+        var popup = document.getElementById('notification-popup');
+        if (popup.style.display === 'none' || popup.style.display === '') {
+            fetchNotifications();
+            popup.style.display = 'block';
+        } else {
+            popup.style.display = 'none';
+        }
+    });
+
+    // Функция для загрузки уведомлений
     function fetchNotifications() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/src/jsonrpc.php', true);
@@ -75,20 +88,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if (response.result) {
-                            var unreadCount = response.result.unread_count;
-                            var badge = document.querySelector('#notification-bell .badge');
-                            if (unreadCount > 0) {
-                                if (!badge) {
-                                    badge = document.createElement('span');
-                                    badge.className = 'badge';
-                                    document.getElementById('notification-bell').appendChild(badge);
-                                }
-                                badge.textContent = unreadCount;
-                            } else {
-                                if (badge) {
-                                    badge.remove();
-                                }
-                            }
+                            var notifications = response.result.notifications;
+                            var notificationList = document.getElementById('notification-list');
+                            notificationList.innerHTML = '';
+                            notifications.forEach(function(notification) {
+                                var listItem = document.createElement('li');
+                                listItem.textContent = notification.message;
+                                notificationList.appendChild(listItem);
+                            });
                         } else if (response.error) {
                             console.error("Error: " + response.error);
                         }
@@ -106,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
-            method: "getUnreadNotificationsCount",
+            method: "getNotifications",
             params: { user_id: <?php echo $user_id; ?> },
             id: 1
         }));
