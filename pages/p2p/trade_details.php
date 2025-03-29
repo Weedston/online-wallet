@@ -243,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         xhr.send(JSON.stringify({
+            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
             sender_id: senderId,
             recipient_id: recipientId,
             message: message

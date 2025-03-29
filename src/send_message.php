@@ -36,7 +36,7 @@ if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
         echo json_encode(['error' => 'Query failed: ' . mysqli_error($CONNECT)]);
     }
 } else {
-    error_log("Ошибка: Не хватает параметров!");
+    error_log("Ошибка: Не хватает параметров! ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message='$message'");
     echo json_encode(['error' => 'Missing parameters']);
 }
 ?>
