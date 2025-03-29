@@ -71,3 +71,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error("Error: " + response.error);
                         }
                     } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
+                }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "getNotifications",
+            params: { user_id: <?php echo $user_id; ?> },
+            id: 1
+        }));
+    }
+
+    setInterval(fetchNotifications, 5000);
+});
+</script>
