@@ -40,20 +40,22 @@ $result = $stmt->get_result();
 <a href="dashboard" class="btn">Back to Dashboard</a>
     <div style='min-height: 10vh;' class="container" >
         <h2>Support</h2>
-        <form method="POST">
-            <textarea name="message" placeholder="Describe your issue..." required></textarea>
-            <button type="submit" class="btn">Submit</button>
-        </form>
-        <h3>Your Requests</h3>
-		<div class="card-container">
+<form method="POST" class="support-form">
+    <textarea name="message" class="message-textarea" placeholder="Describe your issue..." required></textarea>
+    <button type="submit" class="btn submit-button">Submit</button>
+</form>
+<div class="support-requests">
+    <h3>Your Requests</h3>
+    <div class="card-container">
         <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="card">
-                <p><strong>Request:</strong> <?php if (!empty($row['message'])) {echo htmlspecialchars($row['message']);} ?></p>
+            <div class="request-card">
+                <p><strong>Request:</strong> <?php echo htmlspecialchars($row['message']); ?></p>
                 <p><strong>Response:</strong> <?php echo $row['response'] ? htmlspecialchars($row['response']) : 'No response yet'; ?></p>
                 <p><small><?php echo $row['created_at']; ?></small></p>
             </div>
         <?php endwhile; ?>
-		</div>
+    </div>
+</div>
   
     </div>
 </body>

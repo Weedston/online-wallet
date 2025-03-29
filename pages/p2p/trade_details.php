@@ -1,22 +1,14 @@
 <?php
-// Удалена инициализация сессии, так как это уже делается в корневом index.php
-
-$CONNECT = mysqli_connect(HOST, USER, PASS, DB);
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-if (!$CONNECT) {
-    header('Content-Type: application/json');
-    echo json_encode(['error' => 'Connection failed: ' . mysqli_connect_error()]);
-    exit();
-}
-
-if (isset($_POST['ad_id'])) {
+// Убедитесь, что переменная ad_id передается и обрабатывается правильно
+if (isset($_GET['ad_id'])) {
+    $ad_id = intval($_GET['ad_id']);
+} elseif (isset($_POST['ad_id'])) {
     $ad_id = intval($_POST['ad_id']);
 } else {
-    // Проверка наличия ad_id в JSON RPC теле запроса
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
         $rawInput = file_get_contents('php://input');
         $jsonrpc = json_decode($rawInput, true);
@@ -53,8 +45,6 @@ if (!$ad) {
 $seller = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '{$ad['user_id']}'"));
 $buyer_id = $_SESSION['user_id'];
 
-
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $rawInput = file_get_contents('php://input');
@@ -74,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
         if (mysqli_query($CONNECT, $query)) {
             // Создание уведомления для владельца объявления
-            add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
+            //add_notification($ad['user_id'], "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
         } else {
             echo json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
@@ -118,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 </head>
 <body>
     <div class="container">
-        <?php include 'menu.php'; ?>
+        <?php include 'pages/p2p/menu.php'; ?>
         <h2>Trade Details</h2>
         <table class="trade-details-table">
             <tr>
@@ -190,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             if (message.trim() === '') return;
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'p2p-trade_details', true);
+            xhr.open('POST', '?action=send_message', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
@@ -225,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         function loadMessages() {
             var ad_id = document.querySelector('input[name="ad_id"]').value;
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'p2p-trade_details', true);
+            xhr.open('POST', '?action=load_messages', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
