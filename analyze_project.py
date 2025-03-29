@@ -1,6 +1,6 @@
 import os
 import requests
-from github import Github
+# from github import Github
 
 # Ваш GitHub токен
 GITHUB_TOKEN = "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"
