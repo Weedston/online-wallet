@@ -38,8 +38,11 @@ if (!$CONNECT) {
     exit();
 }
 
-$ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
-$ad_result = mysqli_query($CONNECT, $ad_query);
+$stmt = $CONNECT->prepare("SELECT * FROM ads WHERE id = ?");
+$stmt->bind_param("i", $ad_id);
+$stmt->execute();
+$ad_result = $stmt->get_result();
+
 
 if (!$ad_result) {
     header('Content-Type: application/json');
@@ -57,6 +60,8 @@ if (!$ad) {
 
 $seller_id = $ad['user_id'];
 $buyer_id = $ad['buyer_id'];
+$sender_id = $_SESSION['user_id'];
+            $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
@@ -74,11 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $ad_id = intval($jsonrpc['params']['ad_id']);
     if ($jsonrpc['method'] == 'sendMessage') {
         $message = htmlspecialchars($jsonrpc['params']['message'], ENT_QUOTES, 'UTF-8');
-        $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
-        if (mysqli_query($CONNECT, $query)) {
+        $stmt = $CONNECT->prepare("INSERT INTO messages (ad_id, user_id, message) VALUES (?, ?, ?)");
+		$stmt->bind_param("iis", $ad_id, $sender_id, $message);
+		if ($stmt->execute()) {
             // Определяем, кто отправляет сообщение, и отправляем уведомление другому пользователю
-            $sender_id = $_SESSION['user_id'];
-            $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
+            
             error_log("Sending notification to user ID: $recipient_id");
             add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
@@ -188,6 +193,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             <div class="chat-box" id="chat-box"></div>
             <form id="chat-form">
                 <input type="hidden" name="ad_id" value="<?php echo htmlspecialchars($ad_id); ?>">
+				<input type="hidden" id="user-id" value="<?php echo htmlspecialchars($_SESSION['user_id']); ?>">
+				<input type="hidden" id="recipient-id" value="<?php echo htmlspecialchars($recipient_id); ?>">
+
                 <input type="text" name="message" placeholder="Type your message...">
                 <button type="submit">Send</button>
             </form>
@@ -196,29 +204,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var sendMessageButton = document.getElementById('send-message-button');
-    var messageInput = document.getElementById('message-input');
+    var sendMessageButton = document.querySelector("#chat-form button");
+    var messageInput = document.querySelector("#chat-form input[name='message']");
 
-    sendMessageButton.addEventListener('click', function() {
-        var message = messageInput.value;
-        var recipientId = document.getElementById('recipient-id').value; // ID получателя
-        var senderId = document.getElementById('user-id').value; // ID отправителя
+    document.getElementById("chat-form").addEventListener("submit", function(event) {
+        event.preventDefault(); // Останавливаем стандартное поведение формы
+
+        var message = messageInput.value.trim();
+        var recipientId = document.getElementById('recipient-id').value;
+        var senderId = document.getElementById('user-id').value;
+
+        console.log("Отправка сообщения: ", { senderId, recipientId, message }); // Дебаг
+
+        if (!message || senderId == "0" || recipientId == "0") {
+            console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
+            return;
+        }
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/src/send_message.php', true);
+        xhr.open('POST', 'src/send_message.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        displayMessage('You', message);
-                    } else {
-                        console.error("Error: " + response.error);
+            if (xhr.readyState === 4) {
+                console.log("Ответ сервера:", xhr.responseText); // Дебаг ответа сервера
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            displayMessage('You', message);
+                            messageInput.value = ""; // Очистка поля ввода
+                        } else {
+                            console.error("Ошибка сервера:", response.error);
+                        }
+                    } catch (e) {
+                        console.error("Ошибка парсинга JSON:", e, xhr.responseText);
                     }
-                } catch (e) {
-                    console.error("Parsing error:", e);
-                    console.error("Response:", xhr.responseText);
                 }
             }
         };
@@ -228,14 +248,8 @@ document.addEventListener('DOMContentLoaded', function() {
             message: message
         }));
     });
-
-    function displayMessage(sender, message) {
-        var chatBox = document.getElementById('chat-box');
-        var messageElement = document.createElement('div');
-        messageElement.textContent = sender + ': "' + message + '"';
-        chatBox.appendChild(messageElement);
-    }
 });
-    </script>
+</script>
+
 </body>
 </html>
