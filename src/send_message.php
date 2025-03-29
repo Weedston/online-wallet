@@ -6,6 +6,8 @@ header('Content-Type: application/json');
 
 require_once '../config.php';
 
+session_start(); // Начинаем сессию
+
 $request = json_decode(file_get_contents('php://input'), true);
 
 error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
