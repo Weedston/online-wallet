@@ -35,6 +35,14 @@ if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
         error_log("Ошибка SQL: " . mysqli_error($CONNECT));
         echo json_encode(['error' => 'Query failed: ' . mysqli_error($CONNECT)]);
     }
+} elseif ($ad_id > 0 && $request['method'] == 'loadMessages') {
+    $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
+    $response = [];
+    while ($message = mysqli_fetch_assoc($messages)) {
+        $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Seller';
+        $response[] = ['username' => $username, 'message' => htmlspecialchars($message['message'])];
+    }
+    echo json_encode(['result' => $response]);
 } else {
     error_log("Ошибка: Не хватает параметров! ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message='$message'");
     echo json_encode(['error' => 'Missing parameters']);
