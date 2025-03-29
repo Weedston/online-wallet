@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
         $response = [];
         while ($message = mysqli_fetch_assoc($messages)) {
-            $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Seller';
+            $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Not you';
             $response[] = ['username' => $username, 'message' => htmlspecialchars($message['message'])];
         }
         echo json_encode(['result' => $response]);
