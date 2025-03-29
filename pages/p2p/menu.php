@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var popup = document.getElementById('notification-popup');
         if (popup.style.display === 'none' || popup.style.display === '') {
             fetchNotifications();
+            markNotificationsAsRead(); // Добавлено для отметки уведомлений как прочитанных
             popup.style.display = 'block';
         } else {
             popup.style.display = 'none';
@@ -85,6 +86,42 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "getNotifications",
+            params: { user_id: <?php echo $user_id; ?> },
+            id: 1
+        }));
+    }
+
+    // Функция для отметки уведомлений как прочитанных
+    function markNotificationsAsRead() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/src/jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            console.log("Notifications marked as read");
+                            fetchUnreadNotificationCount(); // Обновить количество непрочитанных уведомлений
+                        } else if (response.error) {
+                            console.error("Error: " + response.error.message);
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
+                }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "markNotificationsAsRead",
             params: { user_id: <?php echo $user_id; ?> },
             id: 1
         }));

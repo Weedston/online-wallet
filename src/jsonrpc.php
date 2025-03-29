@@ -65,8 +65,12 @@ function getNotifications($params) {
 function markNotificationsAsRead($params) {
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
-    mysqli_query($CONNECT, "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0");
-    return 'success';
+    $result = mysqli_query($CONNECT, "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0");
+    if ($result) {
+        return 'success';
+    } else {
+        return ['error' => 'Failed to update notifications'];
+    }
 }
 
 function getUnreadNotificationCount($params) {
