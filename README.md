@@ -2,45 +2,14 @@
 ## Структура файлов
 
 ```
-├── p2p
-    ├── create_ad.php
-    ├── exchange.php
-    ├── history.php
-    ├── index.php
-    ├── menu.php
-    ├── process_offer.php
-    ├── profile.php
-    ├── trade.php
-    ├── trade_details.php
-├── styles.css
-├── notyf.png
-├── qrcode.png
-├── notification_sound.mp3
-├── admin_support.php
-├── bottom.php
-├── composer.json
-├── dashboard.php
-├── deposit.php
-├── func.php
-├── index.php
-├── login.php
-├── logout.php
-├── menu-wallet.php
-├── create_ad.php
-├── exchange.php
-├── history.php
-├── index.php
-├── menu.php
-├── process_offer.php
-├── profile.php
-├── trade.php
-├── trade_details.php
-├── profile.php
-├── register.php
-├── send.php
-├── sid_generator.php
-├── support.php
-├── top.php
-├── transfer.php
-├── rpc_response.log
+├── css/styles.css
+├── pages/p2p/create_ad.php
+├── pages/p2p/exchange.php
+├── pages/p2p/history.php
+├── pages/p2p/index.php
+├── pages/p2p/menu.php
+├── pages/p2p/process_offer.php
+├── pages/p2p/profile.php
+├── pages/p2p/trade.php
+├── pages/p2p/trade_details.php
 ```
