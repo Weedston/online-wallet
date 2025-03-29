@@ -2,6 +2,10 @@
 require_once '../config.php';
 require_once 'functions.php';
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 $request = json_decode(file_get_contents('php://input'), true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {

@@ -3,6 +3,10 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 $user_id = $_SESSION['user_id'];
 $notification_unread_count_result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
 $notification_unread_count = mysqli_fetch_assoc($notification_unread_count_result)['count'];
@@ -69,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                             markNotificationsAsRead();
                         } else if (response.error) {
-                            console.error("Error: " + response.error);
+                            console.error("Error: " + response.error.message);
                         }
                     } catch (e) {
                         console.error("Parsing error:", e);
