@@ -67,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         $query = "INSERT INTO messages (ad_id, user_id, message) VALUES ('$ad_id', '$buyer_id', '$message')";
         if (mysqli_query($CONNECT, $query)) {
             // Определяем, кто отправляет сообщение, и отправляем уведомление другому пользователю
-            $recipient_id = ($buyer_id == $_SESSION['user_id']) ? $seller_id : $buyer_id;
+            $sender_id = $_SESSION['user_id'];
+            $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
+            error_log("Sending notification to user ID: $recipient_id");
             add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
             echo json_encode(['result' => 'Message sent successfully']);
         } else {
