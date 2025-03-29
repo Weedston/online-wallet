@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         .chat-box {
             border: 1px solid #ddd;
             padding: 10px;
-            height: 100px;
+            height: 200px; /* Увеличим высоту для лучшего отображения */
             overflow-y: scroll;
             margin-bottom: 20px;
         }
@@ -193,8 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             <div class="chat-box" id="chat-box"></div>
             <form id="chat-form">
                 <input type="hidden" name="ad_id" value="<?php echo htmlspecialchars($ad_id); ?>">
-				<input type="hidden" id="user-id" value="<?php echo htmlspecialchars($_SESSION['user_id']); ?>">
-				<input type="hidden" id="recipient-id" value="<?php echo htmlspecialchars($recipient_id); ?>">
+                <input type="hidden" id="user-id" value="<?php echo htmlspecialchars($_SESSION['user_id']); ?>">
+                <input type="hidden" id="recipient-id" value="<?php echo htmlspecialchars($recipient_id); ?>">
 
                 <input type="text" name="message" placeholder="Type your message...">
                 <button type="submit">Send</button>
@@ -257,6 +257,42 @@ document.addEventListener('DOMContentLoaded', function() {
             message: message
         }));
     });
+
+    // Загружаем сообщения при загрузке страницы
+    function loadMessages() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'src/send_message.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var chatBox = document.getElementById('chat-box');
+                            chatBox.innerHTML = ''; // Очистить чат перед загрузкой сообщений
+                            response.result.forEach(function(message) {
+                                displayMessage(message.username, message.message);
+                            });
+                        } else {
+                            console.error("Ошибка загрузки сообщений:", response.error);
+                        }
+                    } catch (e) {
+                        console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
+                    }
+                }
+            }
+        };
+        xhr.send(JSON.stringify({
+            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+            method: 'loadMessages'
+        }));
+    }
+
+    loadMessages(); // Загрузить сообщения при загрузке страницы
+
+    // Обновляем сообщения каждые 5 секунд
+    setInterval(loadMessages, 5000);
 });
 </script>
 
