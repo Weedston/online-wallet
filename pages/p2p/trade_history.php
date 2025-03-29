@@ -105,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         }
         .trade-details-table th, .trade-details-table td {
             font-size: 95%;
+            height: auto;
         }
         .chat-box {
             border: 1px solid #ddd;
