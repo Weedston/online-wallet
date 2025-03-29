@@ -1,4 +1,7 @@
 <?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -95,6 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     <title>Trade Details</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
+        .trade-details-table {
+            width: 75%;
+            margin: 0 auto;
+            font-size: 75%;
+        }
         .trade-details-table th {
             text-align: left;
         }

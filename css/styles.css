@@ -430,4 +430,12 @@ table td button:hover {
     text-decoration: underline;
 }
 
+.trade-details-table {
+    width: 95%;
+    margin: 0 auto;
+    font-size: 95%;
+}
 
+.trade-details-table th, .trade-details-table td {
+    font-size: 95%;
+}
