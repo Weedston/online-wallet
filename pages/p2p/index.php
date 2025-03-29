@@ -123,7 +123,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                             <?php } else { ?>
                                 <form method="POST" action="p2p-trade_details">
                                     <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
-                                    <button type="submit" name="accept_ad" class="btn">Accept</button>
+                                    <button type="submit" name="accept_ad" class="btn accept-btn">Accept</button>
                                 </form>
                             <?php } ?>
                         </td>
@@ -146,11 +146,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <p><strong>Fiat Currency:</strong> <span id="modal-fiat-currency"></span></p>
             <p><strong>Trade Type:</strong> <span id="modal-trade-type"></span></p>
             <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
-            <div class="modal-buttons">
+            <div class="modal-buttons" id="modal-buttons">
                 <button class="btn cancel" onclick="closeModal()">Cancel</button>
                 <form method="POST" action="p2p-trade_details" style="display:inline;">
                     <input type="hidden" id="modal-ad-id" name="ad_id" value="">
-                    <button type="submit" name="accept_ad" class="btn">Accept</button>
+                    <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
                 </form>
             </div>
         </div>
@@ -168,6 +168,14 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('modal-trade-type').innerText = tradeType;
             document.getElementById('modal-comment').innerText = comment;
             document.getElementById('adModal').style.display = 'block';
+
+            // Hide Accept button if the ad belongs to the current user
+            const currentUser = '<?php echo $_SESSION['user_id']; ?>';
+            if (userId === currentUser) {
+                document.getElementById('modal-accept-btn').style.display = 'none';
+            } else {
+                document.getElementById('modal-accept-btn').style.display = 'inline-block';
+            }
         }
 
         function closeModal() {
@@ -180,6 +188,13 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 closeModal();
             }
         }
+
+        // Prevent modal from opening when clicking the Accept button
+        document.querySelectorAll('.accept-btn').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        });
     </script>
 </body>
 </html>

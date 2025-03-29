@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost:3306
--- Время создания: Мар 28 2025 г., 10:16
+-- Время создания: Мар 29 2025 г., 08:50
 -- Версия сервера: 8.0.41-0ubuntu0.22.04.1
 -- Версия PHP: 8.1.2-1ubuntu2.20
 
@@ -32,21 +32,50 @@ CREATE TABLE `ads` (
   `user_id` int NOT NULL,
   `amount_btc` decimal(16,8) NOT NULL,
   `rate` decimal(16,2) NOT NULL,
-  `payment_method` varchar(255) NOT NULL,
+  `payment_method` varchar(255) DEFAULT NULL,
   `fiat_currency` varchar(255) NOT NULL,
   `trade_type` enum('buy','sell') NOT NULL,
   `status` enum('active','inactive') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `comment` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Дамп данных таблицы `ads`
 --
 
-INSERT INTO `ads` (`id`, `user_id`, `amount_btc`, `rate`, `payment_method`, `fiat_currency`, `trade_type`, `status`, `created_at`, `updated_at`) VALUES
-(2, 184, '0.00030000', '7204926.00', 'Сбербанк', 'RUB', 'sell', 'active', '2025-03-28 07:42:18', '2025-03-28 07:42:18'),
-(3, 182, '0.00030000', '7126455.00', 'Сбербанк', 'EUR', 'sell', 'active', '2025-03-28 09:11:33', '2025-03-28 09:29:16');
+INSERT INTO `ads` (`id`, `user_id`, `amount_btc`, `rate`, `payment_method`, `fiat_currency`, `trade_type`, `status`, `created_at`, `updated_at`, `comment`) VALUES
+(2, 184, '0.00030000', '7204926.00', 'Сбербанк', 'RUB', 'sell', 'active', '2025-03-28 07:42:18', '2025-03-28 17:57:18', 'Готов'),
+(3, 182, '0.00030000', '7012641.00', 'Сбербанк', 'EUR', 'sell', 'active', '2025-03-28 09:11:33', '2025-03-28 14:06:24', 'Только Сбер по номеру телефона'),
+(4, 182, '0.00200000', '7150000.00', NULL, 'RUB', 'buy', 'active', '2025-03-28 15:05:04', '2025-03-29 08:46:51', 'ыв');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `ad_payment_methods`
+--
+
+CREATE TABLE `ad_payment_methods` (
+  `ad_id` int NOT NULL,
+  `payment_method` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `ad_payment_methods`
+--
+
+INSERT INTO `ad_payment_methods` (`ad_id`, `payment_method`) VALUES
+(2, 'OZON Банк'),
+(2, 'PayPal'),
+(4, 'PayPal'),
+(3, 'Wise '),
+(4, 'МИР'),
+(3, 'Сбербанк'),
+(2, 'СБП'),
+(4, 'СБП'),
+(3, 'Совкомбанк'),
+(3, 'Т-Банк');
 
 -- --------------------------------------------------------
 
@@ -104,6 +133,66 @@ CREATE TABLE `members` (
 INSERT INTO `members` (`id`, `passw`, `wallet`, `balance`, `username`, `role`) VALUES
 (182, 'motors whimpering titanate trumpet redeclares lobsters spouses combinator different magnificent recoil airfoils stammers Buchwald tentacled rarety-s rose-s murmured', 'tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn', '0.00000535', '', 'user'),
 (184, 'chinquapin absentia missionaries milky pirate-s midband audiovisual continuities tableaux nowadays tamed protestant falsified Fredericksburg watchword directory-s uproots thermistor', 'tb1qfzxhvj6a6tf0cujun67wyr4m98q0danqftcl7x', '0.00020850', '', 'user');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` int NOT NULL,
+  `ad_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `messages`
+--
+
+INSERT INTO `messages` (`id`, `ad_id`, `user_id`, `message`, `created_at`) VALUES
+(1, 4, 184, 'енкне', '2025-03-28 18:33:55'),
+(2, 4, 184, '123', '2025-03-28 18:34:07'),
+(3, 4, 184, 'Привет', '2025-03-28 18:43:43'),
+(4, 2, 184, '1', '2025-03-28 19:01:11'),
+(5, 2, 184, '213', '2025-03-28 19:01:53'),
+(6, 2, 184, 'в', '2025-03-28 19:07:44'),
+(7, 2, 184, '2', '2025-03-28 19:18:20'),
+(8, 2, 184, '354', '2025-03-28 19:20:48'),
+(9, 2, 184, '321', '2025-03-28 19:33:09'),
+(10, 2, 184, '123', '2025-03-28 19:50:20'),
+(11, 2, 184, '321', '2025-03-28 22:00:12'),
+(12, 3, 184, '3r', '2025-03-28 22:22:33'),
+(13, 3, 184, 'ds', '2025-03-28 22:24:07'),
+(14, 3, 184, 'sdf', '2025-03-28 22:25:02'),
+(15, 2, 182, '321', '2025-03-29 06:29:51');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `message` text NOT NULL,
+  `is_read` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `notifications`
+--
+
+INSERT INTO `notifications` (`id`, `user_id`, `message`, `is_read`, `created_at`) VALUES
+(1, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:07:44'),
+(2, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:18:20'),
+(3, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:20:48'),
+(4, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:33:10'),
+(5, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:50:21');
 
 -- --------------------------------------------------------
 
@@ -191,7 +280,7 @@ CREATE TABLE `visit_counter` (
 --
 
 INSERT INTO `visit_counter` (`page`, `count`) VALUES
-('total', 5783);
+('total', 5791);
 
 --
 -- Индексы сохранённых таблиц
@@ -202,6 +291,13 @@ INSERT INTO `visit_counter` (`page`, `count`) VALUES
 --
 ALTER TABLE `ads`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Индексы таблицы `ad_payment_methods`
+--
+ALTER TABLE `ad_payment_methods`
+  ADD PRIMARY KEY (`ad_id`,`payment_method`),
+  ADD KEY `payment_method` (`payment_method`);
 
 --
 -- Индексы таблицы `fiat_currencies`
@@ -222,6 +318,20 @@ ALTER TABLE `logs`
 --
 ALTER TABLE `members`
   ADD KEY `id` (`id`);
+
+--
+-- Индексы таблицы `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ad_id` (`ad_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Индексы таблицы `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Индексы таблицы `p2p_offers`
@@ -257,7 +367,7 @@ ALTER TABLE `visit_counter`
 -- AUTO_INCREMENT для таблицы `ads`
 --
 ALTER TABLE `ads`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT для таблицы `fiat_currencies`
@@ -276,6 +386,18 @@ ALTER TABLE `logs`
 --
 ALTER TABLE `members`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=187;
+
+--
+-- AUTO_INCREMENT для таблицы `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT для таблицы `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT для таблицы `p2p_offers`
@@ -298,6 +420,20 @@ ALTER TABLE `support_requests`
 --
 -- Ограничения внешнего ключа сохраненных таблиц
 --
+
+--
+-- Ограничения внешнего ключа таблицы `ad_payment_methods`
+--
+ALTER TABLE `ad_payment_methods`
+  ADD CONSTRAINT `ad_payment_methods_ibfk_1` FOREIGN KEY (`ad_id`) REFERENCES `ads` (`id`),
+  ADD CONSTRAINT `ad_payment_methods_ibfk_2` FOREIGN KEY (`payment_method`) REFERENCES `payment_methods` (`method_name`);
+
+--
+-- Ограничения внешнего ключа таблицы `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`ad_id`) REFERENCES `ads` (`id`),
+  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `members` (`id`);
 
 --
 -- Ограничения внешнего ключа таблицы `support_requests`
