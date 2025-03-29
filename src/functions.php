@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__ . '/../config.php';
 
-
 function add_notification($user_id, $message) {
-	
     global $CONNECT; // Declare global variable
 
+    // Добавление логов для проверки параметров
+    error_log("add_notification called with user_id: $user_id, message: $message");
+    
     if (!$CONNECT) {
         error_log("Error: Database connection is missing.");
         return false;
@@ -27,6 +28,7 @@ function add_notification($user_id, $message) {
     }
 
     $stmt->close();
+    error_log("add_notification executed successfully for user_id: $user_id, message: $message");
     return true; // Successful execution
 }
 ?>
