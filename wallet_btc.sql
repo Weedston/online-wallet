@@ -34,7 +34,7 @@ CREATE TABLE `ads` (
   `payment_method` varchar(255) DEFAULT NULL,
   `fiat_currency` varchar(255) NOT NULL,
   `trade_type` enum('buy','sell') NOT NULL,
-  `status` enum('active','inactive','pending') NOT NULL,
+  `status` enum('active','inactive','pending','completed') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `comment` text
