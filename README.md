@@ -46,7 +46,7 @@
 │   ├── transfer.php
 ├── robots.txt
 ├── src/
-│   ├── rpc_response.log
+│   ├── jsonrpc.php
 ├── update_readme.py
 ├── wallet_btc.sql
 ├── wordlist.txt
