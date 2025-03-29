@@ -46,7 +46,7 @@ $ad_result = $stmt->get_result();
 
 if (!$ad_result) {
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Query failed', 'query' => $ad_query, 'mysqli_error' => mysqli_error($CONNECT)]);
+    echo json_encode(['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)]);
     exit();
 }
 
@@ -61,7 +61,7 @@ if (!$ad) {
 $seller_id = $ad['user_id'];
 $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
-            $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
+$recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
@@ -80,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     if ($jsonrpc['method'] == 'sendMessage') {
         $message = htmlspecialchars($jsonrpc['params']['message'], ENT_QUOTES, 'UTF-8');
         $stmt = $CONNECT->prepare("INSERT INTO messages (ad_id, user_id, message) VALUES (?, ?, ?)");
-		$stmt->bind_param("iis", $ad_id, $sender_id, $message);
-		if ($stmt->execute()) {
+        $stmt->bind_param("iis", $ad_id, $sender_id, $message);
+        if ($stmt->execute()) {
             // Определяем, кто отправляет сообщение, и отправляем уведомление другому пользователю
             
             error_log("Sending notification to user ID: $recipient_id");
