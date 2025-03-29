@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../../index.php");
     exit();
@@ -9,7 +11,7 @@ $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
 // Получение сделок со статусами 'pending' и 'completed'
 $trades = mysqli_query($CONNECT, "
-    SELECT ads.*, members.username 
+    SELECT ads.*, members.id AS user_id 
     FROM ads 
     JOIN members ON ads.user_id = members.id 
     WHERE ads.status IN ('pending', 'completed')
@@ -37,7 +39,15 @@ $trades = mysqli_query($CONNECT, "
         th {
             background-color: #f2f2f2;
         }
+        tr.clickable {
+            cursor: pointer;
+        }
     </style>
+    <script>
+        function goToTradeDetails(ad_id) {
+            window.location.href = `p2p-trade_details?ad_id=${ad_id}`;
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -47,7 +57,7 @@ $trades = mysqli_query($CONNECT, "
             <thead>
                 <tr>
                     <th>Trade ID</th>
-                    <th>User</th>
+                    <th>User ID</th>
                     <th>BTC Amount</th>
                     <th>Fiat Amount</th>
                     <th>Rate</th>
@@ -60,9 +70,9 @@ $trades = mysqli_query($CONNECT, "
                 <?php while ($trade = mysqli_fetch_assoc($trades)) { 
                     $fiat_amount = $trade['amount_btc'] * $trade['rate'];
                 ?>
-                    <tr>
+                    <tr class="clickable" onclick="goToTradeDetails(<?php echo htmlspecialchars($trade['id']); ?>)">
                         <td><?php echo htmlspecialchars($trade['id']); ?></td>
-                        <td><?php echo htmlspecialchars($trade['username']); ?></td>
+                        <td><?php echo htmlspecialchars($trade['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($trade['amount_btc']); ?></td>
                         <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($trade['fiat_currency']); ?></td>
                         <td><?php echo htmlspecialchars($trade['rate']); ?></td>
