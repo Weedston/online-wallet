@@ -1,3 +1,4 @@
+# Проект Online Wallet
 
 ## Структура файлов
 
@@ -7,70 +8,45 @@
 ├── composer.json
 ├── composer.lock
 ├── config.php
-├── css/styles.css
-├── css/styles.css
-├── images/notyf.png
-├── images/notyf.png
-├── images/qrcode.png
-├── images/qrcode.png
+├── css/
+│   ├── styles.css
+├── images/
+│   ├── notyf.png
+│   ├── qrcode.png
 ├── index.php
-├── js/notification_sound.mp3
-├── js/notification_sound.mp3
-├── pages/admin_support.php
-├── pages/admin_support.php
-├── pages/bottom.php
-├── pages/bottom.php
-├── pages/composer.json
-├── pages/composer.json
-├── pages/dashboard.php
-├── pages/dashboard.php
-├── pages/deposit.php
-├── pages/deposit.php
-├── pages/func.php
-├── pages/func.php
-├── pages/index.php
-├── pages/index.php
-├── pages/login.php
-├── pages/login.php
-├── pages/logout.php
-├── pages/logout.php
-├── pages/menu-wallet.php
-├── pages/menu-wallet.php
-├── pages/p2p/create_ad.php
-├── pages/p2p/create_ad.php
-├── pages/p2p/exchange.php
-├── pages/p2p/exchange.php
-├── pages/p2p/history.php
-├── pages/p2p/history.php
-├── pages/p2p/index.php
-├── pages/p2p/index.php
-├── pages/p2p/menu.php
-├── pages/p2p/menu.php
-├── pages/p2p/process_offer.php
-├── pages/p2p/process_offer.php
-├── pages/p2p/profile.php
-├── pages/p2p/profile.php
-├── pages/p2p/trade.php
-├── pages/p2p/trade.php
-├── pages/p2p/trade_details.php
-├── pages/p2p/trade_details.php
-├── pages/profile.php
-├── pages/profile.php
-├── pages/register.php
-├── pages/register.php
-├── pages/send.php
-├── pages/send.php
-├── pages/sid_generator.php
-├── pages/sid_generator.php
-├── pages/support.php
-├── pages/support.php
-├── pages/top.php
-├── pages/top.php
-├── pages/transfer.php
-├── pages/transfer.php
+├── js/
+│   ├── notification_sound.mp3
+├── pages/
+│   ├── admin_support.php
+│   ├── bottom.php
+│   ├── composer.json
+│   ├── dashboard.php
+│   ├── deposit.php
+│   ├── func.php
+│   ├── index.php
+│   ├── login.php
+│   ├── logout.php
+│   ├── menu-wallet.php
+│   ├── p2p/
+│   │   ├── create_ad.php
+│   │   ├── exchange.php
+│   │   ├── history.php
+│   │   ├── index.php
+│   │   ├── menu.php
+│   │   ├── process_offer.php
+│   │   ├── profile.php
+│   │   ├── trade.php
+│   │   ├── trade_details.php
+│   ├── profile.php
+│   ├── register.php
+│   ├── send.php
+│   ├── sid_generator.php
+│   ├── support.php
+│   ├── top.php
+│   ├── transfer.php
 ├── robots.txt
-├── src/rpc_response.log
-├── src/rpc_response.log
+├── src/
+│   ├── rpc_response.log
 ├── update_readme.py
 ├── wallet_btc.sql
 ├── wordlist.txt
