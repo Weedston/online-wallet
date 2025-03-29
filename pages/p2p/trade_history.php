@@ -70,7 +70,7 @@ $trades = mysqli_query($CONNECT, "
                 <?php while ($trade = mysqli_fetch_assoc($trades)) { 
                     $fiat_amount = $trade['amount_btc'] * $trade['rate'];
                 ?>
-                    <tr class="clickable" onclick="goToTradeDetails(<?php echo htmlspecialchars($trade['id']); ?>)">
+                    <tr class="<?php echo $trade['status'] == 'pending' ? 'clickable' : ''; ?>" onclick="<?php echo $trade['status'] == 'pending' ? 'goToTradeDetails(' . htmlspecialchars($trade['id']) . ')' : ''; ?>">
                         <td><?php echo htmlspecialchars($trade['id']); ?></td>
                         <td><?php echo htmlspecialchars($trade['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($trade['amount_btc']); ?></td>

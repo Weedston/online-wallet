@@ -16,7 +16,6 @@ $unread_notifications = mysqli_fetch_assoc($unread_notifications_result)['count'
         <li><a href="p2p">P2P Exchange</a></li>
 		<li><a href="p2p-trade_history">Trade History</a></li>
         <li><a href="p2p-create">Create Ad</a></li>
-        <li><a href="p2p-history">Exchange History</a></li>
         <li><a href="p2p-profile">Profile</a></li>
         <li><a href="logout">Logout</a></li>
         <li>
