@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 listItem.textContent = notification.message;
                                 notificationList.appendChild(listItem);
                             });
+                            markNotificationsAsRead();
                         } else if (response.error) {
                             console.error("Error: " + response.error);
                         }
@@ -87,6 +88,19 @@ document.addEventListener('DOMContentLoaded', function() {
             method: "getNotifications",
             params: { user_id: <?php echo $user_id; ?> },
             id: 1
+        }));
+    }
+
+    // Функция для отметки уведомлений как прочитанных
+    function markNotificationsAsRead() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/src/jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "markNotificationsAsRead",
+            params: { user_id: <?php echo $user_id; ?> },
+            id: 2
         }));
     }
 
