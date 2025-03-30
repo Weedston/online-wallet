@@ -134,6 +134,7 @@ else if ($Page == 'p2p-create') include 'pages/p2p/create_ad.php';
 else if ($Page == 'p2p-trade_history') include 'pages/p2p/trade_history.php';
 else if ($Page == 'p2p-profile') include 'pages/p2p/profile.php';
 else if ($Page == 'p2p-trade_details') include 'pages/p2p/trade_details.php';
+else if ($Page == 'notifications') include 'pages/p2p/notifications.php';
 
 else include 'pages/index.php';
 
