@@ -30,13 +30,14 @@
 │   ├── p2p/
 │   │   ├── create_ad.php
 │   │   ├── exchange.php
-│   │   ├── history.php
+│   │   ├── notifications.php
 │   │   ├── index.php
 │   │   ├── menu.php
 │   │   ├── process_offer.php
 │   │   ├── profile.php
 │   │   ├── trade.php
 │   │   ├── trade_details.php
+│   │   ├── trade_history.php
 │   ├── profile.php
 │   ├── register.php
 │   ├── send.php

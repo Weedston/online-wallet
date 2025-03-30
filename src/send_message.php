@@ -32,7 +32,7 @@ if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $query = "INSERT INTO messages (ad_id, user_id, recipient_id, message, created_at) VALUES ('$ad_id', '$sender_id', '$recipient_id', '$message', NOW())";
     $result = mysqli_query($CONNECT, $query);
     if ($result) {
-		if (add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id")) {
+		if (add_notification($recipient_id, "A new chat message based on the ad #$ad_id")) {
             error_log("Уведомление успешно добавлено для пользователя ID: $recipient_id");
         } else {
             error_log("Ошибка добавления уведомления для пользователя ID: $recipient_id");

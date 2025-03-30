@@ -30,6 +30,7 @@ $user_id = $_SESSION['user_id'];
                 <ul id="notification-list">
                     <!-- Уведомления будут загружены тут -->
                 </ul>
+				<a href="notifications" class="view-all-link">View All Notifications</a>
             </div>
         </li>
     </ul>
