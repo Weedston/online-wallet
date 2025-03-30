@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             </tr>
         </table>
         <div class="chat">
-            <h3>Chat with Seller</h3>
+            <h3>Transaction chat</h3>
             <div class="chat-box" id="chat-box"></div>
             <form id="chat-form">
                 <input type="hidden" name="ad_id" value="<?php echo htmlspecialchars($ad_id); ?>">
