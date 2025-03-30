@@ -517,6 +517,16 @@ table td button:hover {
     border-bottom: 1px solid #ccc;
 }
 
+/* Ссылки в уведомлениях */
+.notifications-container ul li a {
+    color: #FFD700; /* Светлый цвет шрифта */
+    text-decoration: none;
+}
+
+.notifications-container ul li a:hover {
+    text-decoration: underline;
+}
+
 .notifications-container .notification-date {
     display: block;
     color: #999;
@@ -534,12 +544,3 @@ table td button:hover {
     text-decoration: underline;
 }
 
-/* Ссылки в уведомлениях */
-.notifications-container ul li a {
-    color: #FFD700; /* Светлый цвет шрифта */
-    text-decoration: none;
-}
-
-.notifications-container ul li a:hover {
-    text-decoration: underline;
-}
