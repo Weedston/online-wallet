@@ -490,3 +490,46 @@ table td button:hover {
 .notification-popup ul li:last-child {
     border-bottom: none; /* Убираем линию у последнего элемента */
 }
+
+.notification-popup .view-all-link {
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.notification-popup .view-all-link:hover {
+    text-decoration: underline;
+}
+
+.notifications-container {
+    margin-top: 20px;
+}
+
+.notifications-container ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.notifications-container li {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.notifications-container .notification-date {
+    display: block;
+    color: #999;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Ссылки в уведомлениях */
+.notification-popup ul li a {
+    color: #FFD700; /* Светлый цвет шрифта */
+    text-decoration: none;
+}
+
+.notification-popup ul li a:hover {
+    text-decoration: underline;
+}

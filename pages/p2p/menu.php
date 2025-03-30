@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             notificationList.innerHTML = '';
                             notifications.forEach(function(notification) {
                                 var listItem = document.createElement('li');
-                                listItem.textContent = notification.message;
+                                listItem.innerHTML = notification.message;
                                 notificationList.appendChild(listItem);
                             });
                         } else if (response.error) {

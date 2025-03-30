@@ -41,7 +41,7 @@ $notifications = fetchAllNotifications($user_id, $CONNECT);
         <ul>
             <?php foreach ($notifications as $notification) { ?>
                 <li>
-                    <span><?php echo htmlspecialchars($notification['message']); ?></span>
+                    <span><?php echo $notification['message']; ?></span>
                     <span class="notification-date"><?php echo htmlspecialchars($notification['created_at']); ?></span>
                 </li>
             <?php } ?>
