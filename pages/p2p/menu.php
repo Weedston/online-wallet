@@ -26,7 +26,7 @@ $user_id = $_SESSION['user_id'];
                 <span class="notification-badge" id="notification-count"></span>
             </a>
             <div id="notification-popup" class="notification-popup">
-                <h4>Уведомления</h4>
+                <h4>Notifications</h4>
                 <ul id="notification-list">
                     <!-- Уведомления будут загружены тут -->
                 </ul>
