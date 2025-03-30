@@ -533,3 +533,13 @@ table td button:hover {
 .notification-popup ul li a:hover {
     text-decoration: underline;
 }
+
+/* Ссылки в уведомлениях */
+.notifications-container ul li a {
+    color: #FFD700; /* Светлый цвет шрифта */
+    text-decoration: none;
+}
+
+.notifications-container ul li a:hover {
+    text-decoration: underline;
+}
