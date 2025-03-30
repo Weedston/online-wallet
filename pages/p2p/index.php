@@ -164,7 +164,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         </table>
     </div>
 
-    <!-- Модальное окно для просмотра объявления -->
+
     <div id="adModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
@@ -200,7 +200,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('modal-comment').innerText = comment;
             document.getElementById('adModal').style.display = 'block';
 
-            // Hide Accept button if the ad belongs to the current user
+            
             const currentUser = '<?php echo $_SESSION['user_id']; ?>';
             if (userId === currentUser) {
                 document.getElementById('modal-accept-btn').style.display = 'none';
@@ -213,14 +213,14 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('adModal').style.display = 'none';
         }
 
-        // Close the modal when clicking outside of it
+        
         window.onclick = function(event) {
             if (event.target == document.getElementById('adModal')) {
                 closeModal();
             }
         }
 
-        // Prevent modal from opening when clicking the Accept button
+       
         document.querySelectorAll('.accept-btn').forEach(button => {
             button.addEventListener('click', function(event) {
                 event.stopPropagation();
