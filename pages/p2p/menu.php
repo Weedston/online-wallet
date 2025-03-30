@@ -34,7 +34,7 @@ $user_id = $_SESSION['user_id'];
         </li>
     </ul>
 </nav>
-
+<div class="nav-bar"></div> <!-- Добавление полоски -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Обработчик для значка уведомлений

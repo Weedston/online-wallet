@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         $seller_id = $ad['user_id'];
 
         // Добавляем уведомление для создателя объявления
-        add_notification($seller_id, "Ваше объявление #$ad_id было принято и находится в статусе ожидания.");
+        add_notification($seller_id, "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
 
         // Перенаправляем пользователя на страницу деталей сделки
         header("Location: p2p-trade_details.php?ad_id=$ad_id");
