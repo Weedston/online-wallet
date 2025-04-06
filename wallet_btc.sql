@@ -3,13 +3,14 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost:3306
--- Время создания: Мар 29 2025 г., 08:50
+-- Время создания: Апр 06 2025 г., 12:37
 -- Версия сервера: 8.0.41-0ubuntu0.22.04.1
--- Версия PHP: 8.1.2-1ubuntu2.20
+-- Версия PHP: 8.1.2-1ubuntu2.21
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
+
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -29,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `ads` (
   `id` int NOT NULL,
   `user_id` int NOT NULL,
-  `amount_btc` decimal(16,8) NOT NULL,
+  `amount_btc` decimal(16,8) DEFAULT NULL,
   `rate` decimal(16,2) NOT NULL,
   `payment_method` varchar(255) DEFAULT NULL,
   `fiat_currency` varchar(255) NOT NULL,
@@ -37,17 +38,21 @@ CREATE TABLE `ads` (
   `status` enum('active','inactive','pending','completed') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `comment` text
+  `comment` text,
+  `buyer_id` int DEFAULT NULL,
+  `min_amount_btc` double NOT NULL,
+  `max_amount_btc` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Дамп данных таблицы `ads`
 --
 
-INSERT INTO `ads` (`id`, `user_id`, `amount_btc`, `rate`, `payment_method`, `fiat_currency`, `trade_type`, `status`, `created_at`, `updated_at`, `comment`) VALUES
-(2, 184, '0.00030000', '7204926.00', 'Сбербанк', 'RUB', 'sell', 'active', '2025-03-28 07:42:18', '2025-03-28 17:57:18', 'Готов'),
-(3, 182, '0.00030000', '7012641.00', 'Сбербанк', 'EUR', 'sell', 'active', '2025-03-28 09:11:33', '2025-03-28 14:06:24', 'Только Сбер по номеру телефона'),
-(4, 182, '0.00200000', '7150000.00', NULL, 'RUB', 'buy', 'active', '2025-03-28 15:05:04', '2025-03-29 08:46:51', 'ыв');
+INSERT INTO `ads` (`id`, `user_id`, `amount_btc`, `rate`, `payment_method`, `fiat_currency`, `trade_type`, `status`, `created_at`, `updated_at`, `comment`, `buyer_id`, `min_amount_btc`, `max_amount_btc`) VALUES
+(2, 184, '0.00030000', '7204926.00', 'Сбербанк', 'RUB', 'sell', 'pending', '2025-03-28 07:42:18', '2025-03-29 12:23:44', 'Готов', 182, 0, 0),
+(3, 182, '0.00030000', '7012641.00', 'Сбербанк', 'EUR', 'sell', 'pending', '2025-03-28 09:11:33', '2025-04-06 12:36:24', 'Только Сбер по номеру телефона', 184, 0.0004, 0.002),
+(4, 182, '0.00200000', '7150000.00', NULL, 'RUB', 'buy', 'active', '2025-03-28 15:05:04', '2025-04-06 12:36:46', '', 184, 0.00004, 0.003),
+(5, 182, NULL, '70187000.00', NULL, 'RUB', 'sell', 'active', '2025-04-06 11:33:23', '2025-04-06 11:33:23', NULL, NULL, 0.00002, 0.004);
 
 -- --------------------------------------------------------
 
@@ -70,11 +75,35 @@ INSERT INTO `ad_payment_methods` (`ad_id`, `payment_method`) VALUES
 (4, 'PayPal'),
 (3, 'Wise '),
 (4, 'МИР'),
+(5, 'МИР'),
 (3, 'Сбербанк'),
+(5, 'Сбербанк'),
 (2, 'СБП'),
 (4, 'СБП'),
+(5, 'СБП'),
 (3, 'Совкомбанк'),
-(3, 'Т-Банк');
+(3, 'Т-Банк'),
+(5, 'Т-Банк');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `escrow_deposits`
+--
+
+CREATE TABLE `escrow_deposits` (
+  `id` int NOT NULL,
+  `ad_id` int NOT NULL,
+  `escrow_address` varchar(100) NOT NULL,
+  `buyer_pubkey` text NOT NULL,
+  `seller_pubkey` text NOT NULL,
+  `arbiter_pubkey` text NOT NULL,
+  `txid` varchar(100) DEFAULT NULL,
+  `btc_amount` decimal(16,8) NOT NULL,
+  `status` enum('waiting_deposit','btc_deposited','fiat_paid','btc_released','disputed','refunded') NOT NULL DEFAULT 'waiting_deposit',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -130,8 +159,8 @@ CREATE TABLE `members` (
 --
 
 INSERT INTO `members` (`id`, `passw`, `wallet`, `balance`, `username`, `role`) VALUES
-(182, 'motors whimpering titanate trumpet redeclares lobsters spouses combinator different magnificent recoil airfoils stammers Buchwald tentacled rarety-s rose-s murmured', 'tb1qtdxq5dzdv29tkw7t6a3k8y7w8zj5qd4lhxw5d', '0.00000000', 'user1', 'user'),
-(184, 'chinquapin absentia missionaries milky pirate-s midband audiovisual continuities tableaux nowadays tamed protestant falsified Fredericksburg watchword directory-s uproots thermistor', 'tb1q5xkg9g6v7q9ww5t4x8k5d4r7f3c2w3n9l6y8y', '0.00000000', 'user2', 'user');
+(182, 'motors whimpering titanate trumpet redeclares lobsters spouses combinator different magnificent recoil airfoils stammers Buchwald tentacled rarety-s rose-s murmured', 'tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn', '0.01425463', '', 'user'),
+(184, 'chinquapin absentia missionaries milky pirate-s midband audiovisual continuities tableaux nowadays tamed protestant falsified Fredericksburg watchword directory-s uproots thermistor', 'tb1qfzxhvj6a6tf0cujun67wyr4m98q0danqftcl7x', '0.00000000', '', 'user');
 
 -- --------------------------------------------------------
 
@@ -144,29 +173,21 @@ CREATE TABLE `messages` (
   `ad_id` int NOT NULL,
   `user_id` int NOT NULL,
   `message` text NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `recipient_id` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Дамп данных таблицы `messages`
 --
 
-INSERT INTO `messages` (`id`, `ad_id`, `user_id`, `message`, `created_at`) VALUES
-(1, 4, 184, 'енкне', '2025-03-28 18:33:55'),
-(2, 4, 184, '123', '2025-03-28 18:34:07'),
-(3, 4, 184, 'Привет', '2025-03-28 18:43:43'),
-(4, 2, 184, '1', '2025-03-28 19:01:11'),
-(5, 2, 184, '213', '2025-03-28 19:01:53'),
-(6, 2, 184, 'в', '2025-03-28 19:07:44'),
-(7, 2, 184, '2', '2025-03-28 19:18:20'),
-(8, 2, 184, '354', '2025-03-28 19:20:48'),
-(9, 2, 184, '321', '2025-03-28 19:33:09'),
-(10, 2, 184, '123', '2025-03-28 19:50:20'),
-(11, 2, 184, '321', '2025-03-28 22:00:12'),
-(12, 3, 184, '3r', '2025-03-28 22:22:33'),
-(13, 3, 184, 'ds', '2025-03-28 22:24:07'),
-(14, 3, 184, 'sdf', '2025-03-28 22:25:02'),
-(15, 2, 182, '321', '2025-03-29 06:29:51');
+INSERT INTO `messages` (`id`, `ad_id`, `user_id`, `message`, `created_at`, `recipient_id`) VALUES
+(87, 3, 184, 'Привет, готовы?', '2025-03-29 19:09:28', 182),
+(88, 3, 182, 'да, готов.', '2025-03-29 19:10:18', 184),
+(89, 2, 182, 'Добрый день', '2025-03-30 06:33:29', 184),
+(90, 2, 182, 'ага,', '2025-03-30 06:45:41', 184),
+(91, 2, 182, '1', '2025-03-30 06:46:22', 184),
+(92, 2, 182, '21', '2025-03-30 07:00:58', 184);
 
 -- --------------------------------------------------------
 
@@ -187,11 +208,15 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `user_id`, `message`, `is_read`, `created_at`) VALUES
-(1, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:07:44'),
-(2, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:18:20'),
-(3, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:20:48'),
-(4, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:33:10'),
-(5, 184, 'Новое сообщение в чате по объявлению #2', 0, '2025-03-28 19:50:21');
+(4, 182, 'Новое сообщение в чате по объявлению #2', 1, '2025-03-29 18:22:58'),
+(5, 182, 'Новое сообщение в чате по объявлению #2', 1, '2025-03-29 18:25:04'),
+(6, 184, 'Новое сообщение в чате по объявлению #2', 1, '2025-03-29 18:35:34'),
+(7, 182, 'Новое сообщение в чате по объявлению #3', 1, '2025-03-29 19:09:29'),
+(8, 184, 'Новое сообщение в чате по объявлению #3', 1, '2025-03-29 19:10:19'),
+(9, 184, 'A new chat message based on the ad #2. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.', 1, '2025-03-30 06:33:29'),
+(10, 184, 'A new chat message based on the ad #2. Go to the <a href=\"p2p-trade_history\">Trade history</a> section to continue the transaction.', 1, '2025-03-30 06:45:42'),
+(11, 184, 'A new chat message based on the ad #2. Go to the <a href=\"p2p-trade_history\">Trade history</a> section to continue the transaction.', 1, '2025-03-30 06:46:22'),
+(12, 184, 'A new chat message based on the ad #2. Go to the <a href=\"p2p-trade_history\">Trade history</a> section to continue the transaction.', 1, '2025-03-30 07:00:58');
 
 -- --------------------------------------------------------
 
@@ -279,7 +304,7 @@ CREATE TABLE `visit_counter` (
 --
 
 INSERT INTO `visit_counter` (`page`, `count`) VALUES
-('total', 5791);
+('total', 5800);
 
 --
 -- Индексы сохранённых таблиц
@@ -297,6 +322,13 @@ ALTER TABLE `ads`
 ALTER TABLE `ad_payment_methods`
   ADD PRIMARY KEY (`ad_id`,`payment_method`),
   ADD KEY `payment_method` (`payment_method`);
+
+--
+-- Индексы таблицы `escrow_deposits`
+--
+ALTER TABLE `escrow_deposits`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ad_id` (`ad_id`);
 
 --
 -- Индексы таблицы `fiat_currencies`
@@ -366,7 +398,13 @@ ALTER TABLE `visit_counter`
 -- AUTO_INCREMENT для таблицы `ads`
 --
 ALTER TABLE `ads`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT для таблицы `escrow_deposits`
+--
+ALTER TABLE `escrow_deposits`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `fiat_currencies`
@@ -390,13 +428,13 @@ ALTER TABLE `members`
 -- AUTO_INCREMENT для таблицы `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
 
 --
 -- AUTO_INCREMENT для таблицы `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT для таблицы `p2p_offers`
@@ -426,6 +464,12 @@ ALTER TABLE `support_requests`
 ALTER TABLE `ad_payment_methods`
   ADD CONSTRAINT `ad_payment_methods_ibfk_1` FOREIGN KEY (`ad_id`) REFERENCES `ads` (`id`),
   ADD CONSTRAINT `ad_payment_methods_ibfk_2` FOREIGN KEY (`payment_method`) REFERENCES `payment_methods` (`method_name`);
+
+--
+-- Ограничения внешнего ключа таблицы `escrow_deposits`
+--
+ALTER TABLE `escrow_deposits`
+  ADD CONSTRAINT `escrow_deposits_ibfk_1` FOREIGN KEY (`ad_id`) REFERENCES `ads` (`id`) ON DELETE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `messages`
