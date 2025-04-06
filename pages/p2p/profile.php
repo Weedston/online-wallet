@@ -46,12 +46,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         } elseif ($request['method'] == 'editAd') {
             $ad_id = intval($request['params']['ad_id']);
-            $amount_btc = floatval($request['params']['amount_btc']);
+            $min_amount_btc = floatval($request['params']['min_amount_btc']);
+            $max_amount_btc = floatval($request['params']['max_amount_btc']);
             $rate = floatval($request['params']['rate']);
             $payment_methods = $request['params']['payment_methods'];
             $trade_type = mysqli_real_escape_string($CONNECT, $request['params']['trade_type']);
             $comment = mysqli_real_escape_string($CONNECT, $request['params']['comment']);
-            $update_query = "UPDATE ads SET amount_btc = '$amount_btc', rate = '$rate', trade_type = '$trade_type', comment = '$comment' WHERE id = '$ad_id' AND user_id = '$user_id'";
+            $update_query = "UPDATE ads SET min_amount_btc = '$min_amount_btc', max_amount_btc = '$max_amount_btc', rate = '$rate', trade_type = '$trade_type', comment = '$comment' WHERE id = '$ad_id' AND user_id = '$user_id'";
 
             if (mysqli_query($CONNECT, $update_query)) {
                 // Удаляем старые методы оплаты
@@ -139,7 +140,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         function openEditModal(adId, currentData) {
             document.getElementById('edit-ad-id').value = adId;
             document.getElementById('edit-date').value = currentData.date;
-            document.getElementById('edit-amount').value = currentData.amountBtc;
+            document.getElementById('edit-min-amount').value = currentData.minAmountBtc;
+            document.getElementById('edit-max-amount').value = currentData.maxAmountBtc;
             document.getElementById('edit-rate').value = currentData.rate;
             const paymentMethodsSelect = document.getElementById('edit-payment-methods');
             paymentMethodsSelect.innerHTML = ''; // Clear existing options
@@ -162,7 +164,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         async function editAd() {
             const adId = document.getElementById('edit-ad-id').value;
             const date = document.getElementById('edit-date').value;
-            const amount_btc = document.getElementById('edit-amount').value;
+            const min_amount_btc = document.getElementById('edit-min-amount').value;
+            const max_amount_btc = document.getElementById('edit-max-amount').value;
             const rate = document.getElementById('edit-rate').value;
             const payment_methods = Array.from(document.getElementById('edit-payment-methods').selectedOptions).map(option => option.value);
             const trade_type = document.getElementById('edit-trade-type').value;
@@ -177,7 +180,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     body: JSON.stringify({
                         jsonrpc: '2.0',
                         method: 'editAd',
-                        params: { ad_id: adId, date: date, amount_btc: amount_btc, rate: rate, payment_methods: payment_methods, trade_type: trade_type, comment: comment },
+                        params: { ad_id: adId, date: date, min_amount_btc: min_amount_btc, max_amount_btc: max_amount_btc, rate: rate, payment_methods: payment_methods, trade_type: trade_type, comment: comment },
                         id: Date.now()
                     })
                 });
@@ -195,7 +198,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     alert(result.result);
                     // Обновить данные объявления на странице без перезагрузки
                     document.getElementById('date-' + adId).innerText = date;
-                    document.getElementById('amount-' + adId).innerText = amount_btc;
+                    document.getElementById('min-amount-' + adId).innerText = min_amount_btc;
+                    document.getElementById('max-amount-' + adId).innerText = max_amount_btc;
                     document.getElementById('rate-' + adId).innerText = rate;
                     document.getElementById('payment-methods-' + adId).innerText = payment_methods.join(', ');
                     document.getElementById('trade-type-' + adId).innerText = trade_type;
@@ -213,10 +217,13 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
         }
 
         function calculateFiatAmount() {
-            const amount_btc = document.getElementById('edit-amount').value;
+            const min_amount_btc = document.getElementById('edit-min-amount').value;
+            const max_amount_btc = document.getElementById('edit-max-amount').value;
             const rate = document.getElementById('edit-rate').value;
-            const fiat_amount = Math.round(amount_btc * rate);
-            document.getElementById('edit-fiat-amount').value = fiat_amount;
+            const min_fiat_amount = Math.round(min_amount_btc * rate);
+            const max_fiat_amount = Math.round(max_amount_btc * rate);
+            document.getElementById('edit-min-fiat-amount').value = min_fiat_amount;
+            document.getElementById('edit-max-fiat-amount').value = max_fiat_amount;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -289,7 +296,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
 <body>
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
-		<h2>User Profile</h2>
+        <h2>User Profile</h2>
         <p><strong>Your ID:</strong> <?php echo htmlspecialchars($user_id); ?></p>
         <p><strong>Wallet:</strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
         <p><strong>Balance:</strong> <?php echo htmlspecialchars($user['balance']); ?></p>
@@ -354,37 +361,40 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
     </div>
 
     <!-- Модальное окно для редактирования объявления -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Edit Ad</h2>
-            <p><strong>Ad ID:</strong> <span id="edit-id"></span></p>
-            <form onsubmit="event.preventDefault(); editAd();">
-                <input type="hidden" id="edit-ad-id">
-                <label for="edit-date">Date:</label>
-                <input type="text" id="edit-date" readonly>
-                <label for="edit-min-amount">Min BTC Amount:</label>
-                <input type="number" id="edit-min-amount" step="0.00000001" required oninput="calculateFiatAmount()">
-                <label for="edit-max-amount">Max BTC Amount:</label>
-                <input type="number" id="edit-max-amount" step="0.00000001" required oninput="calculateFiatAmount()">
-                <label for="edit-rate">Rate:</label>
-                <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
-                <label for="edit-payment-methods">Payment Methods:</label>
-                <select id="edit-payment-methods" multiple required>
-                    <?php foreach ($payment_methods as $method) { ?>
-                        <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
-                    <?php } ?>
-                </select>
-                <label for="edit-fiat-amount">Fiat Amount:</label>
-                <input type="number" id="edit-fiat-amount" readonly>
-                <label for="edit-trade-type">Trade Type:</label>
-                <input type="text" id="edit-trade-type" readonly>
-                <label for="edit-comment">Comment:</label>
-                <textarea id="edit-comment" rows="4"></textarea>
-                <button type="submit" class="btn">Save</button>
-                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
-            </form>
-        </div>
+    <!-- Модальное окно для редактирования объявления -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Edit Ad</h2>
+        <p><strong>Ad ID:</strong> <span id="edit-id"></span></p>
+        <form onsubmit="event.preventDefault(); editAd();">
+            <input type="hidden" id="edit-ad-id">
+            <label for="edit-date">Date:</label>
+            <input type="text" id="edit-date" readonly>
+            <label for="edit-min-amount">Min BTC Amount:</label>
+            <input type="number" id="edit-min-amount" step="0.00000001" required oninput="calculateFiatAmount()">
+            <label for="edit-max-amount">Max BTC Amount:</label>
+            <input type="number" id="edit-max-amount" step="0.00000001" required oninput="calculateFiatAmount()">
+            <label for="edit-rate">Rate:</label>
+            <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
+            <label for="edit-payment-methods">Payment Methods:</label>
+            <select id="edit-payment-methods" multiple required>
+                <?php foreach ($payment_methods as $method) { ?>
+                    <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
+                <?php } ?>
+            </select>
+            <label for="edit-min-fiat-amount">Min Fiat Amount:</label>
+            <input type="number" id="edit-min-fiat-amount" readonly>
+            <label for="edit-max-fiat-amount">Max Fiat Amount:</label>
+            <input type="number" id="edit-max-fiat-amount" readonly>
+            <label for="edit-trade-type">Trade Type:</label>
+            <input type="text" id="edit-trade-type" readonly>
+            <label for="edit-comment">Comment:</label>
+            <textarea id="edit-comment" rows="4"></textarea>
+            <button type="submit" class="btn">Save</button>
+            <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+        </form>
     </div>
+</div>
 </body>
 </html>
