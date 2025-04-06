@@ -104,13 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                         $txid = $unspent_outputs[0]['txid'];
                         $vout = $unspent_outputs[0]['vout'];
                         $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
-						// Логируем значения переменных
-						error_log("txid: " . $txid);
-						error_log("vout: " . $vout);
-						error_log("amount: " . $amount);
-
-						// Если нужно залогировать все данные UTXO:
-						error_log("Unspent Outputs: " . json_encode($unspent_outputs));
 
                         if ($amount < $btc_amount) {
                             $error_message = "Error: Insufficient UTXO amount.";
@@ -121,40 +114,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                             $inputs = [["txid" => $txid, "vout" => $vout]];
                             $escrow_amount = $btc_amount * 0.99; // Subtract 1% service fee
                             $service_fee = $btc_amount * 0.01; // 1% service fee
-							// Ensure the amounts are correctly formatted
+
+                            // Ensure the amounts are correctly formatted
                             $escrow_amount = number_format($escrow_amount, 8, '.', '');
                             $service_fee = number_format($service_fee, 8, '.', '');
 
+                            // Sum of outputs must be equal to the input amount
+                            $change_amount = $amount - ($escrow_amount + $service_fee);
+                            if ($change_amount < 0) {
+                                $error_message = "Error: The sum of outputs is greater than the input amount.";
+                            }
+
                             $outputs = [
-                                $multisig_address => $escrow_amount,
-                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => $service_fee
+                                $multisig_address => (float)$escrow_amount,
+                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee
                             ]; // Replace <service_address> with actual service address
-							error_log("inputs: " . json_encode($inputs));
-							error_log("outputs: " . json_encode($outputs));
+
+                            if ($change_amount > 0) {
+                                $outputs[$buyer_wallet] = (float)number_format($change_amount, 8, '.', '');
+                            }
+
                             $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
                             error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
                             if (isset($raw_tx_result)) {
-                                // Get the private key for the buyer's wallet
-                                $buyer_privkey_result = bitcoinRPC('dumpprivkey', [$buyer_wallet]);
-								error_log("Buyer private key result: " . json_encode($buyer_privkey_result));
-
-                                if (isset($buyer_privkey_result)) {
-                                    $buyer_privkey = $buyer_privkey_result;
-                                    $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_privkey], $inputs]);
-                                    error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
-                                    if (isset($signed_tx_result['hex'])) {
-                                        $signed_tx = $signed_tx_result['hex'];
-                                        $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-                                        if (isset($txid_result)) {
-                                            $txid = $txid_result;
-                                        } else {
-                                            $error_message = "Error: Failed to send raw transaction.";
-                                        }
+                                // Sign the transaction using the wallet
+                                $signed_tx_result = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx_result]);
+                                error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
+                                if (isset($signed_tx_result['hex'])) {
+                                    $signed_tx = $signed_tx_result['hex'];
+                                    $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
+                                    if (isset($txid_result)) {
+                                        $txid = $txid_result;
                                     } else {
-                                        $error_message = "Error: Failed to sign raw transaction.";
+                                        $error_message = "Error: Failed to send raw transaction.";
                                     }
                                 } else {
-                                    $error_message = "Error: Failed to retrieve private key for buyer's wallet.";
+                                    $error_message = "Error: Failed to sign raw transaction.";
                                 }
                             } else {
                                 $error_message = "Error: Failed to create raw transaction.";
