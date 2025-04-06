@@ -150,7 +150,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type']); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
+                    <tr class="clickable-row" onclick="openModal('<?php echo $ad_id; ?>', '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type']); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
