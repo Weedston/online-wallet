@@ -136,6 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                             if (isset($raw_tx_result)) {
                                 // Get the private key for the buyer's wallet
                                 $buyer_privkey_result = bitcoinRPC('dumpprivkey', [$buyer_wallet]);
+								error_log("Buyer private key result: " . json_encode($buyer_privkey_result));
+
                                 if (isset($buyer_privkey_result)) {
                                     $buyer_privkey = $buyer_privkey_result;
                                     $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_privkey], $inputs]);
