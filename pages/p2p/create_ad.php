@@ -10,24 +10,26 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Извлечение доступных фиатных валют
+// Fetch available fiat currencies
 $fiat_currencies = mysqli_query($CONNECT, "SELECT * FROM fiat_currencies");
 
-// Извлечение доступных методов оплаты
+// Fetch available payment methods
 $payment_methods_result = mysqli_query($CONNECT, "SELECT method_name FROM payment_methods");
 $payment_methods = [];
 while ($row = mysqli_fetch_assoc($payment_methods_result)) {
     $payment_methods[] = $row['method_name'];
 }
 
-// Получение баланса пользователя
+// Get user balance
 $user_id = $_SESSION['user_id'];
 $balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id = '$user_id'");
 $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
-// Обработка формы создания объявления
-// Обработка формы создания объявления
+$error_message = '';
+$success_message = '';
+
+// Handle ad creation form
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
     $min_amount_btc = number_format(floatval($_POST['min_amount_btc']), 8, '.', '');
     $max_amount_btc = number_format(floatval($_POST['max_amount_btc']), 8, '.', '');
@@ -37,45 +39,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
     $trade_type = htmlspecialchars($_POST['trade_type'], ENT_QUOTES, 'UTF-8');
     $status = 'active';
 
-    // Проверка достаточности баланса
-    if ($max_amount_btc > $balance) {
-        echo "<script>alert('Error: Insufficient BTC balance.'); window.location.href='create_ad.php';</script>";
-        exit();
+    // Balance check for "sell" trade type
+    if ($trade_type == 'sell' && $max_amount_btc > $balance) {
+        $error_message = 'Error: Insufficient BTC balance.';
     }
 
     if (!$CONNECT) {
-        echo "<script>alert('Connection failed: " . mysqli_connect_error() . "'); window.location.href='create_ad.php';</script>";
-        exit();
+        $error_message = 'Connection failed: ' . mysqli_connect_error();
     }
 
-    // Подготовленный запрос без payment_method
-    $query = "INSERT INTO ads (user_id, min_amount_btc, max_amount_btc, rate, fiat_currency, trade_type, status) 
-              VALUES (?, ?, ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($CONNECT, $query);
+    if (empty($error_message)) {
+        // Prepared statement without payment_method
+        $query = "INSERT INTO ads (user_id, min_amount_btc, max_amount_btc, rate, fiat_currency, trade_type, status) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($CONNECT, $query);
 
-    if ($stmt) {
-        // Привязка параметров: "i" - integer, "d" - double, "s" - string
-        mysqli_stmt_bind_param($stmt, "idddsss", $user_id, $min_amount_btc, $max_amount_btc, $rate, $fiat_currency, $trade_type, $status);
+        if ($stmt) {
+            // Bind parameters: "i" - integer, "d" - double, "s" - string
+            mysqli_stmt_bind_param($stmt, "idddsss", $user_id, $min_amount_btc, $max_amount_btc, $rate, $fiat_currency, $trade_type, $status);
 
-        if (mysqli_stmt_execute($stmt)) {
-            $ad_id = mysqli_insert_id($CONNECT);
-            foreach ($payment_methods_selected as $method) {
-                $method = mysqli_real_escape_string($CONNECT, $method);
-                mysqli_query($CONNECT, "INSERT INTO ad_payment_methods (ad_id, payment_method) VALUES ('$ad_id', '$method')");
+            if (mysqli_stmt_execute($stmt)) {
+                $ad_id = mysqli_insert_id($CONNECT);
+                foreach ($payment_methods_selected as $method) {
+                    $method = mysqli_real_escape_string($CONNECT, $method);
+                    mysqli_query($CONNECT, "INSERT INTO ad_payment_methods (ad_id, payment_method) VALUES ('$ad_id', '$method')");
+                }
+                $success_message = 'Ad created successfully!';
+            } else {
+                $error_message = 'Error: ' . mysqli_stmt_error($stmt);
             }
-            echo "<script>alert('Ad created successfully!');</script>";
-        } else {
-            echo "<script>alert('Error: " . mysqli_stmt_error($stmt) . "'); window.location.href='create_ad.php';</script>";
-            exit();
-        }
 
-        mysqli_stmt_close($stmt);
-    } else {
-        echo "<script>alert('Error: " . mysqli_error($CONNECT) . "'); window.location.href='create_ad.php';</script>";
-        exit();
+            mysqli_stmt_close($stmt);
+        } else {
+            $error_message = 'Error: ' . mysqli_error($CONNECT);
+        }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -107,8 +106,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            setInterval(fetchBtcRates, 10000); // Обновление каждые 60 секунд
-            fetchBtcRates(); // Первоначальная загрузка курсов
+            setInterval(fetchBtcRates, 10000); // Update every 60 seconds
+            fetchBtcRates(); // Initial load of rates
         });
     </script>
 </head>
@@ -116,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 <div class="container">
     <?php include 'pages/p2p/menu.php'; ?>
     <div class="container ad-container">
-        <!-- Информационный блок о курсах BTC и балансе -->
+        <!-- BTC rates and balance info box -->
         <div class="btc-price-box">
             <p>Your Balance: <?php echo $balance; ?> BTC</p>
             <p>Current BTC Rates:</p>
@@ -127,11 +126,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
             </ul>
         </div>
 
-        <!-- Форма создания объявления -->
+        <!-- Ad creation form -->
         <div class="ad-form">
             <h2>Create a P2P Exchange Ad</h2>
             <form method="POST">
-                <!-- Поля формы -->
+                <!-- Form fields -->
                 <p>
                 <label for="trade_type">Trade Type:</label>
                 <select name="trade_type" id="trade_type" required>
@@ -139,19 +138,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                     <option value="sell">Sell BTC</option>
                 </select>
                 </p><p>
-                
+
                 <label for="min_amount_btc">Min Amount of BTC:</label>
                 <input type="number" name="min_amount_btc" id="min_amount_btc" step="0.00000001" required>
                 </p><p>
-                
+
                 <label for="max_amount_btc">Max Amount of BTC:</label>
                 <input type="number" name="max_amount_btc" id="max_amount_btc" step="0.00000001" required>
                 </p><p>
-                
+
                 <label for="rate">Rate (Fiat per BTC):</label>
                 <input type="number" name="rate" id="rate" step="0.01" required>
                 </p><p>
-                
+
                 <label for="fiat_currency">Fiat Currency:</label>
                 <select name="fiat_currency" id="fiat_currency" required>
                     <?php while ($currency = mysqli_fetch_assoc($fiat_currencies)) { ?>
@@ -161,7 +160,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                     <?php } ?>
                 </select>
                 </p><p>
-                
+
                 <label for="payment_methods">Payment Methods:</label>
                 <select name="payment_methods[]" id="payment_methods" multiple required>
                     <?php foreach ($payment_methods as $method) { ?>
@@ -171,8 +170,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                     <?php } ?>
                 </select>
                 </p>
-                
-                <!-- Новый блок для отображения информации о сделке -->
+
+                <!-- New block to display trade info -->
                 <p id="trade_info" style="color: #FFD700;"></p>
                 
                 <button type="submit" name="create_ad" class="btn">Create Ad</button>
@@ -180,6 +179,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
         </div>
     </div>
 </div>
+
+<?php if (!empty($error_message)) { ?>
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeErrorModal()">&times;</span>
+            <p><?php echo $error_message; ?></p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('errorModal').style.display = 'block';
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('errorModal')) {
+                closeErrorModal();
+            }
+        }
+    </script>
+<?php } ?>
+
+<?php if (!empty($success_message)) { ?>
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSuccessModal()">&times;</span>
+            <p><?php echo $success_message; ?></p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('successModal').style.display = 'block';
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('successModal')) {
+                closeSuccessModal();
+            }
+        }
+    </script>
+<?php } ?>
 
 <script>
     document.getElementById('trade_type').addEventListener('change', updateTradeInfo);
