@@ -5,7 +5,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'src/functions.php';
 
-require_once __DIR__ . '/../../config.php';  // Убедитесь, что путь к файлу конфигурации правильный
+require_once __DIR__ . '/../../config.php';  // Ensure the configuration file path is correct
 
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
@@ -15,18 +15,18 @@ if (!$CONNECT) {
 
 $error_message = '';
 
-// Проверяем, была ли нажата кнопка "Accept"
+// Check if "Accept" button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
     $btc_amount = floatval($_POST['btc_amount']);
 
-    // Получаем информацию об объявлении
+    // Get ad info
     $ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
     $ad_result = mysqli_query($CONNECT, $ad_query);
     $ad = mysqli_fetch_assoc($ad_result);
 
-    // Проверка баланса для типа сделки "покупка"
+    // Balance check for "buy" trade type
     if ($ad['trade_type'] == 'buy') {
         $user_query = "SELECT balance FROM members WHERE id = '$buyer_id'";
         $user_result = mysqli_query($CONNECT, $user_query);
@@ -34,31 +34,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         
         $fiat_amount = $btc_amount * $ad['rate'];
         if ($fiat_amount > $user['balance']) {
-            $error_message = "Ошибка: недостаточно средств на балансе для совершения сделки.";
+            $error_message = "Error: Insufficient balance for the transaction.";
         }
     }
 
     if (empty($error_message) && ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc'])) {
-        $error_message = "Ошибка: сумма BTC должна быть в пределах минимальной и максимальной.";
+        $error_message = "Error: The BTC amount must be within the specified range.";
     }
 
     if (empty($error_message)) {
-        // Обновляем статус объявления на "ожидание" и сохраняем информацию о покупателе
+        // Update ad status to "pending" and save buyer info
         $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
         if (mysqli_query($CONNECT, $update_query)) {
-            // Добавляем уведомление для создателя объявления
+            // Add notification for the ad creator
             add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
 
-            // Перенаправляем пользователя на страницу деталей сделки
+            // Redirect user to trade details page
             header("Location: p2p-trade_details.php?ad_id=$ad_id");
             exit();
         } else {
-            $error_message = "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
+            $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
         }
     }
 }
 
-// Получение всех активных объявлений
+// Get all active ads
 $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN members ON ads.user_id = members.id WHERE ads.status = 'active'");
 ?>
 
@@ -70,7 +70,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
     <title>P2P Exchange BTC to Fiat</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
-        /* Модальное окно */
+        /* Modal window */
         .modal {
             display: none;
             position: fixed;
@@ -103,11 +103,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             text-decoration: none;
             cursor: pointer;
         }
-        /* Курсор при наведении на строку таблицы */
+        /* Cursor on table row hover */
         tr.clickable-row {
             cursor: pointer;
         }
-        /* Стили для кнопок в модальном окне */
+        /* Styles for buttons in modal */
         .modal-buttons {
             display: flex;
             justify-content: space-between;
@@ -158,7 +158,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     $ad_id = $ad['id'];
                     $fiat_amount = $ad['max_amount_btc'] * $ad['rate'];
 
-                    // Получение методов оплаты для этого объявления
+                    // Get payment methods for this ad
                     $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '$ad_id'");
                     $payment_methods = [];
                     while ($row = mysqli_fetch_assoc($payment_methods_result)) {
