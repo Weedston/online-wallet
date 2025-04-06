@@ -71,35 +71,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         }
 
         if (empty($error_message)) {
-            // Create multisig address
-            $multisig_result = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]]);
-            if (isset($multisig_result['address'])) {
-                $multisig_address = $multisig_result['address'];
+            // Get unspent transaction outputs (UTXOs) for the buyer
+            $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_pubkey]]);
+            if (empty($unspent_outputs)) {
+                $error_message = "Error: No unspent outputs found for the buyer.";
             } else {
-                $error_message = "Error: Failed to create multisig address.";
-            }
+                $txid = $unspent_outputs[0]['txid'];
+                $vout = $unspent_outputs[0]['vout'];
 
-            if (empty($error_message)) {
-                // Create escrow transaction
-                $inputs = [["txid" => "<txid>", "vout" => 0]]; // Replace <txid> with actual txid and 0 with actual vout
-                $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+                // Create multisig address
+                $multisig_result = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]]);
+                if (isset($multisig_result['address'])) {
+                    $multisig_address = $multisig_result['address'];
+                } else {
+                    $error_message = "Error: Failed to create multisig address.";
+                }
 
-                $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-                if (isset($raw_tx_result)) {
-                    $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_pubkey, $seller_pubkey], $inputs]);
-                    if (isset($signed_tx_result['hex'])) {
-                        $signed_tx = $signed_tx_result['hex'];
-                        $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-                        if (isset($txid_result)) {
-                            $txid = $txid_result;
+                if (empty($error_message)) {
+                    // Create escrow transaction
+                    $inputs = [["txid" => $txid, "vout" => $vout]];
+                    $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+
+                    $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+                    if (isset($raw_tx_result)) {
+                        $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_pubkey], $inputs]);
+                        if (isset($signed_tx_result['hex'])) {
+                            $signed_tx = $signed_tx_result['hex'];
+                            $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
+                            if (isset($txid_result)) {
+                                $txid = $txid_result;
+                            } else {
+                                $error_message = "Error: Failed to send raw transaction.";
+                            }
                         } else {
-                            $error_message = "Error: Failed to send raw transaction.";
+                            $error_message = "Error: Failed to sign raw transaction.";
                         }
                     } else {
-                        $error_message = "Error: Failed to sign raw transaction.";
+                        $error_message = "Error: Failed to create raw transaction.";
                     }
-                } else {
-                    $error_message = "Error: Failed to create raw transaction.";
                 }
             }
 
