@@ -150,13 +150,13 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" data-ad-id="<?php echo $ad_id; ?>" data-user-id="<?php echo htmlspecialchars($ad['user_id']); ?>" data-min-amount-btc="<?php echo htmlspecialchars($ad['min_amount_btc']); ?>" data-max-amount-btc="<?php echo htmlspecialchars($ad['max_amount_btc']); ?>" data-rate="<?php echo htmlspecialchars($ad['rate']); ?>" data-payment-methods="<?php echo htmlspecialchars($payment_methods_display); ?>" data-fiat-amount="<?php echo number_format($fiat_amount, 2, '.', ' '); ?>" data-fiat-currency="<?php echo htmlspecialchars($ad['fiat_currency']); ?>" data-trade-type="<?php echo htmlspecialchars($ad['trade_type']); ?>" data-comment="<?php echo htmlspecialchars($ad['comment']); ?>">
-                        <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td><?php echo htmlspecialchars($payment_methods_display); ?></td>
-                        <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
+                    <tr class="clickable-row" data-ad-id="<?php echo $ad_id; ?>" data-user-id="<?php echo htmlspecialchars($ad['user_id'] ?? ''); ?>" data-min-amount-btc="<?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?>" data-max-amount-btc="<?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?>" data-rate="<?php echo htmlspecialchars($ad['rate'] ?? ''); ?>" data-payment-methods="<?php echo htmlspecialchars($payment_methods_display ?? ''); ?>" data-fiat-amount="<?php echo number_format($fiat_amount, 2, '.', ' '); ?>" data-fiat-currency="<?php echo htmlspecialchars($ad['fiat_currency'] ?? ''); ?>" data-trade-type="<?php echo htmlspecialchars($ad['trade_type'] ?? ''); ?>" data-comment="<?php echo htmlspecialchars($ad['comment'] ?? ''); ?>">
+                        <td><?php echo htmlspecialchars($ad['user_id'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($ad['rate'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($payment_methods_display ?? ''); ?></td>
+                        <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></td>
                     </tr>
                 <?php } ?>
@@ -218,7 +218,13 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('modal-fiat-amount').innerText = fiatAmount;
             document.getElementById('modal-fiat-currency').innerText = fiatCurrency;
             document.getElementById('modal-trade-type').innerText = tradeType;
-            document.getElementById('modal-comment').innerText = comment;
+
+            if (comment.trim() === '') {
+                document.getElementById('modal-comment').innerText = 'No comment.';
+            } else {
+                document.getElementById('modal-comment').innerText = comment;
+            }
+
             document.getElementById('adModal').style.display = 'block';
 
             const btcAmountInput = document.getElementById('btc-amount');
