@@ -37,6 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
     $payment_methods_selected = $_POST['payment_methods'];
     $fiat_currency = htmlspecialchars($_POST['fiat_currency'], ENT_QUOTES, 'UTF-8');
     $trade_type = htmlspecialchars($_POST['trade_type'], ENT_QUOTES, 'UTF-8');
+    $comment = htmlspecialchars($_POST['comment'], ENT_QUOTES, 'UTF-8');
     $status = 'active';
 
     // Balance check for "sell" trade type
@@ -50,13 +51,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 
     if (empty($error_message)) {
         // Prepared statement without payment_method
-        $query = "INSERT INTO ads (user_id, min_amount_btc, max_amount_btc, rate, fiat_currency, trade_type, status) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO ads (user_id, min_amount_btc, max_amount_btc, rate, fiat_currency, trade_type, comment, status) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($CONNECT, $query);
 
         if ($stmt) {
             // Bind parameters: "i" - integer, "d" - double, "s" - string
-            mysqli_stmt_bind_param($stmt, "idddsss", $user_id, $min_amount_btc, $max_amount_btc, $rate, $fiat_currency, $trade_type, $status);
+            mysqli_stmt_bind_param($stmt, "idddssss", $user_id, $min_amount_btc, $max_amount_btc, $rate, $fiat_currency, $trade_type, $comment, $status);
 
             if (mysqli_stmt_execute($stmt)) {
                 $ad_id = mysqli_insert_id($CONNECT);
@@ -169,6 +170,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                         </option>
                     <?php } ?>
                 </select>
+                </p><p>
+
+                <label for="comment">Comment:</label>
+                <textarea name="comment" id="comment" rows="4" cols="50"></textarea>
                 </p>
 
                 <!-- New block to display trade info -->
