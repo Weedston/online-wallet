@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
             // Validate public keys
             if (!ctype_xdigit($buyer_pubkey) || !ctype_xdigit($seller_pubkey) || !ctype_xdigit($arbiter_pubkey)) {
-                $error_message = "Error: One or more public keys are not valid hex strings.";
+                $error_message = "Error: One or more public keys are not valid hex strings. Invalid Public Key: Buyer: $buyer_pubkey, Seller: $seller_pubkey, Arbiter: $arbiter_pubkey";
                 error_log("Invalid Public Key: Buyer: $buyer_pubkey, Seller: $seller_pubkey, Arbiter: $arbiter_pubkey");
             }
 
