@@ -114,6 +114,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         .modal-buttons .btn.cancel:hover {
             background-color: #555;
         }
+        .error-message {
+            color: red;
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -175,7 +180,8 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <form method="POST" action="" style="display:inline;">
                 <input type="hidden" id="modal-ad-id" name="ad_id" value="">
                 <label for="btc-amount">BTC Amount:</label>
-                <input type="number" id="btc-amount" name="btc_amount" step="0.00000001" required>
+                <input type="number" id="btc-amount" name="btc_amount" step="0.00000001" required oninput="validateBtcAmount()">
+                <div class="error-message" id="btc-amount-error">BTC amount must be within the specified range.</div>
                 <div class="modal-buttons" id="modal-buttons">
                     <button class="btn cancel" onclick="closeModal()">Cancel</button>
                     <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
@@ -216,27 +222,27 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('adModal').style.display = 'none';
         }
 
+        function validateBtcAmount() {
+            const btcAmountInput = document.getElementById('btc-amount');
+            const minAmountBtc = parseFloat(btcAmountInput.min);
+            const maxAmountBtc = parseFloat(btcAmountInput.max);
+            const btcAmount = parseFloat(btcAmountInput.value);
+            const errorMessage = document.getElementById('btc-amount-error');
+
+            if (btcAmount < minAmountBtc || btcAmount > maxAmountBtc) {
+                errorMessage.style.display = 'block';
+                document.getElementById('modal-accept-btn').disabled = true;
+            } else {
+                errorMessage.style.display = 'none';
+                document.getElementById('modal-accept-btn').disabled = false;
+            }
+        }
+
         window.onclick = function(event) {
             if (event.target == document.getElementById('adModal')) {
                 closeModal();
             }
         }
-
-        document.querySelectorAll('.clickable-row').forEach(row => {
-            row.addEventListener('click', function(event) {
-                const adId = this.getAttribute('onclick').match(/openModal\((\d+),/)[1];
-                const userId = this.cells[0].innerText;
-                const minAmountBtc = this.cells[1].innerText;
-                const maxAmountBtc = this.cells[2].innerText;
-                const rate = this.cells[3].innerText;
-                const paymentMethods = this.cells[4].innerText;
-                const fiatAmount = this.cells[5].innerText.split(' ')[0];
-                const fiatCurrency = this.cells[5].innerText.split(' ')[1];
-                const tradeType = this.cells[6].innerText;
-                const comment = this.cells[7] ? this.cells[7].innerText : '';
-                openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment);
-            });
-        });
     </script>
 </body>
 </html>
