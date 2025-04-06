@@ -38,9 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         $user_result = mysqli_query($CONNECT, $user_query);
         $user = mysqli_fetch_assoc($user_result);
         
-        $fiat_amount = $btc_amount * $ad['rate'];
-        if ($fiat_amount > $user['balance']) {
-            $error_message = "Error: Insufficient balance for the transaction.";
+        if ($btc_amount > $user['balance']) {
+            $error_message = "Error: Insufficient BTC balance for the transaction.";
         }
     }
 
