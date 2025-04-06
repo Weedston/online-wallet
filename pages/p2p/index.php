@@ -24,13 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_result = mysqli_query($CONNECT, $ad_query);
     $ad = mysqli_fetch_assoc($ad_result);
 
-    // Проверка баланса для типа сделки "продажа"
-    if ($ad['trade_type'] == 'sell') {
+    // Проверка баланса для типа сделки "покупка"
+    if ($ad['trade_type'] == 'buy') {
         $user_query = "SELECT balance FROM members WHERE id = '$buyer_id'";
         $user_result = mysqli_query($CONNECT, $user_query);
         $user = mysqli_fetch_assoc($user_result);
         
-        if ($btc_amount > $user['balance']) {
+        $fiat_amount = $btc_amount * $ad['rate'];
+        if ($fiat_amount > $user['balance']) {
             echo "Ошибка: недостаточно средств на балансе для совершения сделки.";
             exit();
         }
