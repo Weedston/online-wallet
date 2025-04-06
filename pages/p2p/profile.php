@@ -333,24 +333,24 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     }
                 ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
-                        <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']); ?></td>
-                        <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
-                        <td id="min-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
-                        <td id="max-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
-                        <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $ad_payment_methods)); ?></td>
-                        <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($min_fiat_amount . ' - ' . $max_fiat_amount); ?></td>
-                        <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']); ?></td>
-                        <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment']); ?></td>
+                        <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']) ?? ''; ?></td>
+                        <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']) ?? ''; ?></td>
+                        <td id="min-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['min_amount_btc']) ?? ''; ?></td>
+                        <td id="max-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['max_amount_btc']) ?? ''; ?></td>
+                        <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']) ?? ''; ?></td>
+                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $ad_payment_methods)) ?? ''; ?></td>
+                        <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($min_fiat_amount . ' - ' . $max_fiat_amount) ?? ''; ?></td>
+                        <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']) ?? ''; ?></td>
+                        <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment']) ?? ''; ?></td>
                         <td>
                             <button onclick="openEditModal(<?php echo $ad['id']; ?>, {
-                                date: '<?php echo htmlspecialchars($ad['created_at']); ?>',
-                                minAmountBtc: '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>',
-                                maxAmountBtc: '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>',
-                                rate: '<?php echo htmlspecialchars($ad['rate']); ?>',
-                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $ad_payment_methods)); ?>',
-                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>',
-                                comment: '<?php echo htmlspecialchars($ad['comment']); ?>'
+                                date: '<?php echo htmlspecialchars($ad['created_at']) ?? ''; ?>',
+                                minAmountBtc: '<?php echo htmlspecialchars($ad['min_amount_btc']) ?? ''; ?>',
+                                maxAmountBtc: '<?php echo htmlspecialchars($ad['max_amount_btc']) ?? ''; ?>',
+                                rate: '<?php echo htmlspecialchars($ad['rate']) ?? ''; ?>',
+                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $ad_payment_methods)) ?? ''; ?>',
+                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']) ?? ''; ?>',
+                                comment: '<?php echo htmlspecialchars($ad['comment']) ?? ''; ?>'
                             })" class="btn">Edit</button>
                             <button onclick="deleteAd(<?php echo $ad['id']; ?>)" class="btn">Delete</button>
                         </td>
@@ -385,9 +385,4 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <label for="edit-min-fiat-amount">Min Fiat Amount:</label>
                 <input type="number" id="edit-min-fiat-amount" readonly>
                 <label for="edit-max-fiat-amount">Max Fiat Amount:</label>
-                <input type="number" id="edit-max-fiat-amount" readonly>
-                <label for="edit-trade-type">Trade Type:</label>
-                <input type="text" id="edit-trade-type" readonly>
-                <label for="edit-comment">Comment:</label>
-                <textarea id="edit-comment" rows="4"></textarea>
-                <button
+                <input type="number" id="edit
