@@ -120,7 +120,8 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <thead>
                 <tr>
                     <th>User ID</th>
-                    <th>BTC Amount</th>
+                    <th>Min BTC Amount</th>
+                    <th>Max BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Methods</th>
                     <th>Fiat Amount</th>
@@ -131,7 +132,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
                     $ad_id = $ad['id'];
-                    $fiat_amount = $ad['amount_btc'] * $ad['rate'];
+                    $fiat_amount = $ad['max_amount_btc'] * $ad['rate'];
 
                     // Получение методов оплаты для этого объявления
                     $payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '$ad_id'");
@@ -141,9 +142,10 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
+                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
-                        <td><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
+                        <td><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
+                        <td><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate']); ?></td>
                         <td><?php echo htmlspecialchars($payment_methods_display); ?></td>
                         <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
@@ -164,13 +166,13 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         </table>
     </div>
 
-
     <div id="adModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h2>Ad Details</h2>
             <p><strong>User ID:</strong> <span id="modal-user-id"></span></p>
-            <p><strong>BTC Amount:</strong> <span id="modal-amount-btc"></span></p>
+            <p><strong>Min BTC Amount:</strong> <span id="modal-min-amount-btc"></span></p>
+            <p><strong>Max BTC Amount:</strong> <span id="modal-max-amount-btc"></span></p>
             <p><strong>Rate:</strong> <span id="modal-rate"></span></p>
             <p><strong>Payment Methods:</strong> <span id="modal-payment-methods"></span></p>
             <p><strong>Fiat Amount:</strong> <span id="modal-fiat-amount"></span></p>
@@ -188,10 +190,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
     </div>
 
     <script>
-        function openModal(adId, userId, amountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment) {
+        function openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment) {
             document.getElementById('modal-ad-id').value = adId;
             document.getElementById('modal-user-id').innerText = userId;
-            document.getElementById('modal-amount-btc').innerText = amountBtc;
+            document.getElementById('modal-min-amount-btc').innerText = minAmountBtc;
+            document.getElementById('modal-max-amount-btc').innerText = maxAmountBtc;
             document.getElementById('modal-rate').innerText = rate;
             document.getElementById('modal-payment-methods').innerText = paymentMethods;
             document.getElementById('modal-fiat-amount').innerText = fiatAmount;
@@ -220,7 +223,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             }
         }
 
-       
+        
         document.querySelectorAll('.accept-btn').forEach(button => {
             button.addEventListener('click', function(event) {
                 event.stopPropagation();
