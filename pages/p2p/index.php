@@ -24,6 +24,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_result = mysqli_query($CONNECT, $ad_query);
     $ad = mysqli_fetch_assoc($ad_result);
 
+    // Проверка баланса для типа сделки "продажа"
+    if ($ad['trade_type'] == 'sell') {
+        $user_query = "SELECT balance FROM members WHERE id = '$buyer_id'";
+        $user_result = mysqli_query($CONNECT, $user_query);
+        $user = mysqli_fetch_assoc($user_result);
+        
+        if ($btc_amount > $user['balance']) {
+            echo "Ошибка: недостаточно средств на балансе для совершения сделки.";
+            exit();
+        }
+    }
+
     if ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc']) {
         echo "Ошибка: сумма BTC должна быть в пределах минимальной и максимальной.";
     } else {
@@ -230,6 +242,8 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             const btcAmountInput = document.getElementById('btc-amount');
             btcAmountInput.min = minAmountBtc;
             btcAmountInput.max = maxAmountBtc;
+            btcAmountInput.setAttribute('data-rate', rate);
+            btcAmountInput.setAttribute('data-trade-type', tradeType);
 
             const currentUser = '<?php echo $_SESSION['user_id']; ?>';
             if (userId === currentUser) {
@@ -251,6 +265,9 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             const maxAmountBtc = parseFloat(btcAmountInput.max);
             const btcAmount = parseFloat(btcAmountInput.value);
             const errorMessage = document.getElementById('btc-amount-error');
+            const rate = parseFloat(btcAmountInput.getAttribute('data-rate'));
+            const tradeType = btcAmountInput.getAttribute('data-trade-type');
+            const fiatAmountElement = document.getElementById('modal-fiat-amount');
 
             if (btcAmount < minAmountBtc || btcAmount > maxAmountBtc) {
                 errorMessage.style.display = 'block';
@@ -259,6 +276,12 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 errorMessage.style.display = 'none';
                 document.getElementById('modal-accept-btn').disabled = false;
             }
+
+            let fiatAmount = btcAmount * rate;
+            if (tradeType === 'sell') {
+                fiatAmount = btcAmount / rate;
+            }
+            fiatAmountElement.innerText = fiatAmount.toFixed(2);
         }
 
         window.onclick = function(event) {
