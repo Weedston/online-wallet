@@ -47,25 +47,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
     if (empty($error_message)) {
         // Get public keys of participants from the database
-        $buyer_pubkey_result = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$buyer_id'");
+        $buyer_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$buyer_id'");
         if ($buyer_pubkey_row = mysqli_fetch_assoc($buyer_pubkey_result)) {
-            $buyer_pubkey = $buyer_pubkey_row['wallet'];
+            $buyer_pubkey = $buyer_pubkey_row['pubkey'];
         } else {
             $error_message = "Error: Buyer public key not found.";
         }
 
         $seller_id = $ad['user_id'];
-        $seller_pubkey_result = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$seller_id'");
+        $seller_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$seller_id'");
         if ($seller_pubkey_row = mysqli_fetch_assoc($seller_pubkey_result)) {
-            $seller_pubkey = $seller_pubkey_row['wallet'];
+            $seller_pubkey = $seller_pubkey_row['pubkey'];
         } else {
             $error_message = "Error: Seller public key not found.";
         }
 
         $arbiter_id = 182; // Set arbiter_id to 182
-        $arbiter_pubkey_result = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$arbiter_id'");
+        $arbiter_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$arbiter_id'");
         if ($arbiter_pubkey_row = mysqli_fetch_assoc($arbiter_pubkey_result)) {
-            $arbiter_pubkey = $arbiter_pubkey_row['wallet'];
+            $arbiter_pubkey = $arbiter_pubkey_row['pubkey'];
         } else {
             $error_message = "Error: Arbiter public key not found.";
         }
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
             // Validate public keys
             if (!ctype_xdigit($buyer_pubkey) || !ctype_xdigit($seller_pubkey) || !ctype_xdigit($arbiter_pubkey)) {
-                $error_message = "Error: One or more public keys are not valid hex strings. Invalid Public Key: Buyer: $buyer_pubkey, Seller: $seller_pubkey, Arbiter: $arbiter_pubkey";
+                $error_message = "Error: One or more public keys are not valid hex strings.";
                 error_log("Invalid Public Key: Buyer: $buyer_pubkey, Seller: $seller_pubkey, Arbiter: $arbiter_pubkey");
             }
 
