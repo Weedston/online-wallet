@@ -13,6 +13,8 @@ if (!$CONNECT) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
+$error_message = '';
+
 // Проверяем, была ли нажата кнопка "Accept"
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
@@ -32,14 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         
         $fiat_amount = $btc_amount * $ad['rate'];
         if ($fiat_amount > $user['balance']) {
-            echo "Ошибка: недостаточно средств на балансе для совершения сделки.";
-            exit();
+            $error_message = "Ошибка: недостаточно средств на балансе для совершения сделки.";
         }
     }
 
-    if ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc']) {
-        echo "Ошибка: сумма BTC должна быть в пределах минимальной и максимальной.";
-    } else {
+    if (empty($error_message) && ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc'])) {
+        $error_message = "Ошибка: сумма BTC должна быть в пределах минимальной и максимальной.";
+    }
+
+    if (empty($error_message)) {
         // Обновляем статус объявления на "ожидание" и сохраняем информацию о покупателе
         $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
         if (mysqli_query($CONNECT, $update_query)) {
@@ -50,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
             header("Location: p2p-trade_details.php?ad_id=$ad_id");
             exit();
         } else {
-            echo "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
+            $error_message = "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
         }
     }
 }
@@ -202,6 +205,28 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             </form>
         </div>
     </div>
+
+    <?php if (!empty($error_message)) { ?>
+        <div id="errorModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeErrorModal()">&times;</span>
+                <p><?php echo $error_message; ?></p>
+            </div>
+        </div>
+        <script>
+            document.getElementById('errorModal').style.display = 'block';
+
+            function closeErrorModal() {
+                document.getElementById('errorModal').style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == document.getElementById('errorModal')) {
+                    closeErrorModal();
+                }
+            }
+        </script>
+    <?php } ?>
 
     <script>
         document.querySelectorAll('.clickable-row').forEach(row => {
