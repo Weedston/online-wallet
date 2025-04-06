@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             </tr>
             <tr>
                 <th>Fiat Amount</th>
-                <td><?php echo htmlspecialchars($ad['rate'] * $ad['amount_btc']); ?></td>
+                <td><?php echo number_format(htmlspecialchars($ad['rate'] * $ad['amount_btc']), 2, '.', ' '); ?></td>
             </tr>
             <tr>
                 <th>Rate</th>
