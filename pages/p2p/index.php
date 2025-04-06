@@ -141,6 +141,10 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             display: none;
             margin-top: 10px;
         }
+        .balance-highlight {
+            color: orange;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -199,7 +203,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <p><strong>Fiat Currency:</strong> <span id="modal-fiat-currency"></span></p>
             <p><strong>Trade Type:</strong> <span id="modal-trade-type"></span></p>
             <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
-            <p><strong>Your Balance:</strong> <span id="modal-user-balance"><?php echo $balance; ?> BTC</span></p>
+            <p><strong>Your Balance:</strong> <span id="modal-user-balance" class="balance-highlight"><?php echo $balance; ?> BTC</span></p>
             <form method="POST" action="" style="display:inline;">
                 <input type="hidden" id="modal-ad-id" name="ad_id" value="">
                 <label for="btc-amount">BTC Amount:</label>
