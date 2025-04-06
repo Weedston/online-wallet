@@ -130,7 +130,6 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     <th>Payment Methods</th>
                     <th>Fiat Amount</th>
                     <th>Trade Type</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -154,13 +153,6 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                         <td><?php echo htmlspecialchars($payment_methods_display); ?></td>
                         <td><?php echo number_format($fiat_amount, 2, '.', ' '); ?> <?php echo htmlspecialchars($ad['fiat_currency']); ?></td>
                         <td><?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?></td>
-                        <td>
-                            <?php if ($ad['user_id'] == $_SESSION['user_id']) { ?>
-                                My ad
-                            <?php } else { ?>
-                                <!-- Удаляем кнопку "Accept" из таблицы -->
-                            <?php } ?>
-                        </td>
                     </tr>
                 <?php } ?>
             </tbody>
@@ -230,9 +222,19 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             }
         }
 
-        document.querySelectorAll('.accept-btn').forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.stopPropagation();
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', function(event) {
+                const adId = this.getAttribute('onclick').match(/openModal\((\d+),/)[1];
+                const userId = this.cells[0].innerText;
+                const minAmountBtc = this.cells[1].innerText;
+                const maxAmountBtc = this.cells[2].innerText;
+                const rate = this.cells[3].innerText;
+                const paymentMethods = this.cells[4].innerText;
+                const fiatAmount = this.cells[5].innerText.split(' ')[0];
+                const fiatCurrency = this.cells[5].innerText.split(' ')[1];
+                const tradeType = this.cells[6].innerText;
+                const comment = this.cells[7] ? this.cells[7].innerText : '';
+                openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment);
             });
         });
     </script>
