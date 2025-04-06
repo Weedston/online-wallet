@@ -119,7 +119,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                         if (empty($error_message)) {
                             // Create escrow transaction
                             $inputs = [["txid" => $txid, "vout" => $vout]];
-                            $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+                            $escrow_amount = $btc_amount * 0.99; // Subtract 1% service fee
+                            $service_fee = $btc_amount * 0.01; // 1% service fee
+							// Ensure the amounts are correctly formatted
+                            $escrow_amount = number_format($escrow_amount, 8, '.', '');
+                            $service_fee = number_format($service_fee, 8, '.', '');
+
+                            $outputs = [
+                                $multisig_address => (float)$escrow_amount,
+                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee
+                            ]; // Replace <service_address> with actual service address
 							error_log("inputs: " . json_encode($inputs));
 							error_log("outputs: " . json_encode($outputs));
                             $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
