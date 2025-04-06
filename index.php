@@ -116,7 +116,33 @@ function bitcoinRPC($method, $params = []) {
     return 'Unknown ERROR: ' . $response;
 }
 
+// Функция для создания мультиподписного кошелька
+function createMultisigAddress($keys) {
+    $rpc = new BitcoinRPC();
+    $response = $rpc->createmultisig(2, $keys);
+    return $response->address;
+}
 
+// Функция для депонирования BTC
+function createEscrowTransaction($inputs, $outputs) {
+    $rpc = new BitcoinRPC();
+    $raw_tx = $rpc->createrawtransaction($inputs, $outputs);
+    return $raw_tx;
+}
+
+// Функция для подписания транзакции
+function signTransaction($raw_tx, $keys, $inputs) {
+    $rpc = new BitcoinRPC();
+    $signed_tx = $rpc->signrawtransactionwithkey($raw_tx, $keys, $inputs);
+    return $signed_tx->hex;
+}
+
+// Функция для отправки транзакции
+function sendTransaction($signed_tx) {
+    $rpc = new BitcoinRPC();
+    $txid = $rpc->sendrawtransaction($signed_tx);
+    return $txid;
+}
 
 //include 'pages/top.php';
 
