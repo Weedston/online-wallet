@@ -150,7 +150,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" onclick="openModal('<?php echo $ad_id; ?>', '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type']); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
+                    <tr class="clickable-row" data-ad-id="<?php echo $ad_id; ?>" data-user-id="<?php echo htmlspecialchars($ad['user_id']); ?>" data-min-amount-btc="<?php echo htmlspecialchars($ad['min_amount_btc']); ?>" data-max-amount-btc="<?php echo htmlspecialchars($ad['max_amount_btc']); ?>" data-rate="<?php echo htmlspecialchars($ad['rate']); ?>" data-payment-methods="<?php echo htmlspecialchars($payment_methods_display); ?>" data-fiat-amount="<?php echo number_format($fiat_amount, 2, '.', ' '); ?>" data-fiat-currency="<?php echo htmlspecialchars($ad['fiat_currency']); ?>" data-trade-type="<?php echo htmlspecialchars($ad['trade_type']); ?>" data-comment="<?php echo htmlspecialchars($ad['comment']); ?>">
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
@@ -183,7 +183,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 <input type="number" id="btc-amount" name="btc_amount" step="0.00000001" required oninput="validateBtcAmount()">
                 <div class="error-message" id="btc-amount-error">BTC amount must be within the specified range.</div>
                 <div class="modal-buttons" id="modal-buttons">
-                    <button class="btn cancel" onclick="closeModal()">Cancel</button>
+                    <button class="btn cancel" type="button" onclick="closeModal()">Cancel</button>
                     <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
                 </div>
             </form>
@@ -191,6 +191,23 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
     </div>
 
     <script>
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', function() {
+                const adId = this.dataset.adId;
+                const userId = this.dataset.userId;
+                const minAmountBtc = this.dataset.minAmountBtc;
+                const maxAmountBtc = this.dataset.maxAmountBtc;
+                const rate = this.dataset.rate;
+                const paymentMethods = this.dataset.paymentMethods;
+                const fiatAmount = this.dataset.fiatAmount;
+                const fiatCurrency = this.dataset.fiatCurrency;
+                const tradeType = this.dataset.tradeType;
+                const comment = this.dataset.comment;
+
+                openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment);
+            });
+        });
+
         function openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment) {
             document.getElementById('modal-ad-id').value = adId;
             document.getElementById('modal-user-id').innerText = userId;
