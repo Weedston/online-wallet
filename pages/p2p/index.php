@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     }
 
     if (empty($error_message)) {
-          // Get public keys of participants from the database
+        // Get wallet addresses and public keys of participants from the database
         $buyer_wallet_result = mysqli_query($CONNECT, "SELECT wallet, pubkey FROM members WHERE id = '$buyer_id'");
         if ($buyer_wallet_row = mysqli_fetch_assoc($buyer_wallet_result)) {
             $buyer_wallet = $buyer_wallet_row['wallet'];
@@ -103,27 +103,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                     } else {
                         $txid = $unspent_outputs[0]['txid'];
                         $vout = $unspent_outputs[0]['vout'];
+                        $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
 
-                        // Create escrow transaction
-                        $inputs = [["txid" => $txid, "vout" => $vout]];
-                        $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+                        if ($amount < $btc_amount) {
+                            $error_message = "Error: Insufficient UTXO amount.";
+                        }
 
-                        $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-                        if (isset($raw_tx_result)) {
-                            $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_pubkey], $inputs]);
-                            if (isset($signed_tx_result['hex'])) {
-                                $signed_tx = $signed_tx_result['hex'];
-                                $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-                                if (isset($txid_result)) {
-                                    $txid = $txid_result;
+                        if (empty($error_message)) {
+                            // Create escrow transaction
+                            $inputs = [["txid" => $txid, "vout" => $vout]];
+                            $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+
+                            $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+                            error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
+                            if (isset($raw_tx_result)) {
+                                // Get the private key for the buyer's wallet
+                                $buyer_privkey_result = bitcoinRPC('dumpprivkey', [$buyer_wallet]);
+                                if (isset($buyer_privkey_result)) {
+                                    $buyer_privkey = $buyer_privkey_result;
+                                    $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_privkey], $inputs]);
+                                    error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
+                                    if (isset($signed_tx_result['hex'])) {
+                                        $signed_tx = $signed_tx_result['hex'];
+                                        $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
+                                        if (isset($txid_result)) {
+                                            $txid = $txid_result;
+                                        } else {
+                                            $error_message = "Error: Failed to send raw transaction.";
+                                        }
+                                    } else {
+                                        $error_message = "Error: Failed to sign raw transaction.";
+                                    }
                                 } else {
-                                    $error_message = "Error: Failed to send raw transaction.";
+                                    $error_message = "Error: Failed to retrieve private key for buyer's wallet.";
                                 }
                             } else {
-                                $error_message = "Error: Failed to sign raw transaction.";
+                                $error_message = "Error: Failed to create raw transaction.";
                             }
-                        } else {
-                            $error_message = "Error: Failed to create raw transaction.";
                         }
                     }
 
