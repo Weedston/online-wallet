@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
             add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
 
             // Redirect user to trade details page
-            header("Location: p2p-trade_details.php?ad_id=$ad_id");
+            header("Location: p2p-trade_details?ad_id=$ad_id");
             exit();
         } else {
             $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
