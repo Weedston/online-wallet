@@ -300,7 +300,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <tr>
                     <th>Ad ID</th>
                     <th>Date</th>
-                    <th>BTC Amount</th>
+                    <th>Min BTC Amount</th>
+                    <th>Max BTC Amount</th>
                     <th>Rate</th>
                     <th>Payment Methods</th>
                     <th>Fiat Amount</th>
@@ -311,7 +312,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
             </thead>
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
-                    $fiat_amount = round($ad['amount_btc'] * $ad['rate']);
+                    $min_fiat_amount = round($ad['min_amount_btc'] * $ad['rate']);
+                    $max_fiat_amount = round($ad['max_amount_btc'] * $ad['rate']);
                     // Получение методов оплаты для этого объявления
                     $ad_payment_methods_result = mysqli_query($CONNECT, "SELECT payment_method FROM ad_payment_methods WHERE ad_id = '{$ad['id']}'");
                     $ad_payment_methods = [];
@@ -324,22 +326,24 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                     }
                 ?>
                     <tr id="ad-row-<?php echo $ad['id']; ?>">
-                        <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id']); ?></td>
-                        <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at']); ?></td>
-                        <td id="amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['amount_btc']); ?></td>
-                        <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate']); ?></td>
-                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $ad_payment_methods)); ?></td>
-                        <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($fiat_amount); ?></td>
-                        <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type']); ?></td>
-                        <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment']); ?></td>
+                        <td id="id-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['id'] ?? ''); ?></td>
+                        <td id="date-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['created_at'] ?? ''); ?></td>
+                        <td id="min-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?></td>
+                        <td id="max-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?></td>
+                        <td id="rate-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['rate'] ?? ''); ?></td>
+                        <td id="payment-methods-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars(implode(', ', $ad_payment_methods) ?? ''); ?></td>
+                        <td id="fiat-amount-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($min_fiat_amount . ' - ' . $max_fiat_amount ?? ''); ?></td>
+                        <td id="trade-type-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['trade_type'] ?? ''); ?></td>
+                        <td id="comment-<?php echo $ad['id']; ?>"><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
                         <td>
                             <button onclick="openEditModal(<?php echo $ad['id']; ?>, {
-                                date: '<?php echo htmlspecialchars($ad['created_at']); ?>',
-                                amountBtc: '<?php echo htmlspecialchars($ad['amount_btc']); ?>',
-                                rate: '<?php echo htmlspecialchars($ad['rate']); ?>',
-                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $ad_payment_methods)); ?>',
-                                tradeType: '<?php echo htmlspecialchars($ad['trade_type']); ?>',
-                                comment: '<?php echo htmlspecialchars($ad['comment']); ?>'
+                                date: '<?php echo htmlspecialchars($ad['created_at'] ?? ''); ?>',
+                                minAmountBtc: '<?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?>',
+                                maxAmountBtc: '<?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?>',
+                                rate: '<?php echo htmlspecialchars($ad['rate'] ?? ''); ?>',
+                                paymentMethods: '<?php echo htmlspecialchars(implode(',', $ad_payment_methods) ?? ''); ?>',
+                                tradeType: '<?php echo htmlspecialchars($ad['trade_type'] ?? ''); ?>',
+                                comment: '<?php echo htmlspecialchars($ad['comment'] ?? ''); ?>'
                             })" class="btn">Edit</button>
                             <button onclick="deleteAd(<?php echo $ad['id']; ?>)" class="btn">Delete</button>
                         </td>
@@ -359,8 +363,10 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id'");
                 <input type="hidden" id="edit-ad-id">
                 <label for="edit-date">Date:</label>
                 <input type="text" id="edit-date" readonly>
-                <label for="edit-amount">BTC Amount:</label>
-                <input type="number" id="edit-amount" step="0.00000001" required oninput="calculateFiatAmount()">
+                <label for="edit-min-amount">Min BTC Amount:</label>
+                <input type="number" id="edit-min-amount" step="0.00000001" required oninput="calculateFiatAmount()">
+                <label for="edit-max-amount">Max BTC Amount:</label>
+                <input type="number" id="edit-max-amount" step="0.00000001" required oninput="calculateFiatAmount()">
                 <label for="edit-rate">Rate:</label>
                 <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
                 <label for="edit-payment-methods">Payment Methods:</label>
