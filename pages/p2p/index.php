@@ -17,24 +17,28 @@ if (!$CONNECT) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
+    $btc_amount = floatval($_POST['btc_amount']);
 
-    // Обновляем статус объявления на "ожидание" и сохраняем информацию о покупателе
-    $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id' WHERE id = '$ad_id'";
-    if (mysqli_query($CONNECT, $update_query)) {
-        // Получаем информацию о создателе объявления
-        $ad_query = "SELECT user_id FROM ads WHERE id = '$ad_id'";
-        $ad_result = mysqli_query($CONNECT, $ad_query);
-        $ad = mysqli_fetch_assoc($ad_result);
-        $seller_id = $ad['user_id'];
+    // Получаем информацию об объявлении
+    $ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
+    $ad_result = mysqli_query($CONNECT, $ad_query);
+    $ad = mysqli_fetch_assoc($ad_result);
 
-        // Добавляем уведомление для создателя объявления
-        add_notification($seller_id, "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
-
-        // Перенаправляем пользователя на страницу деталей сделки
-        header("Location: p2p-trade_details.php?ad_id=$ad_id");
-        exit();
+    if ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc']) {
+        echo "Ошибка: сумма BTC должна быть в пределах минимальной и максимальной.";
     } else {
-        echo "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
+        // Обновляем статус объявления на "ожидание" и сохраняем информацию о покупателе
+        $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
+        if (mysqli_query($CONNECT, $update_query)) {
+            // Добавляем уведомление для создателя объявления
+            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
+
+            // Перенаправляем пользователя на страницу деталей сделки
+            header("Location: p2p-trade_details.php?ad_id=$ad_id");
+            exit();
+        } else {
+            echo "Ошибка при обновлении статуса объявления: " . mysqli_error($CONNECT);
+        }
     }
 }
 
@@ -142,7 +146,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
                 ?>
-                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type'] == 'buy' ? 'Buy' : 'Sell'); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
+                    <tr class="clickable-row" onclick="openModal(<?php echo $ad_id; ?>, '<?php echo htmlspecialchars($ad['user_id']); ?>', '<?php echo htmlspecialchars($ad['min_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['max_amount_btc']); ?>', '<?php echo htmlspecialchars($ad['rate']); ?>', '<?php echo htmlspecialchars($payment_methods_display); ?>', '<?php echo number_format($fiat_amount, 2, '.', ' '); ?>', '<?php echo htmlspecialchars($ad['fiat_currency']); ?>', '<?php echo htmlspecialchars($ad['trade_type']); ?>', '<?php echo htmlspecialchars($ad['comment']); ?>')">
                         <td><?php echo htmlspecialchars($ad['user_id']); ?></td>
                         <td><?php echo htmlspecialchars($ad['min_amount_btc']); ?></td>
                         <td><?php echo htmlspecialchars($ad['max_amount_btc']); ?></td>
@@ -154,10 +158,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                             <?php if ($ad['user_id'] == $_SESSION['user_id']) { ?>
                                 My ad
                             <?php } else { ?>
-                                <form method="POST" action="">
-                                    <input type="hidden" name="ad_id" value="<?php echo $ad['id']; ?>">
-                                    <button type="submit" name="accept_ad" class="btn accept-btn">Accept</button>
-                                </form>
+                                <!-- Удаляем кнопку "Accept" из таблицы -->
                             <?php } ?>
                         </td>
                     </tr>
@@ -179,13 +180,15 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <p><strong>Fiat Currency:</strong> <span id="modal-fiat-currency"></span></p>
             <p><strong>Trade Type:</strong> <span id="modal-trade-type"></span></p>
             <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
-            <div class="modal-buttons" id="modal-buttons">
-                <button class="btn cancel" onclick="closeModal()">Cancel</button>
-                <form method="POST" action="" style="display:inline;">
-                    <input type="hidden" id="modal-ad-id" name="ad_id" value="">
+            <form method="POST" action="" style="display:inline;">
+                <input type="hidden" id="modal-ad-id" name="ad_id" value="">
+                <label for="btc-amount">BTC Amount:</label>
+                <input type="number" id="btc-amount" name="btc_amount" step="0.00000001" required>
+                <div class="modal-buttons" id="modal-buttons">
+                    <button class="btn cancel" onclick="closeModal()">Cancel</button>
                     <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -203,12 +206,17 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('modal-comment').innerText = comment;
             document.getElementById('adModal').style.display = 'block';
 
-            
+            const btcAmountInput = document.getElementById('btc-amount');
+            btcAmountInput.min = minAmountBtc;
+            btcAmountInput.max = maxAmountBtc;
+
             const currentUser = '<?php echo $_SESSION['user_id']; ?>';
             if (userId === currentUser) {
                 document.getElementById('modal-accept-btn').style.display = 'none';
+                btcAmountInput.disabled = true;
             } else {
                 document.getElementById('modal-accept-btn').style.display = 'inline-block';
+                btcAmountInput.disabled = false;
             }
         }
 
@@ -216,14 +224,12 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             document.getElementById('adModal').style.display = 'none';
         }
 
-        
         window.onclick = function(event) {
             if (event.target == document.getElementById('adModal')) {
                 closeModal();
             }
         }
 
-        
         document.querySelectorAll('.accept-btn').forEach(button => {
             button.addEventListener('click', function(event) {
                 event.stopPropagation();
