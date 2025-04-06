@@ -101,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $user = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '$user_id'"));
 
 // Получение объявлений пользователя
-$ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id', status = 'active'");
+$ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND status = 'active'");
 
 ?>
 
