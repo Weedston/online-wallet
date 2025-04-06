@@ -104,9 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                         $txid = $unspent_outputs[0]['txid'];
                         $vout = $unspent_outputs[0]['vout'];
                         $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
-						error_log("txid: $txid");
-						error_log("vout: $vout");
-						error_log("amount: $amount");
+						// Логируем значения переменных
+						error_log("txid: " . $txid);
+						error_log("vout: " . $vout);
+						error_log("amount: " . $amount);
+
+						// Если нужно залогировать все данные UTXO:
+						error_log("Unspent Outputs: " . json_encode($unspent_outputs));
 
                         if ($amount < $btc_amount) {
                             $error_message = "Error: Insufficient UTXO amount.";
@@ -116,8 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                             // Create escrow transaction
                             $inputs = [["txid" => $txid, "vout" => $vout]];
                             $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
-							error_log("inputs: $inputs");
-							error_log("outputs: $outputs");
+							error_log("inputs: " . json_encode($inputs));
+							error_log("outputs: " . json_encode($outputs));
                             $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
                             error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
                             if (isset($raw_tx_result)) {
