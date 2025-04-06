@@ -20,29 +20,42 @@ while ($row = mysqli_fetch_assoc($payment_methods_result)) {
     $payment_methods[] = $row['method_name'];
 }
 
+// Получение баланса пользователя
+$user_id = $_SESSION['user_id'];
+$balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id = '$user_id'");
+$balance_row = mysqli_fetch_assoc($balance_result);
+$balance = $balance_row['balance'];
+
 // Обработка формы создания объявления
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) { 
-    $user_id = $_SESSION['user_id'];
-    $amount_btc = number_format(floatval($_POST['amount_btc']), 8, '.', '');
+// Обработка формы создания объявления
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
+    $min_amount_btc = number_format(floatval($_POST['min_amount_btc']), 8, '.', '');
+    $max_amount_btc = number_format(floatval($_POST['max_amount_btc']), 8, '.', '');
     $rate = number_format(floatval($_POST['rate']), 2, '.', '');
     $payment_methods_selected = $_POST['payment_methods'];
     $fiat_currency = htmlspecialchars($_POST['fiat_currency'], ENT_QUOTES, 'UTF-8');
     $trade_type = htmlspecialchars($_POST['trade_type'], ENT_QUOTES, 'UTF-8');
     $status = 'active';
-    
+
+    // Проверка достаточности баланса
+    if ($max_amount_btc > $balance) {
+        echo "<script>alert('Error: Insufficient BTC balance.'); window.location.href='create_ad.php';</script>";
+        exit();
+    }
+
     if (!$CONNECT) {
         echo "<script>alert('Connection failed: " . mysqli_connect_error() . "'); window.location.href='create_ad.php';</script>";
         exit();
     }
 
     // Подготовленный запрос без payment_method
-    $query = "INSERT INTO ads (user_id, amount_btc, rate, fiat_currency, trade_type, status) 
-              VALUES (?, ?, ?, ?, ?, ?)";
+    $query = "INSERT INTO ads (user_id, min_amount_btc, max_amount_btc, rate, fiat_currency, trade_type, status) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = mysqli_prepare($CONNECT, $query);
 
     if ($stmt) {
         // Привязка параметров: "i" - integer, "d" - double, "s" - string
-        mysqli_stmt_bind_param($stmt, "iddsss", $user_id, $amount_btc, $rate, $fiat_currency, $trade_type, $status);
+        mysqli_stmt_bind_param($stmt, "idddsss", $user_id, $min_amount_btc, $max_amount_btc, $rate, $fiat_currency, $trade_type, $status);
 
         if (mysqli_stmt_execute($stmt)) {
             $ad_id = mysqli_insert_id($CONNECT);
@@ -103,8 +116,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 <div class="container">
     <?php include 'pages/p2p/menu.php'; ?>
     <div class="container ad-container">
-        <!-- Информационный блок о курсах BTC -->
+        <!-- Информационный блок о курсах BTC и балансе -->
         <div class="btc-price-box">
+            <p>Your Balance: <?php echo $balance; ?> BTC</p>
             <p>Current BTC Rates:</p>
             <ul>
                 <li id="usd-rate">1 BTC = N/A USD</li>
@@ -126,8 +140,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                 </select>
                 </p><p>
                 
-                <label for="amount_btc">Amount of BTC:</label>
-                <input type="number" name="amount_btc" id="amount_btc" step="0.00000001" required>
+                <label for="min_amount_btc">Min Amount of BTC:</label>
+                <input type="number" name="min_amount_btc" id="min_amount_btc" step="0.00000001" required>
+                </p><p>
+                
+                <label for="max_amount_btc">Max Amount of BTC:</label>
+                <input type="number" name="max_amount_btc" id="max_amount_btc" step="0.00000001" required>
                 </p><p>
                 
                 <label for="rate">Rate (Fiat per BTC):</label>
@@ -165,22 +183,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 
 <script>
     document.getElementById('trade_type').addEventListener('change', updateTradeInfo);
-    document.getElementById('amount_btc').addEventListener('input', updateTradeInfo);
+    document.getElementById('min_amount_btc').addEventListener('input', updateTradeInfo);
+    document.getElementById('max_amount_btc').addEventListener('input', updateTradeInfo);
     document.getElementById('rate').addEventListener('input', updateTradeInfo);
 
     function updateTradeInfo() {
         const tradeType = document.getElementById('trade_type').value;
-        const amountBtc = parseFloat(document.getElementById('amount_btc').value) || 0;
+        const minAmountBtc = parseFloat(document.getElementById('min_amount_btc').value) || 0;
+        const maxAmountBtc = parseFloat(document.getElementById('max_amount_btc').value) || 0;
         const rate = parseFloat(document.getElementById('rate').value) || 0;
         const tradeInfo = document.getElementById('trade_info');
 
         let infoText = '';
         if (tradeType === 'buy') {
-            const fiatAmount = amountBtc * rate;
-            infoText = `You will pay ${fiatAmount.toFixed(2)} fiat currency for ${amountBtc.toFixed(8)} BTC.`;
+            const minFiatAmount = minAmountBtc * rate;
+            const maxFiatAmount = maxAmountBtc * rate;
+            infoText = `You will pay between ${minFiatAmount.toFixed(2)} and ${maxFiatAmount.toFixed(2)} fiat currency for BTC.`;
         } else {
-            const fiatAmount = amountBtc * rate;
-            infoText = `You will receive ${fiatAmount.toFixed(2)} fiat currency for ${amountBtc.toFixed(8)} BTC.`;
+            const minFiatAmount = minAmountBtc * rate;
+            const maxFiatAmount = maxAmountBtc * rate;
+            infoText = `You will receive between ${minFiatAmount.toFixed(2)} and ${maxFiatAmount.toFixed(2)} fiat currency for BTC.`;
         }
 
         tradeInfo.textContent = infoText;
