@@ -34,7 +34,6 @@ $wallet = $row['wallet'];
 
 
 		setcookie("id", $user_id, time()+60*60*24*30);
-        setcookie("hash", $hash, time()+60*60*24*30);
 		$_SESSION['user_id'] = $user_id;
 		$_SESSION['wallet'] = $wallet;
 		
