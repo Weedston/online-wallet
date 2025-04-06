@@ -126,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                             $service_fee = number_format($service_fee, 8, '.', '');
 
                             $outputs = [
-                                $multisig_address => (float)$escrow_amount,
-                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee
+                                $multisig_address => $escrow_amount,
+                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => $service_fee
                             ]; // Replace <service_address> with actual service address
 							error_log("inputs: " . json_encode($inputs));
 							error_log("outputs: " . json_encode($outputs));
