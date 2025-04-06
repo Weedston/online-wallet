@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         $seller_pubkey_row = mysqli_fetch_assoc($seller_pubkey_result);
         $seller_pubkey = $seller_pubkey_row['wallet'];
 
-        $arbiter_id = 182; // Assuming arbiter_id is 1, replace with actual arbiter ID if different
+        $arbiter_id = 1; // Assuming arbiter_id is 1, replace with actual arbiter ID if different
         $arbiter_pubkey_result = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$arbiter_id'");
         $arbiter_pubkey_row = mysqli_fetch_assoc($arbiter_pubkey_result);
         $arbiter_pubkey = $arbiter_pubkey_row['wallet'];
@@ -67,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
         $multisig_address = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]])['address'];
 
         // Create escrow transaction
-        $inputs = [["txid" => "<txid>", "vout" => <vout>]];
-        $outputs = [$multisig_address => $btc_amount, "<service_address>" => ($btc_amount * 0.01)];
+        $inputs = [["txid" => "<txid>", "vout" => 0]]; // Replace <txid> with actual txid and 0 with actual vout
+        $outputs = [$multisig_address => $btc_amount, "<service_address>" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
 
         $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
         $signed_tx = bitcoinRPC('signrawtransactionwithkey', [$raw_tx, [$buyer_pubkey, $seller_pubkey], $inputs])['hex'];
