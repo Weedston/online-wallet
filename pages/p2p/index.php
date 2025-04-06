@@ -72,32 +72,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
         if (empty($error_message)) {
             // Create multisig address
-            $multisig_address = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]])['address'];
-
-            // Create escrow transaction
-            $inputs = [["txid" => "<txid>", "vout" => 0]]; // Replace <txid> with actual txid and 0 with actual vout
-            $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
-
-            $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-            $signed_tx = bitcoinRPC('signrawtransactionwithkey', [$raw_tx, [$buyer_pubkey, $seller_pubkey], $inputs])['hex'];
-            $txid = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-
-            // Insert escrow deposit information into database
-            $insert_query = "INSERT INTO escrow_deposits (ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status) 
-                             VALUES ('$ad_id', '$multisig_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited')";
-            mysqli_query($CONNECT, $insert_query);
-
-            // Update ad status to "pending" and save buyer info
-            $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
-            if (mysqli_query($CONNECT, $update_query)) {
-                // Add notification for the ad creator
-                add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
-
-                // Redirect user to trade details page
-                header("Location: p2p-trade_details.php?ad_id=$ad_id");
-                exit();
+            $multisig_result = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]]);
+            if (isset($multisig_result['address'])) {
+                $multisig_address = $multisig_result['address'];
             } else {
-                $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
+                $error_message = "Error: Failed to create multisig address.";
+            }
+
+            if (empty($error_message)) {
+                // Create escrow transaction
+                $inputs = [["txid" => "<txid>", "vout" => 0]]; // Replace <txid> with actual txid and 0 with actual vout
+                $outputs = [$multisig_address => $btc_amount, "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => ($btc_amount * 0.01)]; // Replace <service_address> with actual service address
+
+                $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+                if (isset($raw_tx_result)) {
+                    $signed_tx_result = bitcoinRPC('signrawtransactionwithkey', [$raw_tx_result, [$buyer_pubkey, $seller_pubkey], $inputs]);
+                    if (isset($signed_tx_result['hex'])) {
+                        $signed_tx = $signed_tx_result['hex'];
+                        $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
+                        if (isset($txid_result)) {
+                            $txid = $txid_result;
+                        } else {
+                            $error_message = "Error: Failed to send raw transaction.";
+                        }
+                    } else {
+                        $error_message = "Error: Failed to sign raw transaction.";
+                    }
+                } else {
+                    $error_message = "Error: Failed to create raw transaction.";
+                }
+            }
+
+            if (empty($error_message)) {
+                // Insert escrow deposit information into database
+                $insert_query = "INSERT INTO escrow_deposits (ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status) 
+                                 VALUES ('$ad_id', '$multisig_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited')";
+                mysqli_query($CONNECT, $insert_query);
+
+                // Update ad status to "pending" and save buyer info
+                $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
+                if (mysqli_query($CONNECT, $update_query)) {
+                    // Add notification for the ad creator
+                    add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
+
+                    // Redirect user to trade details page
+                    header("Location: p2p-trade_details.php?ad_id=$ad_id");
+                    exit();
+                } else {
+                    $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
+                }
             }
         }
     }
