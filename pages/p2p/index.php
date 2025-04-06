@@ -78,10 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
             // Create multisig address
             $multisig_result = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]]);
+            error_log("Multisig Result: " . json_encode($multisig_result)); // Log the multisig result
             if (isset($multisig_result['address'])) {
                 $multisig_address = $multisig_result['address'];
+                $redeemScript = $multisig_result['redeemScript'];
             } else {
-                $error_message = "Error: Failed to create multisig address.";
+                $error_message = "Error: Failed to create multisig address. Multisig creation error: " . json_encode($multisig_result);
                 error_log("Multisig creation error: " . json_encode($multisig_result));
             }
 
