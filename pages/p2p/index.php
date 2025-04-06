@@ -15,6 +15,12 @@ if (!$CONNECT) {
 
 $error_message = '';
 
+// Get user balance
+$user_id = $_SESSION['user_id'];
+$balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id = '$user_id'");
+$balance_row = mysqli_fetch_assoc($balance_result);
+$balance = $balance_row['balance'];
+
 // Check if "Accept" button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
@@ -193,6 +199,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <p><strong>Fiat Currency:</strong> <span id="modal-fiat-currency"></span></p>
             <p><strong>Trade Type:</strong> <span id="modal-trade-type"></span></p>
             <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
+            <p><strong>Your Balance:</strong> <span id="modal-user-balance"><?php echo $balance; ?> BTC</span></p>
             <form method="POST" action="" style="display:inline;">
                 <input type="hidden" id="modal-ad-id" name="ad_id" value="">
                 <label for="btc-amount">BTC Amount:</label>
