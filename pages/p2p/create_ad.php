@@ -186,50 +186,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 </div>
 
 <?php if (!empty($error_message)) { ?>
-    <div id="errorModal" class="modal">
+    <div id="errorModal" class="modal" style="display: block;">
         <div class="modal-content">
             <span class="close" onclick="closeErrorModal()">&times;</span>
             <p><?php echo $error_message; ?></p>
         </div>
     </div>
-    <script>
-        document.getElementById('errorModal').style.display = 'block';
-
-        function closeErrorModal() {
-            document.getElementById('errorModal').style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('errorModal')) {
-                closeErrorModal();
-            }
-        }
-    </script>
 <?php } ?>
 
 <?php if (!empty($success_message)) { ?>
-    <div id="successModal" class="modal">
+    <div id="successModal" class="modal" style="display: block;">
         <div class="modal-content">
             <span class="close" onclick="closeSuccessModal()">&times;</span>
             <p><?php echo $success_message; ?></p>
         </div>
     </div>
-    <script>
-        document.getElementById('successModal').style.display = 'block';
-
-        function closeSuccessModal() {
-            document.getElementById('successModal').style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('successModal')) {
-                closeSuccessModal();
-            }
-        }
-    </script>
 <?php } ?>
 
 <script>
+    function closeErrorModal() {
+        document.getElementById('errorModal').style.display = 'none';
+    }
+
+    function closeSuccessModal() {
+        document.getElementById('successModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('errorModal')) {
+            closeErrorModal();
+        }
+        if (event.target == document.getElementById('successModal')) {
+            closeSuccessModal();
+        }
+    }
+
     document.getElementById('trade_type').addEventListener('change', updateTradeInfo);
     document.getElementById('min_amount_btc').addEventListener('input', updateTradeInfo);
     document.getElementById('max_amount_btc').addEventListener('input', updateTradeInfo);
