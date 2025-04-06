@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("<p style='color:red;'>Error: No available UTXOs!</p>");
     }
 
-    $serviceWallet = "bc1qq00pgwy3mleht2ts3yz99k5u7zr76fylek9sad";
+    $serviceWallet = "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn";
 
     // Запрашиваем комиссию
     $feeEstimate = bitcoinRPC("estimatesmartfee", [6]);
