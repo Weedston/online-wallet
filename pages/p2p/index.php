@@ -46,12 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     }
 
     if (empty($error_message)) {
-        // Get public keys of participants from the database
-        $buyer_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$buyer_id'");
-        if ($buyer_pubkey_row = mysqli_fetch_assoc($buyer_pubkey_result)) {
-            $buyer_pubkey = $buyer_pubkey_row['pubkey'];
+          // Get public keys of participants from the database
+        $buyer_wallet_result = mysqli_query($CONNECT, "SELECT wallet, pubkey FROM members WHERE id = '$buyer_id'");
+        if ($buyer_wallet_row = mysqli_fetch_assoc($buyer_wallet_result)) {
+            $buyer_wallet = $buyer_wallet_row['wallet'];
+            $buyer_pubkey = $buyer_wallet_row['pubkey'];
         } else {
-            $error_message = "Error: Buyer public key not found.";
+            $error_message = "Error: Buyer wallet not found.";
         }
 
         $seller_id = $ad['user_id'];
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
                 if (empty($error_message)) {
                     // Get unspent transaction outputs (UTXOs) for the buyer
-                    $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_pubkey]]);
+                    $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_wallet]]);
                     if (empty($unspent_outputs)) {
                         $error_message = "Error: No unspent outputs found for the buyer.";
                     } else {
