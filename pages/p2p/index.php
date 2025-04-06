@@ -4,8 +4,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 require_once 'src/functions.php';
-require_once __DIR__ . '/../../config.php';  // Ensure the configuration file path is correct
-require_once '../../index.php';  // Include the Bitcoin RPC functions
 
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
