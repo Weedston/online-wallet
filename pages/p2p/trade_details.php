@@ -246,7 +246,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
             }
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/send_message.php', true);
+            xhr.open('POST', '/src/send_message.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
@@ -270,92 +270,92 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
                     }
                 }
             };
-            xhr.send(JSON.stringify({
-                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-                sender_id: senderId,
-                recipient_id: recipientId,
-                message: message
+             xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "send_message",
+                params: {
+                    ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                    user_id: senderId,
+                    message: message
+                },
+                id: 1
             }));
         });
 
         function loadMessages() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/src/jsonrpc.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var messages = response.result;
-                            var chatMessages = document.getElementById('chat-messages');
-                            chatMessages.innerHTML = '';
-                            messages.forEach(function(message) {
-                                var listItem = document.createElement('li');
-                                listItem.textContent = message.username + ": " + message.message;
-                                chatMessages.appendChild(listItem);
-                            });
-                        } else if (response.error) {
-                            console.error("Ошибка загрузки сообщений: " + response.error.message);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var messages = response.result;
+                                messages.forEach(function(message) {
+                                    displayMessage(message.username, message.message);
+                                });
+                            } else if (response.error) {
+                                console.error("Ошибка загрузки сообщений: " + response.error.message);
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON:", e);
+                            console.error("Response:", xhr.responseText);
                         }
-                    } catch (e) {
-                        console.error("Ошибка парсинга JSON:", e);
-                        console.error("Response:", xhr.responseText);
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
                     }
-                } else {
-                    console.error("Request failed with status:", xhr.status);
                 }
-            }
-        };
-        xhr.onerror = function() {
-            console.error("Request failed");
-        };
-        xhr.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: "loadMessages",
-            params: { ad_id: <?php echo $ad_id; ?> },
-            id: 1
-        }));
-    }
+            };
+            xhr.onerror = function() {
+                console.error("Request failed");
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "loadMessages",
+                params: { ad_id: <?php echo $ad_id; ?> },
+                id: 1
+            }));
+        }
+
 
         loadMessages();
         setInterval(loadMessages, 5000);
 
-         
         function getEscrowStatus() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/src/jsonrpc.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            document.getElementById('trade-status').textContent = response.result.status;
-                        } else if (response.error) {
-                            console.error("Ошибка получения статуса сделки: " + response.error.message);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                document.getElementById('trade-status').textContent = response.result.status;
+                            } else if (response.error) {
+                                console.error("Ошибка получения статуса сделки: " + response.error.message);
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON:", e);
+                            console.error("Response:", xhr.responseText);
                         }
-                    } catch (e) {
-                        console.error("Ошибка парсинга JSON:", e);
-                        console.error("Response:", xhr.responseText);
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
                     }
-                } else {
-                    console.error("Request failed with status:", xhr.status);
                 }
-            }
-        };
-        xhr.onerror = function() {
-            console.error("Request failed");
-        };
-        xhr.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: "getEscrowStatus",
-            params: { ad_id: <?php echo $ad_id; ?> },
-            id: 1
-        }));
-    }
+            };
+            xhr.onerror = function() {
+                console.error("Request failed");
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "getEscrowStatus",
+                params: { ad_id: <?php echo $ad_id; ?> },
+                id: 1
+            }));
+        }
 
         setInterval(getEscrowStatus, 5000);
     });

@@ -7,7 +7,9 @@ header('Content-Type: application/json');
 require_once '../config.php';
 require_once 'functions.php'; // Подключаем файл с функцией add_notification
 
-session_start(); // Начинаем сессию
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 $request = json_decode(file_get_contents('php://input'), true);
 
@@ -24,10 +26,11 @@ $ad_id = intval($request['ad_id'] ?? 0);
 $sender_id = intval($request['sender_id'] ?? 0);
 $recipient_id = intval($request['recipient_id'] ?? 0);
 $message = trim($request['message'] ?? '');
+$method = $request['method'] ?? '';
 
-error_log("ПАРАМЕТРЫ: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message");
+error_log("ПАРАМЕТРЫ: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message, method=$method");
 
-if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
+if ($method === 'send_message' && $ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $message = mysqli_real_escape_string($CONNECT, $message);
     $query = "INSERT INTO messages (ad_id, user_id, recipient_id, message, created_at) VALUES ('$ad_id', '$sender_id', '$recipient_id', '$message', NOW())";
     $result = mysqli_query($CONNECT, $query);
@@ -42,7 +45,7 @@ if ($ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
         error_log("Ошибка SQL: " . mysqli_error($CONNECT));
         echo json_encode(['error' => 'Query failed: ' . mysqli_error($CONNECT)]);
     }
-} elseif ($ad_id > 0 && isset($request['method']) && $request['method'] == 'loadMessages') { // Добавлена проверка на наличие параметра method
+} elseif ($method === 'loadMessages' && $ad_id > 0) {
     $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
     $response = [];
     while ($message = mysqli_fetch_assoc($messages)) {
