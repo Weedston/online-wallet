@@ -317,7 +317,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
         loadMessages();
         setInterval(loadMessages, 5000);
 
-         function fetchUnreadNotificationCount() {
+          function fetchUnreadNotificationCount() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/src/jsonrpc.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
