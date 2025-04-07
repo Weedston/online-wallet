@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $params = $jsonrpc['params'] ?? [];
     $ad_id = $params['ad_id'] ?? null;
 
-    if (!$method) {
+    if (!$method && $jsonrpc['method'] !== 'send_message') {
         echo json_encode(['error' => 'Missing parameters: method', 'jsonrpc' => $jsonrpc]);
         exit();
     }
