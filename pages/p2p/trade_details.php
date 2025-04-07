@@ -65,6 +65,15 @@ $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
 $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
+// Получение статуса сделки из таблицы escrow_deposits
+$stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
+$stmt->bind_param("i", $ad_id);
+$stmt->execute();
+$escrow_result = $stmt->get_result();
+$escrow = mysqli_fetch_assoc($escrow_result);
+$escrow_status = $escrow['status'];
+
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $rawInput = file_get_contents('php://input');
@@ -191,29 +200,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             </tr>
         </table>
 		<div class="action-buttons">
-			<?php 
-			switch ($escrow_status) {
-			case 'btc_deposited':
-			if ($current_user_role === 'seller') {
-				echo '<button name="fiat_received">Подтвердить получение фиата</button>';
-			}
-			break;
+            <?php
+            switch ($escrow_status) {
+                case 'btc_deposited':
+                    if ($current_user_role === 'seller') {
+                        echo '<button name="fiat_received">Подтвердить получение фиата</button>';
+                    }
+                    break;
 
-			case 'fiat_paid':
-			if ($current_user_role === 'buyer') {
-				echo '<button name="release_btc">Подписать и завершить сделку</button>';
-			}
-			break;
+                case 'fiat_paid':
+                    if ($current_user_role === 'buyer') {
+                        echo '<button name="release_btc">Подписать и завершить сделку</button>';
+                    }
+                    break;
 
-			case 'disputed':
-			if ($current_user_role === 'admin') {
-				echo '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button>';
-				echo '<button name="resolve_dispute_seller">Решить в пользу продавца</button>';
-			}
-			break;
-			}
-			?>
-		</div>
+                case 'disputed':
+                    if ($current_user_role === 'admin') {
+                        echo '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button>';
+                        echo '<button name="resolve_dispute_seller">Решить в пользу продавца</button>';
+                    }
+                    break;
+            }
+            ?>
+        </div>
 		
         <div class="chat">
             <h3>Transaction chat</h3>
@@ -391,7 +400,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
         fetchUnreadNotificationCount();
         setInterval(fetchUnreadNotificationCount, 5000);
+		
+		// Функция для получения текущего статуса сделки
+        function getEscrowStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.status) {
+                        document.getElementById('escrow-status').textContent = response.status;
+                        // Обновление интерфейса в зависимости от статуса
+                        // Например, отображение кнопок в зависимости от статуса
+                        switch (response.status) {
+                            case 'btc_deposited':
+                                if (current_user_role === 'seller') {
+                                    document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
+                                }
+                                break;
+
+                            case 'fiat_paid':
+                                if (current_user_role === 'buyer') {
+                                    document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
+                                }
+                                break;
+
+                            case 'disputed':
+                                if (current_user_role === 'admin') {
+                                    document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button name="resolve_dispute_seller">Решить в пользу продавца</button>';
+                                }
+                                break;
+                        }
+                    } else {
+                        console.error("Ошибка получения статуса сделки:", response.error);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                method: 'getEscrowStatus'
+            }));
+        }
+
+        setInterval(getEscrowStatus, 5000); // Обновление статуса сделки каждые 5 секунд
     });
+	
+	
     </script>
 
 </body>
