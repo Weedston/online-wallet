@@ -7,9 +7,7 @@ header('Content-Type: application/json');
 require_once '../config.php';
 require_once 'functions.php'; // Подключаем файл с функцией add_notification
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+session_start(); // Начинаем сессию
 
 $request = json_decode(file_get_contents('php://input'), true);
 
