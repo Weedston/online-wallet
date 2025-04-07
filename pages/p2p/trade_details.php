@@ -186,6 +186,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
     document.addEventListener('DOMContentLoaded', function() {
         var cancelTradeButton = document.getElementById('cancel-trade');
         var confirmPaymentButton = document.getElementById('confirm-payment');
+        var current_user_role = "<?php echo $current_user_role; ?>"; // Добавляем инициализацию переменной
 
         if (cancelTradeButton) {
             cancelTradeButton.addEventListener('click', function() {
