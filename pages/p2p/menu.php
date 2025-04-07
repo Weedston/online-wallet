@@ -23,7 +23,7 @@ $user_id = $_SESSION['user_id'];
         <li>
             <a href="#" id="notification-bell">
                 <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
-                <span class="notification-badge" id="notification-count"></span>
+                <span class="notification-badge" id="notification-count">0</span>
             </a>
             <div id="notification-popup" class="notification-popup">
                 <h4>Notifications</h4>
@@ -143,7 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log("Parsed response:", response);
                             if (response.result) {
                                 var count = response.result.count;
-                                console.log("Unread notification count:", count);
+                                console.log("Unread notification count parsed:", count);
+                                document.getElementById('notification-count').textContent = count;
+                            } else if (response.count !== undefined) {
+                                var count = response.count;
+                                console.log("Unread notification count (fallback):", count);
                                 document.getElementById('notification-count').textContent = count;
                             } else if (response.error) {
                                 console.error("Error: " + response.error.message);

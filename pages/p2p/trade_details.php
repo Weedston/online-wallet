@@ -279,96 +279,83 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
         });
 
         function loadMessages() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/send_message.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            if (xhr.responseText) {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.result) {
-                                    var chatBox = document.getElementById('chat-box');
-                                    chatBox.innerHTML = '';
-                                    response.result.forEach(function(message) {
-                                        displayMessage(message.username, message.message);
-                                    });
-                                } else {
-                                    console.error("Ошибка загрузки сообщений:", response.error);
-                                }
-                            } else {
-                                console.error("Пустой ответ сервера");
-                            }
-                        } catch (e) {
-                            console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/src/jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var messages = response.result;
+                            var chatMessages = document.getElementById('chat-messages');
+                            chatMessages.innerHTML = '';
+                            messages.forEach(function(message) {
+                                var listItem = document.createElement('li');
+                                listItem.textContent = message.username + ": " + message.message;
+                                chatMessages.appendChild(listItem);
+                            });
+                        } else if (response.error) {
+                            console.error("Ошибка загрузки сообщений: " + response.error.message);
                         }
-                    } else {
-                        console.error("Ошибка загрузки сообщений:", xhr.statusText);
+                    } catch (e) {
+                        console.error("Ошибка парсинга JSON:", e);
+                        console.error("Response:", xhr.responseText);
                     }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
                 }
-            };
-            xhr.send(JSON.stringify({
-                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-                method: 'loadMessages'
-            }));
-        }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "loadMessages",
+            params: { ad_id: ad_id },
+            id: 1
+        }));
+    }
 
         loadMessages();
         setInterval(loadMessages, 5000);
 
          
         function getEscrowStatus() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/functions.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    console.log("Ответ сервера при получении статуса сделки:", xhr.responseText);
-                    if (xhr.status === 200) {
-                        try {
-                            if (xhr.responseText) {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.status) {
-                                    document.getElementById('escrow-status').textContent = response.status;
-                                    switch (response.status) {
-                                        case 'btc_deposited':
-                                            if (current_user_role === 'seller') {
-                                                document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
-                                            }
-                                            break;
-
-                                        case 'fiat_paid':
-                                            if (current_user_role === 'buyer') {
-                                                document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
-                                            }
-                                            break;
-
-                                        case 'disputed':
-                                            if (current_user_role === 'admin') {
-                                                document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button name="resolve_dispute_seller">Решить в пользу продавца</button>';
-                                            }
-                                            break;
-                                    }
-                                } else {
-                                    console.error("Ошибка получения статуса сделки:", response.error);
-                                }
-                            } else {
-                                console.error("Пустой ответ сервера");
-                            }
-                        } catch (e) {
-                            console.error("Ошибка парсинга JSON:", e, xhr.responseText);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/src/jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            document.getElementById('trade-status').textContent = response.result.status;
+                        } else if (response.error) {
+                            console.error("Ошибка получения статуса сделки: " + response.error.message);
                         }
-                    } else {
-                        console.error("Ошибка получения статуса сделки:", xhr.statusText);
+                    } catch (e) {
+                        console.error("Ошибка парсинга JSON:", e);
+                        console.error("Response:", xhr.responseText);
                     }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
                 }
-            };
-            xhr.send(JSON.stringify({
-                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-                method: 'getEscrowStatus'
-            }));
-        }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "getEscrowStatus",
+            params: { ad_id: ad_id },
+            id: 1
+        }));
+    }
 
         setInterval(getEscrowStatus, 5000);
     });
