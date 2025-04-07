@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config.php';
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
+
 function add_notification($user_id, $message) {
     global $CONNECT;
 
@@ -111,26 +112,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $rawInput = file_get_contents('php://input');
     $jsonrpc = json_decode($rawInput, true);
 
-    error_log("RAW JSON---: " . $rawInput); // Логируем входящий JSON
+    error_log("RAW JSON: " . $rawInput); // Логируем входящий JSON
 
     if ($jsonrpc === null) {
         echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
         exit();
     }
-    if (!isset($jsonrpc['ad_id']) || !isset($jsonrpc['method'])) {
-		echo json_encode(['----error----' => 'ad_id', 'ad_id' => $jsonrpc['ad_id']]);
-        echo json_encode(['error' => 'Missing parameters', 'jsonrpc' => $jsonrpc]);
+
+    $method = $jsonrpc['method'] ?? null;
+    $params = $jsonrpc['params'] ?? [];
+    $ad_id = $params['ad_id'] ?? null;
+
+    if (!$method) {
+        echo json_encode(['error' => 'Missing parameters: method', 'jsonrpc' => $jsonrpc]);
         exit();
     }
-    $ad_id = intval($jsonrpc['ad_id']);
-    $method = $jsonrpc['method'];
 
     switch ($method) {
         case 'getEscrowStatus':
+            if (!$ad_id) {
+                echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
+                exit();
+            }
             echo get_escrow_status($ad_id);
             break;
         case 'loadMessages':
+            if (!$ad_id) {
+                echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
+                exit();
+            }
             echo json_encode(load_messages($ad_id));
+            break;
+        case 'getUnreadNotificationCount':
+            echo json_encode(getUnreadNotificationCount($params));
+            break;
+        case 'getNotifications':
+            echo json_encode(getNotifications($params));
+            break;
+        case 'markNotificationsAsRead':
+            echo json_encode(markNotificationsAsRead($params));
             break;
         default:
             echo json_encode(['error' => 'Unknown method']);
