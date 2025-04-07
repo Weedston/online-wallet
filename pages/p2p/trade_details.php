@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getEscrowStatus() {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '', true);
+        xhr.open('POST', 'src/functions.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4 && xhr.status === 200) {

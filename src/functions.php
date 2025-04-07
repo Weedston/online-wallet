@@ -64,6 +64,10 @@ function get_ad_info($ad_id) {
 function get_escrow_status($ad_id) {
     global $CONNECT;
 
+    if (empty($ad_id)) {
+        return ['error' => 'ad_id is missing'];
+    }
+
     $stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
     $stmt->bind_param("i", $ad_id);
     $stmt->execute();
