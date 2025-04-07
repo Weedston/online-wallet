@@ -317,6 +317,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
         loadMessages();
         setInterval(loadMessages, 5000);
 
+         
         function getEscrowStatus() {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'src/functions.php', true);
