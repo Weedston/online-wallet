@@ -269,12 +269,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log("Ответ сервера:", xhr.responseText);
                 if (xhr.status === 200) {
                     try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            displayMessage('You', message);
-                            messageInput.value = "";
+                        if (xhr.responseText) {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                displayMessage('You', message);
+                                messageInput.value = "";
+                            } else {
+                                console.error("Ошибка сервера:", response.error);
+                            }
                         } else {
-                            console.error("Ошибка сервера:", response.error);
+                            console.error("Пустой ответ сервера");
                         }
                     } catch (e) {
                         console.error("Ошибка парсинга JSON:", e, xhr.responseText);
@@ -292,21 +296,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function loadMessages() {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/send_message.php', true);
+        xhr.open('POST', 'src/functions.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var chatBox = document.getElementById('chat-box');
-                            chatBox.innerHTML = '';
-                            response.result.forEach(function(message) {
-                                displayMessage(message.username, message.message);
-                            });
+                        if (xhr.responseText) {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var chatBox = document.getElementById('chat-box');
+                                chatBox.innerHTML = '';
+                                response.result.forEach(function(message) {
+                                    displayMessage(message.username, message.message);
+                                });
+                            } else {
+                                console.error("Ошибка загрузки сообщений:", response.error);
+                            }
                         } else {
-                            console.error("Ошибка загрузки сообщений:", response.error);
+                            console.error("Пустой ответ сервера");
                         }
                     } catch (e) {
                         console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
@@ -331,12 +339,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.result) {
-                            var count = response.result.count;
-                            document.getElementById('notification-count').textContent = count;
-                        } else if (response.error) {
-                            console.error("Error: " + response.error.message);
+                        if (xhr.responseText) {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.result) {
+                                var count = response.result.count;
+                                document.getElementById('notification-count').textContent = count;
+                            } else if (response.error) {
+                                console.error("Error: " + response.error.message);
+                            }
+                        } else {
+                            console.error("Пустой ответ сервера");
                         }
                     } catch (e) {
                         console.error("Parsing error:", e);
@@ -367,30 +379,38 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.status) {
-                    document.getElementById('escrow-status').textContent = response.status;
-                    switch (response.status) {
-                        case 'btc_deposited':
-                            if (current_user_role === 'seller') {
-                                document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
-                            }
-                            break;
+                try {
+                    if (xhr.responseText) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.status) {
+                            document.getElementById('escrow-status').textContent = response.status;
+                            switch (response.status) {
+                                case 'btc_deposited':
+                                    if (current_user_role === 'seller') {
+                                        document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
+                                    }
+                                    break;
 
-                        case 'fiat_paid':
-                            if (current_user_role === 'buyer') {
-                                document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
-                            }
-                            break;
+                                case 'fiat_paid':
+                                    if (current_user_role === 'buyer') {
+                                        document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
+                                    }
+                                    break;
 
-                        case 'disputed':
-                            if (current_user_role === 'admin') {
-                                document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button n[...]';
+                                case 'disputed':
+                                    if (current_user_role === 'admin') {
+                                        document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button n[...]';
+                                    }
+                                    break;
                             }
-                            break;
+                        } else {
+                            console.error("Ошибка получения статуса сделки:", response.error);
+                        }
+                    } else {
+                        console.error("Пустой ответ сервера");
                     }
-                } else {
-                    console.error("Ошибка получения статуса сделки:", response.error);
+                } catch (e) {
+                    console.error("Ошибка парсинга JSON:", e, xhr.responseText);
                 }
             }
         };

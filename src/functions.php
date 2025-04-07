@@ -43,18 +43,22 @@ function add_notification($user_id, $message) {
 function get_ad_info($ad_id) {
     global $CONNECT;
 
+    error_log("get_ad_info called with ad_id: $ad_id");
+
     $stmt = $CONNECT->prepare("SELECT * FROM ads WHERE id = ?");
     $stmt->bind_param("i", $ad_id);
     $stmt->execute();
     $ad_result = $stmt->get_result();
 
     if (!$ad_result) {
+        error_log("Query failed: " . mysqli_error($CONNECT));
         return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $ad = mysqli_fetch_assoc($ad_result);
 
     if (!$ad) {
+        error_log("Ad not found for ad_id: $ad_id");
         return ['error' => 'Ad not found', 'ad_id' => $ad_id];
     }
 
@@ -64,51 +68,81 @@ function get_ad_info($ad_id) {
 function get_escrow_status($ad_id) {
     global $CONNECT;
 
+    error_log("get_escrow_status called with ad_id: $ad_id");
+
     if (empty($ad_id)) {
-        return ['error' => 'ad_id is missing'];
+        error_log("get_escrow_status error: ad_id is missing");
+        return json_encode(['error' => 'ad_id is missing']);
     }
 
     $stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
     $stmt->bind_param("i", $ad_id);
     $stmt->execute();
     $escrow_result = $stmt->get_result();
-    $escrow = mysqli_fetch_assoc($escrow_result);
-
-    if (!$escrow) {
-        return ['error' => 'Escrow not found', 'ad_id' => $ad_id];
+    if (!$escrow_result) {
+        error_log("get_escrow_status query error: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)]);
     }
 
-    return ['status' => $escrow['status']];
+    $escrow = mysqli_fetch_assoc($escrow_result);
+    if (!$escrow) {
+        error_log("get_escrow_status: Escrow not found for ad_id: $ad_id");
+        return json_encode(['error' => 'Escrow not found', 'ad_id' => $ad_id]);
+    }
+
+    return json_encode(['status' => $escrow['status']]);
 }
 
 function send_message($ad_id, $user_id, $message) {
     global $CONNECT;
+
+    error_log("send_message called with ad_id: $ad_id, user_id: $user_id, message: $message");
 
     $stmt = $CONNECT->prepare("INSERT INTO messages (ad_id, user_id, message) VALUES (?, ?, ?)");
     $stmt->bind_param("iis", $ad_id, $user_id, htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
     if ($stmt->execute()) {
         $recipient_id = get_recipient_id($ad_id, $user_id);
         add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
-        return ['result' => 'Message sent successfully'];
+        return json_encode(['result' => 'Message sent successfully']);
     } else {
-        return ['error' => 'Error: ' . mysqli_error($CONNECT)];
+        error_log("Error executing statement: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
     }
 }
 
 function load_messages($ad_id) {
     global $CONNECT;
 
+    error_log("load_messages called with ad_id: $ad_id");
+
+    if (empty($ad_id)) {
+        error_log("load_messages error: ad_id is missing");
+        return json_encode(['error' => 'ad_id is missing']);
+    }
+
     $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
+    if (!$messages) {
+        error_log("load_messages error: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)]);
+    }
+
     $response = [];
     while ($message = mysqli_fetch_assoc($messages)) {
         $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Not you';
         $response[] = ['username' => $username, 'message' => htmlspecialchars($message['message'])];
     }
-    return ['result' => $response];
+
+    if (empty($response)) {
+        error_log("load_messages: No messages found for ad_id: $ad_id");
+    }
+
+    return json_encode(['result' => $response]);
 }
 
 function get_recipient_id($ad_id, $sender_id) {
     global $CONNECT;
+
+    error_log("get_recipient_id called with ad_id: $ad_id, sender_id: $sender_id");
 
     $stmt = $CONNECT->prepare("SELECT user_id, buyer_id FROM ads WHERE id = ?");
     $stmt->bind_param("i", $ad_id);
