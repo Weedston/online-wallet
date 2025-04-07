@@ -100,5 +100,6 @@ function getUnreadNotificationCount($params) {
     $count = mysqli_fetch_assoc($result)['count'];
     error_log("Unread notification count for user_id $user_id: $count");
     return ['count' => $count];
+	error_log("Returned Count: $count");
 }
 ?>
