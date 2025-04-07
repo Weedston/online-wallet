@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             </tr>
             <tr>
                 <th>Comment</th>
-                <td><?php echo htmlspecialchars($ad['comment']); ?></td>
+                <td><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
             </tr>
         </table>
 		<div class="trade-actions">
