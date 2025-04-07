@@ -76,12 +76,21 @@ function get_escrow_status($ad_id) {
     }
 
     $stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
+    if (!$stmt) {
+        error_log("get_escrow_status prepare error: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Failed to prepare statement', 'mysqli_error' => mysqli_error($CONNECT)]);
+    }
+
     $stmt->bind_param("i", $ad_id);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        error_log("get_escrow_status execute error: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Failed to execute statement', 'mysqli_error' => mysqli_error($CONNECT)]);
+    }
+
     $escrow_result = $stmt->get_result();
     if (!$escrow_result) {
-        error_log("get_escrow_status query error: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)]);
+        error_log("get_escrow_status get_result error: " . mysqli_error($CONNECT));
+        return json_encode(['error' => 'Failed to get result', 'mysqli_error' => mysqli_error($CONNECT)]);
     }
 
     $escrow = mysqli_fetch_assoc($escrow_result);
@@ -90,6 +99,7 @@ function get_escrow_status($ad_id) {
         return json_encode(['error' => 'Escrow not found', 'ad_id' => $ad_id]);
     }
 
+    error_log("get_escrow_status result: " . json_encode($escrow));
     return json_encode(['status' => $escrow['status']]);
 }
 
@@ -103,10 +113,10 @@ function send_message($ad_id, $user_id, $message) {
     if ($stmt->execute()) {
         $recipient_id = get_recipient_id($ad_id, $user_id);
         add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
-        return json_encode(['result' => 'Message sent successfully']);
+        return ['result' => 'Message sent successfully'];
     } else {
         error_log("Error executing statement: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Error: ' . mysqli_error($CONNECT)]);
+        return ['error' => 'Error: ' . mysqli_error($CONNECT)];
     }
 }
 
@@ -117,13 +127,13 @@ function load_messages($ad_id) {
 
     if (empty($ad_id)) {
         error_log("load_messages error: ad_id is missing");
-        return json_encode(['error' => 'ad_id is missing']);
+        return ['error' => 'ad_id is missing'];
     }
 
     $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
     if (!$messages) {
         error_log("load_messages error: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)]);
+        return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $response = [];
@@ -136,7 +146,7 @@ function load_messages($ad_id) {
         error_log("load_messages: No messages found for ad_id: $ad_id");
     }
 
-    return json_encode(['result' => $response]);
+    return ['result' => $response];
 }
 
 function get_recipient_id($ad_id, $sender_id) {

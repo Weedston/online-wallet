@@ -42,6 +42,18 @@ $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
 $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
+$ad_id = $_GET['ad_id'];
+$escrow_status_json = get_escrow_status($ad_id);
+$escrow_status = json_decode($escrow_status_json, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log("JSON decode error: " . json_last_error_msg());
+    $status = 'unknown';
+} elseif (isset($escrow_status['status'])) {
+    $status = $escrow_status['status'];
+} else {
+    $status = 'unknown';
+}
 $escrow_status = get_escrow_status($ad_id)['status'];
 
 $current_user_id = $_SESSION['user_id'];
