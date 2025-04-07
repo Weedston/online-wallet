@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost:3306
--- Время создания: Апр 07 2025 г., 13:02
+-- Время создания: Апр 07 2025 г., 13:04
 -- Версия сервера: 8.0.41-0ubuntu0.22.04.1
 -- Версия PHP: 8.1.2-1ubuntu2.21
 
@@ -110,6 +110,20 @@ CREATE TABLE `escrow_deposits` (
 
 INSERT INTO `escrow_deposits` (`id`, `ad_id`, `escrow_address`, `buyer_pubkey`, `seller_pubkey`, `arbiter_pubkey`, `txid`, `btc_amount`, `status`, `created_at`, `updated_at`, `buyer_confirmed`, `seller_confirmed`, `arbiter_confirmed`, `buyer_cancelled`, `seller_cancelled`, `arbiter_cancelled`) VALUES
 (1, 6, '2MyK5oy7a2uNDdemoADVMCMg6V4phnfWu7s', '02260ff95657db6c3c1eeecf1231e8c1fe7e5c30a48530856aca16e19eda21c439', '0250e6bc9fe036fa94e88ce58f645b0cbc1920dd1b961040c72a53e4e8d8d836bc', '02260ff95657db6c3c1eeecf1231e8c1fe7e5c30a48530856aca16e19eda21c439', 'ac7bcfba0a790758875013551ad0d85226c3856cb754cb6ddcea564d856acf9a', '0.00015000', 'btc_deposited', '2025-04-06 22:30:13', '2025-04-06 22:30:13', 0, 0, 0, 0, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `escrow_signatures`
+--
+
+CREATE TABLE `escrow_signatures` (
+  `id` int NOT NULL,
+  `escrow_id` int NOT NULL,
+  `role` enum('buyer','seller','arbiter') NOT NULL,
+  `signed_hex` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -320,6 +334,13 @@ ALTER TABLE `escrow_deposits`
   ADD KEY `ad_id` (`ad_id`);
 
 --
+-- Индексы таблицы `escrow_signatures`
+--
+ALTER TABLE `escrow_signatures`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `escrow_id` (`escrow_id`);
+
+--
 -- Индексы таблицы `fiat_currencies`
 --
 ALTER TABLE `fiat_currencies`
@@ -396,6 +417,12 @@ ALTER TABLE `escrow_deposits`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT для таблицы `escrow_signatures`
+--
+ALTER TABLE `escrow_signatures`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT для таблицы `fiat_currencies`
 --
 ALTER TABLE `fiat_currencies`
@@ -459,6 +486,12 @@ ALTER TABLE `ad_payment_methods`
 --
 ALTER TABLE `escrow_deposits`
   ADD CONSTRAINT `escrow_deposits_ibfk_1` FOREIGN KEY (`ad_id`) REFERENCES `ads` (`id`) ON DELETE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `escrow_signatures`
+--
+ALTER TABLE `escrow_signatures`
+  ADD CONSTRAINT `escrow_signatures_ibfk_1` FOREIGN KEY (`escrow_id`) REFERENCES `escrow_deposits` (`id`) ON DELETE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `messages`
