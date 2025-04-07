@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../config.php';
-
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 function add_notification($user_id, $message) {
     global $CONNECT;
 

@@ -76,8 +76,16 @@ function markNotificationsAsRead($params) {
 function getUnreadNotificationCount($params) {
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
+    error_log("getUnreadNotificationCount called with user_id: $user_id");
+
     $result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
+    if (!$result) {
+        error_log("Query failed: " . mysqli_error($CONNECT));
+        return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
+    }
+
     $count = mysqli_fetch_assoc($result)['count'];
+    error_log("Unread notification count for user_id $user_id: $count");
     return ['count' => $count];
 }
 ?>
