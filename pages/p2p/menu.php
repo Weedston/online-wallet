@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "getNotifications",
-            params: { user_id: <?php echo $user_id; ?> }, // Исправлено
+            params: { user_id: <?php echo $user_id; ?> },
             id: 1
         }));
     }
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "markNotificationsAsRead",
-            params: { user_id: <?php echo $user_id; ?> }, // Исправлено
+            params: { user_id: <?php echo $user_id; ?> },
             id: 1
         }));
     }
