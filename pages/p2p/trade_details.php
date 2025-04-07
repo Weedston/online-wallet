@@ -190,9 +190,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
                 <td><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
             </tr>
         </table>
-		<div class="trade-actions">
-			<button id="cancel-trade" class="btn cancel">Отменить сделку</button>
-			<button id="confirm-payment" class="btn confirm">Подтвердить оплату</button>
+		<div class="action-buttons">
+			<?php 
+			switch ($escrow_status) {
+			case 'btc_deposited':
+			if ($current_user_role === 'seller') {
+				echo '<button name="fiat_received">Подтвердить получение фиата</button>';
+			}
+			break;
+
+			case 'fiat_paid':
+			if ($current_user_role === 'buyer') {
+				echo '<button name="release_btc">Подписать и завершить сделку</button>';
+			}
+			break;
+
+			case 'disputed':
+			if ($current_user_role === 'admin') {
+				echo '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button>';
+				echo '<button name="resolve_dispute_seller">Решить в пользу продавца</button>';
+			}
+			break;
+			}
+			?>
 		</div>
 		
         <div class="chat">

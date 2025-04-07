@@ -44,6 +44,22 @@ function add_notification($user_id, $message) {
     return true; // Successful execution
 }
 
+function getEscrowStatus($ad_id) {
+    global $CONNECT;
+
+    // Проверка существования записи сделки
+    $stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
+    $stmt->bind_param("i", $ad_id);
+    $stmt->execute();
+    $escrow_result = $stmt->get_result();
+    $escrow = mysqli_fetch_assoc($escrow_result);
+
+    if (!$escrow) {
+        return ['error' => 'Escrow not found', 'ad_id' => $ad_id];
+    }
+
+    return ['status' => $escrow['status']];
+}
 
 function confirmTrade($ad_id, $user_id) {
     global $CONNECT;
