@@ -128,6 +128,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
     }
 
+    // Функция для получения количества непрочитанных уведомлений
+    function fetchUnreadNotificationCount() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/src/jsonrpc.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.result) {
+                            var count = response.result.count;
+                            document.getElementById('notification-count').textContent = count;
+                        } else if (response.error) {
+                            console.error("Error: " + response.error.message);
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        console.error("Response:", xhr.responseText);
+                    }
+                } else {
+                    console.error("Request failed with status:", xhr.status);
+                }
+            }
+        };
+        xhr.onerror = function() {
+            console.error("Request failed");
+        };
+        xhr.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "getUnreadNotificationCount",
+            params: { user_id: <?php echo $user_id; ?> },
+            id: 1
+        }));
+    }
 
+    fetchUnreadNotificationCount();
+    setInterval(fetchUnreadNotificationCount, 5000);
 });
 </script>
