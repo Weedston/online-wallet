@@ -7,16 +7,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+
 $CONNECT = mysqli_connect(HOST, USER, PASS, DB);
 
-// Получение сделок со статусами 'pending' и 'completed'
+$user_id = $_SESSION['user_id'];
+// Получение сделок, где текущий пользователь является создателем или покупателем
 $trades = mysqli_query($CONNECT, "
     SELECT ads.*, members.id AS user_id 
     FROM ads 
     JOIN members ON ads.user_id = members.id 
-    WHERE ads.status IN ('pending', 'completed')
+    WHERE (ads.status IN ('pending', 'completed')) 
+    AND (ads.user_id = '$user_id' OR ads.buyer_id = '$user_id')
     ORDER BY ads.updated_at DESC
 ");
+
 ?>
 
 <!DOCTYPE html>
