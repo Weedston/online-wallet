@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         if (confirm('Вы уверены, что хотите отменить сделку?')) {
             // AJAX request to cancel the trade
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/cancel_trade.php', true);
+            xhr.open('POST', 'src/functions.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         if (confirm('Вы уверены, что хотите подтвердить оплату?')) {
             // AJAX request to confirm the payment
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/confirm_payment.php', true);
+            xhr.open('POST', 'src/functions.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {

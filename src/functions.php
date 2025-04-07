@@ -44,8 +44,7 @@ function add_notification($user_id, $message) {
     return true; // Successful execution
 }
 
-<?php
-// Функция для подтверждения сделки
+
 function confirmTrade($ad_id, $user_id) {
     global $CONNECT;
 
