@@ -190,6 +190,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
                 <td><?php echo htmlspecialchars($ad['comment']); ?></td>
             </tr>
         </table>
+		<div class="trade-actions">
+			<button id="cancel-trade" class="btn cancel">Отменить сделку</button>
+			<button id="confirm-payment" class="btn confirm">Подтвердить оплату</button>
+		</div>
+		
         <div class="chat">
             <h3>Transaction chat</h3>
             <div class="chat-box" id="chat-box"></div>
@@ -205,6 +210,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     </div>
 
     <script>
+	document.getElementById('cancel-trade').addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите отменить сделку?')) {
+            // AJAX request to cancel the trade
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/cancel_trade.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert('Сделка успешно отменена.');
+                    window.location.reload();
+                }
+            };
+            xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
+        }
+    });
+
+    document.getElementById('confirm-payment').addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите подтвердить оплату?')) {
+            // AJAX request to confirm the payment
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/confirm_payment.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert('Оплата успешно подтверждена.');
+                    window.location.reload();
+                }
+            };
+            xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
+        }
+    });
+	
     function displayMessage(username, message) {
         var chatBox = document.getElementById('chat-box');
         var messageElement = document.createElement('div');
