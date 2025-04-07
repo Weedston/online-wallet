@@ -133,10 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     exit();
 }
 
-// Если запрос не POST или не имеет нужного типа содержимого, просто игнорируем
-error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
-
-
 function send_message($ad_id, $user_id, $message) {
     global $CONNECT;
 
