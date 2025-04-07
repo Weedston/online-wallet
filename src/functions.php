@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/../config.php';
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 function add_notification($user_id, $message) {
     global $CONNECT;
 
@@ -126,12 +130,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         case 'getEscrowStatus':
             echo get_escrow_status($ad_id);
             break;
-        // Добавьте сюда другие методы по мере необходимости
+        case 'loadMessages':
+            echo json_encode(load_messages($ad_id));
+            break;
         default:
             echo json_encode(['error' => 'Unknown method']);
     }
     exit();
 }
+
+// Если запрос не POST или не имеет нужного типа содержимого, просто игнорируем
+error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
 
 function send_message($ad_id, $user_id, $message) {
     global $CONNECT;
