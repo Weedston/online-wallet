@@ -59,34 +59,7 @@ $is_buyer = ($current_user_id == $ad['buyer_id']);
 $is_seller = ($current_user_id == $ad['user_id']);
 $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
-    header('Content-Type: application/json');
-    $rawInput = file_get_contents('php://input');
-    $jsonrpc = json_decode($rawInput, true);
 
-    if ($jsonrpc === null) {
-        echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
-        exit();
-    }
-    if (!isset($jsonrpc['params']['ad_id'])) {
-        echo json_encode(['error' => 'ad_id is missing in params', 'jsonrpc' => $jsonrpc]);
-        exit();
-    }
-    $ad_id = intval($jsonrpc['params']['ad_id']);
-    if ($jsonrpc['method'] == 'sendMessage') {
-        $message = $jsonrpc['params']['message'];
-        $result = send_message($ad_id, $sender_id, $message);
-        echo json_encode($result);
-    } elseif ($jsonrpc['method'] == 'loadMessages') {
-        $result = load_messages($ad_id);
-        echo json_encode($result);
-    } else {
-        echo json_encode(['error' => 'Unknown method']);
-    }
-    exit();
-} else {
-    error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
-}
 ?>
 
 <!DOCTYPE html>
@@ -329,6 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {
                         console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
                     }
+                } else {
+                    console.error("Ошибка загрузки сообщений:", xhr.statusText);
                 }
             }
         };
@@ -365,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.error("Response:", xhr.responseText);
                     }
                 } else {
-                    console.error("Request failed with status:", xhr.status);
+                    console.error("Request failed with status:", xhr.statusText);
                 }
             }
         };
@@ -383,12 +358,14 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchUnreadNotificationCount();
     setInterval(fetchUnreadNotificationCount, 5000);
     
-    function getEscrowStatus() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/functions.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
+function getEscrowStatus() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'src/functions.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            console.log("Ответ сервера при получении статуса сделки:", xhr.responseText);
+            if (xhr.status === 200) {
                 try {
                     if (xhr.responseText) {
                         var response = JSON.parse(xhr.responseText);
@@ -409,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 case 'disputed':
                                     if (current_user_role === 'admin') {
-                                        document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button n[...]';
+                                        document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button name="resolve_dispute_seller">Решить в пользу продавца</button>';
                                     }
                                     break;
                             }
@@ -422,15 +399,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch (e) {
                     console.error("Ошибка парсинга JSON:", e, xhr.responseText);
                 }
+            } else {
+                console.error("Ошибка получения статуса сделки:", xhr.statusText);
             }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            method: 'getEscrowStatus'
-        }));
-    }
+        }
+    };
+    xhr.send(JSON.stringify({
+        ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+        method: 'getEscrowStatus'
+    }));
+}
 
-    setInterval(getEscrowStatus, 5000);
+setInterval(getEscrowStatus, 5000);
 });
     </script>
 

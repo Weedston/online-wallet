@@ -103,6 +103,40 @@ function get_escrow_status($ad_id) {
     return json_encode(['status' => $escrow['status']]);
 }
 
+// Обработчик запросов
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+    header('Content-Type: application/json');
+    $rawInput = file_get_contents('php://input');
+    $jsonrpc = json_decode($rawInput, true);
+
+    error_log("RAW JSON: " . $rawInput); // Логируем входящий JSON
+
+    if ($jsonrpc === null) {
+        echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
+        exit();
+    }
+    if (!isset($jsonrpc['ad_id']) || !isset($jsonrpc['method'])) {
+        echo json_encode(['error' => 'Missing parameters', 'jsonrpc' => $jsonrpc]);
+        exit();
+    }
+    $ad_id = intval($jsonrpc['ad_id']);
+    $method = $jsonrpc['method'];
+
+    switch ($method) {
+        case 'getEscrowStatus':
+            echo get_escrow_status($ad_id);
+            break;
+        // Добавьте сюда другие методы по мере необходимости
+        default:
+            echo json_encode(['error' => 'Unknown method']);
+    }
+    exit();
+}
+
+// Если запрос не POST или не имеет нужного типа содержимого, просто игнорируем
+error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
+
+
 function send_message($ad_id, $user_id, $message) {
     global $CONNECT;
 
