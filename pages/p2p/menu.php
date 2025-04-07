@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var requestData = JSON.stringify({
             jsonrpc: "2.0",
             method: "getUnreadNotificationCount",
-            params: { "user_id": <?php echo $sender_id; ?> },
+            params: { "user_id": <?php echo $user_id; ?> }, // Исправлено
             id: 1
         });
         console.log("Request data:", requestData);
