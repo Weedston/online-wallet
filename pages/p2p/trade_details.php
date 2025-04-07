@@ -73,6 +73,16 @@ $escrow_result = $stmt->get_result();
 $escrow = mysqli_fetch_assoc($escrow_result);
 $escrow_status = $escrow['status'];
 
+$current_user_id = $_SESSION['user_id'];
+
+$is_buyer = ($current_user_id == $ad['buyer_id']);
+$is_seller = ($current_user_id == $ad['user_id']);
+
+if ($is_buyer) {
+    $current_user_role = 'buyer';
+} elseif ($is_seller) {
+    $current_user_role = 'seller';
+} 
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
