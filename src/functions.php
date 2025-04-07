@@ -111,13 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $rawInput = file_get_contents('php://input');
     $jsonrpc = json_decode($rawInput, true);
 
-    error_log("RAW JSON: " . $rawInput); // Логируем входящий JSON
+    error_log("RAW JSON---: " . $rawInput); // Логируем входящий JSON
 
     if ($jsonrpc === null) {
         echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
         exit();
     }
     if (!isset($jsonrpc['ad_id']) || !isset($jsonrpc['method'])) {
+		echo json_encode(['----error----' => 'ad_id', 'ad_id' => $jsonrpc['ad_id']]);
         echo json_encode(['error' => 'Missing parameters', 'jsonrpc' => $jsonrpc]);
         exit();
     }

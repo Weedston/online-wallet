@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log("Notifications marked as read");
                             fetchUnreadNotificationCount(); // Обновить количество непрочитанных уведомлений
                         } else if (response.error) {
-                            console.error("Error: " + response.error.message);
+                            console.error("-----Error: " + response.error.message);
                         }
                     } catch (e) {
                         console.error("Parsing error:", e);
@@ -130,8 +130,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Функция для получения количества непрочитанных уведомлений
     function fetchUnreadNotificationCount() {
+	console.log("Полный URL: " + window.location.href);
+	console.log("Путь: " + window.location.pathname);
+
+
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/src/jsonrpc.php', true);
+		xhr.onload = function () {
+    if (xhr.status >= 200 && xhr.status < 300) {
+        console.log('Файл доступен и вернул ответ:', xhr.responseText);
+    } else {
+        console.warn('Файл доступен, но вернул ошибку. Статус:', xhr.status);
+    }
+};
+
+xhr.onerror = function () {
+    console.error('Ошибка запроса. Возможно, файл не существует или недоступен.');
+};
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
