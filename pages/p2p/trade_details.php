@@ -42,7 +42,6 @@ $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
 $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
-$ad_id = $_GET['ad_id'];
 $escrow_status_json = get_escrow_status($ad_id);
 $escrow_status = json_decode($escrow_status_json, true);
 
@@ -54,7 +53,6 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 } else {
     $status = 'unknown';
 }
-$escrow_status = get_escrow_status($ad_id)['status'];
 
 $current_user_id = $_SESSION['user_id'];
 $is_buyer = ($current_user_id == $ad['buyer_id']);
@@ -174,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
         </table>
         <div class="action-buttons">
             <?php
-            switch ($escrow_status) {
+            switch ($status) {
                 case 'btc_deposited':
                     if ($current_user_role === 'seller') {
                         echo '<button name="fiat_received">Подтвердить получение фиата</button>';
@@ -212,82 +210,211 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     </div>
 
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var cancelTradeButton = document.getElementById('cancel-trade');
-    var confirmPaymentButton = document.getElementById('confirm-payment');
+    document.addEventListener('DOMContentLoaded', function() {
+        var cancelTradeButton = document.getElementById('cancel-trade');
+        var confirmPaymentButton = document.getElementById('confirm-payment');
 
-    if (cancelTradeButton) {
-        cancelTradeButton.addEventListener('click', function() {
-            if (confirm('Вы уверены, что хотите отменить сделку?')) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'src/functions.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        alert('Сделка успешно отменена.');
-                        window.location.reload();
-                    }
-                };
-                xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
-            }
-        });
-    }
-
-    if (confirmPaymentButton) {
-        confirmPaymentButton.addEventListener('click', function() {
-            if (confirm('Вы уверены, что хотите подтвердить оплату?')) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'src/functions.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        alert('Оплата успешно подтверждена.');
-                        window.location.reload();
-                    }
-                };
-                xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
-            }
-        });
-    }
-
-    function displayMessage(username, message) {
-        var chatBox = document.getElementById('chat-box');
-        var messageElement = document.createElement('div');
-        messageElement.textContent = username + ': ' + message;
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    document.getElementById("chat-form").addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        var messageInput = document.querySelector("#chat-form input[name='message']");
-        var message = messageInput.value.trim();
-        var recipientId = document.getElementById('recipient-id').value;
-        var senderId = document.getElementById('user-id').value;
-
-        console.log("Отправка сообщения: ", { senderId, recipientId, message });
-
-        if (!message || senderId == "0" || recipientId == "0") {
-            console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
-            return;
+        if (cancelTradeButton) {
+            cancelTradeButton.addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите отменить сделку?')) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'src/functions.php', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            alert('Сделка успешно отменена.');
+                            window.location.reload();
+                        }
+                    };
+                    xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
+                }
+            });
         }
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/send_message.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                console.log("Ответ сервера:", xhr.responseText);
-                if (xhr.status === 200) {
+        if (confirmPaymentButton) {
+            confirmPaymentButton.addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите подтвердить оплату?')) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'src/functions.php', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            alert('Оплата успешно подтверждена.');
+                            window.location.reload();
+                        }
+                    };
+                    xhr.send(JSON.stringify({ ad_id: <?php echo $ad_id; ?> }));
+                }
+            });
+        }
+
+        function displayMessage(username, message) {
+            var chatBox = document.getElementById('chat-box');
+            var messageElement = document.createElement('div');
+            messageElement.textContent = username + ': ' + message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        document.getElementById("chat-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            var messageInput = document.querySelector("#chat-form input[name='message']");
+            var message = messageInput.value.trim();
+            var recipientId = document.getElementById('recipient-id').value;
+            var senderId = document.getElementById('user-id').value;
+
+            console.log("Отправка сообщения: ", { senderId, recipientId, message });
+
+            if (!message || senderId == "0" || recipientId == "0") {
+                console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/send_message.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log("Ответ сервера:", xhr.responseText);
+                    if (xhr.status === 200) {
+                        try {
+                            if (xhr.responseText) {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.result) {
+                                    displayMessage('You', message);
+                                    messageInput.value = "";
+                                } else {
+                                    console.error("Ошибка сервера:", response.error);
+                                }
+                            } else {
+                                console.error("Пустой ответ сервера");
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON:", e, xhr.responseText);
+                        }
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                sender_id: senderId,
+                recipient_id: recipientId,
+                message: message
+            }));
+        });
+
+        function loadMessages() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/functions.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            if (xhr.responseText) {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.result) {
+                                    var chatBox = document.getElementById('chat-box');
+                                    chatBox.innerHTML = '';
+                                    response.result.forEach(function(message) {
+                                        displayMessage(message.username, message.message);
+                                    });
+                                } else {
+                                    console.error("Ошибка загрузки сообщений:", response.error);
+                                }
+                            } else {
+                                console.error("Пустой ответ сервера");
+                            }
+                        } catch (e) {
+                            console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
+                        }
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                method: 'loadMessages'
+            }));
+        }
+
+        loadMessages();
+        setInterval(loadMessages, 5000);
+
+        function fetchUnreadNotificationCount() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            if (xhr.responseText) {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.result) {
+                                    var count = response.result.count;
+                                    document.getElementById('notification-count').textContent = count;
+                                } else if (response.error) {
+                                    console.error("Error: " + response.error.message);
+                                }
+                            } else {
+                                console.error("Пустой ответ сервера");
+                            }
+                        } catch (e) {
+                            console.error("Parsing error:", e);
+                            console.error("Response:", xhr.responseText);
+                        }
+                    } else {
+                        console.error("Request failed with status:", xhr.status);
+                    }
+                }
+            };
+            xhr.onerror = function() {
+                console.error("Request failed");
+            };
+            xhr.send(JSON.stringify({
+                jsonrpc: "2.0",
+                method: "getUnreadNotificationCount",
+                params: { user_id: <?php echo $sender_id; ?> },
+                id: 1
+            }));
+        }
+
+        fetchUnreadNotificationCount();
+        setInterval(fetchUnreadNotificationCount, 5000);
+        
+        function getEscrowStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'src/functions.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
                     try {
                         if (xhr.responseText) {
                             var response = JSON.parse(xhr.responseText);
-                            if (response.result) {
-                                displayMessage('You', message);
-                                messageInput.value = "";
+                            if (response.status) {
+                                document.getElementById('escrow-status').textContent = response.status;
+                                switch (response.status) {
+                                    case 'btc_deposited':
+                                        if (current_user_role === 'seller') {
+                                            document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
+                                        }
+                                        break;
+
+                                    case 'fiat_paid':
+                                        if (current_user_role === 'buyer') {
+                                            document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
+                                        }
+                                        break;
+
+                                    case 'disputed':
+                                        if (current_user_role === 'admin') {
+                                            document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button n[...]';
+                                        }
+                                        break;
+                                }
                             } else {
-                                console.error("Ошибка сервера:", response.error);
+                                console.error("Ошибка получения статуса сделки:", response.error);
                             }
                         } else {
                             console.error("Пустой ответ сервера");
@@ -296,145 +423,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.error("Ошибка парсинга JSON:", e, xhr.responseText);
                     }
                 }
-            }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            sender_id: senderId,
-            recipient_id: recipientId,
-            message: message
-        }));
+            };
+            xhr.send(JSON.stringify({
+                ad_id: <?php echo htmlspecialchars($ad_id); ?>,
+                method: 'getEscrowStatus'
+            }));
+        }
+
+        setInterval(getEscrowStatus, 5000);
     });
-
-    function loadMessages() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/functions.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        if (xhr.responseText) {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.result) {
-                                var chatBox = document.getElementById('chat-box');
-                                chatBox.innerHTML = '';
-                                response.result.forEach(function(message) {
-                                    displayMessage(message.username, message.message);
-                                });
-                            } else {
-                                console.error("Ошибка загрузки сообщений:", response.error);
-                            }
-                        } else {
-                            console.error("Пустой ответ сервера");
-                        }
-                    } catch (e) {
-                        console.error("Ошибка парсинга JSON при загрузке сообщений:", e, xhr.responseText);
-                    }
-                }
-            }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            method: 'loadMessages'
-        }));
-    }
-
-    loadMessages();
-    setInterval(loadMessages, 5000);
-
-    function fetchUnreadNotificationCount() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/src/jsonrpc.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        if (xhr.responseText) {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.result) {
-                                var count = response.result.count;
-                                document.getElementById('notification-count').textContent = count;
-                            } else if (response.error) {
-                                console.error("Error: " + response.error.message);
-                            }
-                        } else {
-                            console.error("Пустой ответ сервера");
-                        }
-                    } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
-                    }
-                } else {
-                    console.error("Request failed with status:", xhr.status);
-                }
-            }
-        };
-        xhr.onerror = function() {
-            console.error("Request failed");
-        };
-        xhr.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: "getUnreadNotificationCount",
-            params: { user_id: <?php echo $sender_id; ?> },
-            id: 1
-        }));
-    }
-
-    fetchUnreadNotificationCount();
-    setInterval(fetchUnreadNotificationCount, 5000);
-    
-    function getEscrowStatus() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'src/functions.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                    if (xhr.responseText) {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.status) {
-                            document.getElementById('escrow-status').textContent = response.status;
-                            switch (response.status) {
-                                case 'btc_deposited':
-                                    if (current_user_role === 'seller') {
-                                        document.querySelector('.action-buttons').innerHTML = '<button name="fiat_received">Подтвердить получение фиата</button>';
-                                    }
-                                    break;
-
-                                case 'fiat_paid':
-                                    if (current_user_role === 'buyer') {
-                                        document.querySelector('.action-buttons').innerHTML = '<button name="release_btc">Подписать и завершить сделку</button>';
-                                    }
-                                    break;
-
-                                case 'disputed':
-                                    if (current_user_role === 'admin') {
-                                        document.querySelector('.action-buttons').innerHTML = '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button><button n[...]';
-                                    }
-                                    break;
-                            }
-                        } else {
-                            console.error("Ошибка получения статуса сделки:", response.error);
-                        }
-                    } else {
-                        console.error("Пустой ответ сервера");
-                    }
-                } catch (e) {
-                    console.error("Ошибка парсинга JSON:", e, xhr.responseText);
-                }
-            }
-        };
-        xhr.send(JSON.stringify({
-            ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-            method: 'getEscrowStatus'
-        }));
-    }
-
-    setInterval(getEscrowStatus, 5000);
-});
-    
     </script>
 
 </body>
