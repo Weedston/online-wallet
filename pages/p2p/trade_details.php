@@ -314,7 +314,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "loadMessages",
-            params: { ad_id: ad_id },
+            params: { ad_id: <?php echo $ad_id; ?> },
             id: 1
         }));
     }
@@ -352,7 +352,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "getEscrowStatus",
-            params: { ad_id: ad_id },
+            params: { ad_id: <?php echo $ad_id; ?> },
             id: 1
         }));
     }
