@@ -39,7 +39,14 @@ switch ($method) {
         $response['result'] = markNotificationsAsRead($params);
         break;
     case 'getUnreadNotificationCount':
-        $response['result'] = getUnreadNotificationCount($params);
+        if (!isset($params['user_id'])) {
+            $response['error'] = [
+                'code' => -32602,
+                'message' => 'Missing parameters: user_id'
+            ];
+        } else {
+            $response['result'] = getUnreadNotificationCount($params);
+        }
         break;
     default:
         $response['error'] = [
@@ -77,6 +84,10 @@ function getUnreadNotificationCount($params) {
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
     error_log("getUnreadNotificationCount called with user_id: $user_id");
+
+    if (empty($user_id)) {
+        return ['error' => 'Missing parameters: user_id'];
+    }
 
     $result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
     if (!$result) {
