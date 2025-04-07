@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         if (xhr.responseText) {
                             var response = JSON.parse(xhr.responseText);
+                            console.log("Parsed response:", response);
                             if (response.result) {
                                 var count = response.result.count;
                                 document.getElementById('notification-count').textContent = count;
@@ -161,12 +162,14 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.onerror = function() {
             console.error("Request failed");
         };
-        xhr.send(JSON.stringify({
+        var requestData = JSON.stringify({
             jsonrpc: "2.0",
             method: "getUnreadNotificationCount",
             params: { "user_id": <?php echo $sender_id; ?> },
             id: 1
-        }));
+        });
+        console.log("Request data:", requestData);
+        xhr.send(requestData);
     }
 
     fetchUnreadNotificationCount();

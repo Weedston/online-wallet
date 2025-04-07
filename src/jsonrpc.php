@@ -7,6 +7,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 $request = json_decode(file_get_contents('php://input'), true);
+error_log("RAW JSON: " . file_get_contents('php://input'));
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     echo json_encode([
@@ -39,6 +40,7 @@ switch ($method) {
         $response['result'] = markNotificationsAsRead($params);
         break;
     case 'getUnreadNotificationCount':
+        error_log("Params for getUnreadNotificationCount: " . json_encode($params));
         if (!isset($params['user_id'])) {
             $response['error'] = [
                 'code' => -32602,
