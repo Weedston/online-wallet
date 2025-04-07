@@ -30,7 +30,7 @@ $user_id = $_SESSION['user_id'];
                 <ul id="notification-list">
                     <!-- Уведомления будут загружены тут -->
                 </ul>
-				<a href="notifications" class="view-all-link">View All Notifications</a>
+                <a href="notifications" class="view-all-link">View All Notifications</a>
             </div>
         </li>
     </ul>
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log("Notifications marked as read");
                             fetchUnreadNotificationCount(); // Обновить количество непрочитанных уведомлений
                         } else if (response.error) {
-                            console.error("-----Error: " + response.error.message);
+                            console.error("Error: " + response.error.message);
                         }
                     } catch (e) {
                         console.error("Parsing error:", e);
@@ -130,23 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Функция для получения количества непрочитанных уведомлений
     function fetchUnreadNotificationCount() {
-	console.log("Полный URL: " + window.location.href);
-	console.log("Путь: " + window.location.pathname);
-
-
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/src/jsonrpc.php', true);
-		xhr.onload = function () {
-    if (xhr.status >= 200 && xhr.status < 300) {
-        console.log('Файл доступен и вернул ответ:', xhr.responseText);
-    } else {
-        console.warn('Файл доступен, но вернул ошибку. Статус:', xhr.status);
-    }
-};
-
-xhr.onerror = function () {
-    console.error('Ошибка запроса. Возможно, файл не существует или недоступен.');
-};
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
@@ -158,29 +143,35 @@ xhr.onerror = function () {
                             console.log("Parsed response:", response);
                             if (response.result) {
                                 var count = response.result.count;
+                                console.log("Unread notification count:", count);
                                 document.getElementById('notification-count').textContent = count;
                             } else if (response.error) {
                                 console.error("Error: " + response.error.message);
+                                document.getElementById('notification-count').textContent = "0";
                             }
                         } else {
                             console.error("Пустой ответ сервера");
+                            document.getElementById('notification-count').textContent = "0";
                         }
                     } catch (e) {
                         console.error("Ошибка парсинга JSON:", e);
                         console.error("Response:", xhr.responseText);
+                        document.getElementById('notification-count').textContent = "0";
                     }
                 } else {
                     console.error("Request failed with status:", xhr.statusText);
+                    document.getElementById('notification-count').textContent = "0";
                 }
             }
         };
         xhr.onerror = function() {
             console.error("Request failed");
+            document.getElementById('notification-count').textContent = "0";
         };
         var requestData = JSON.stringify({
             jsonrpc: "2.0",
             method: "getUnreadNotificationCount",
-            params: { "user_id": <?php echo $user_id; ?> }, // Исправлено
+            params: { "user_id": <?php echo $user_id; ?> },
             id: 1
         });
         console.log("Request data:", requestData);

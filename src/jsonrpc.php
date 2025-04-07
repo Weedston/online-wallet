@@ -1,5 +1,5 @@
 <?php
-
+require_once '../config.php';
 require_once 'functions.php';
 
 if (session_status() == PHP_SESSION_NONE) {
@@ -7,7 +7,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 $request = json_decode(file_get_contents('php://input'), true);
-error_log("RAW JSON+++: " . file_get_contents('php://input'));
+error_log("RAW JSON: " . file_get_contents('php://input'));
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     echo json_encode([
@@ -21,12 +21,9 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
-$method = $request['method'];
-error_log("--------------method: " . $request['method']);
-$params = $request['params'];
-error_log("params: " . json_encode($request['params']));
-$id = $request['id'];
-error_log("id: " . json_encode($request['id']));
+$method = $request['method'] ?? null;
+$params = $request['params'] ?? [];
+$id = $request['id'] ?? null;
 
 $response = [
     'jsonrpc' => '2.0',
@@ -47,7 +44,7 @@ switch ($method) {
         if (!isset($params['user_id'])) {
             $response['error'] = [
                 'code' => -32602,
-                'message' => 'Missing------------- parameters: user_id'
+                'message' => 'Missing parameters: user_id'
             ];
         } else {
             $response['result'] = getUnreadNotificationCount($params);
@@ -86,13 +83,12 @@ function markNotificationsAsRead($params) {
 }
 
 function getUnreadNotificationCount($params) {
-	error_log("-----------------Run getUnreadNotificationCount");
     global $CONNECT;
     $user_id = $params['user_id'] ?? 0;
     error_log("getUnreadNotificationCount called with user_id: $user_id");
 
     if (empty($user_id)) {
-        return ['error' => 'Missing parameters!!!!!!: user_id'];
+        return ['error' => 'Missing parameters: user_id'];
     }
 
     $result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
@@ -104,6 +100,5 @@ function getUnreadNotificationCount($params) {
     $count = mysqli_fetch_assoc($result)['count'];
     error_log("Unread notification count for user_id $user_id: $count");
     return ['count' => $count];
-	error_log("Returned Count: $count");
 }
 ?>
