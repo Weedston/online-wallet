@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                         $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
                         if (mysqli_query($CONNECT, $update_query)) {
                             // Add notification for the ad creator
-                            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the \"Trade history\" section and continue the transaction.");
+                            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
 
                             // Redirect user to trade details page
                             header("Location: p2p-trade_details?ad_id=$ad_id");
