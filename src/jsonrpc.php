@@ -34,7 +34,7 @@ switch ($method) {
     case 'getUnreadNotificationCount':
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
-            error_log("Unread notification count: " . print_r($result, true)); // Логируем результат
+            
             echo json_encode(['result' => ['count' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
@@ -43,7 +43,7 @@ switch ($method) {
     case 'getNotifications':
         if ($user_id > 0) {
             $result = getNotifications($user_id);
-            error_log("Notifications: " . print_r($result, true)); // Логируем результат
+            
             echo json_encode(['result' => ['notifications' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
