@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "getNotifications",
-            params: { user_id: <?php echo json_encode(['user_id' => $user_id]); ?> },
+            params: { user_id: <?php echo $user_id; ?> },
             id: 1
         }));
     }
