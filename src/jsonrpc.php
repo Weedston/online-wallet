@@ -1,104 +1,97 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once '../config.php';
 require_once 'functions.php';
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+session_start();
 
 $request = json_decode(file_get_contents('php://input'), true);
-error_log("RAW JSON: " . file_get_contents('php://input'));
+
+error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
+error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true));  // Логируем массив после json_decode()
 
 if (json_last_error() !== JSON_ERROR_NONE) {
-    echo json_encode([
-        'jsonrpc' => '2.0',
-        'error' => [
-            'code' => -32700,
-            'message' => 'Invalid JSON'
-        ],
-        'id' => null
-    ]);
+    error_log("Ошибка JSON: " . json_last_error_msg());
+    echo json_encode(['error' => 'Invalid JSON']);
     exit();
 }
 
 $method = $request['method'] ?? null;
 $params = $request['params'] ?? [];
-$id = $request['id'] ?? null;
+$user_id = intval($params['user_id'] ?? 0);
 
-$response = [
-    'jsonrpc' => '2.0',
-    'id' => $id,
-    'result' => null,
-    'error' => null
-];
+error_log("ПАРАМЕТРЫ: method=$method, user_id=$user_id");
+
+if (!$method) {
+    echo json_encode(['error' => 'Missing parameters: method']);
+    exit();
+}
 
 switch ($method) {
+    case 'getUnreadNotificationCount':
+        if ($user_id > 0) {
+            $result = getUnreadNotificationCount($user_id);
+            error_log("Unread notification count: " . $result); // Логируем результат
+            echo json_encode(['result' => ['count' => $result]]);
+        } else {
+            echo json_encode(['error' => 'Missing parameters: user_id']);
+        }
+        break;
     case 'getNotifications':
-        $response['result'] = getNotifications($params);
+        if ($user_id > 0) {
+            $result = getNotifications($user_id);
+            error_log("Notifications: " . print_r($result, true)); // Логируем результат
+            echo json_encode(['result' => ['notifications' => $result]]);
+        } else {
+            echo json_encode(['error' => 'Missing parameters: user_id']);
+        }
         break;
     case 'markNotificationsAsRead':
-        $response['result'] = markNotificationsAsRead($params);
-        break;
-    case 'getUnreadNotificationCount':
-        error_log("Params for getUnreadNotificationCount: " . json_encode($params));
-        if (!isset($params['user_id'])) {
-            $response['error'] = [
-                'code' => -32602,
-                'message' => 'Missing parameters: user_id'
-            ];
+        if ($user_id > 0) {
+            $result = markNotificationsAsRead($user_id);
+            error_log("Mark notifications as read result: " . json_encode($result)); // Логируем результат
+            echo json_encode(['result' => $result]);
         } else {
-            $response['result'] = getUnreadNotificationCount($params);
+            echo json_encode(['error' => 'Missing parameters: user_id']);
         }
         break;
     default:
-        $response['error'] = [
-            'code' => -32601,
-            'message' => 'Method not found'
-        ];
-        break;
+        echo json_encode(['error' => 'Unknown method']);
 }
 
-echo json_encode($response);
-
-function getNotifications($params) {
+function getUnreadNotificationCount($user_id) {
     global $CONNECT;
-    $user_id = $params['user_id'] ?? 0;
-    $result = mysqli_query($CONNECT, "SELECT * FROM notifications WHERE user_id = '$user_id' AND is_read = 0 ORDER BY created_at DESC");
+
+    $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
+    $result = mysqli_query($CONNECT, $query);
+    $row = mysqli_fetch_assoc($result);
+
+    return $row['count'];
+}
+
+function getNotifications($user_id) {
+    global $CONNECT;
+
+    $query = "SELECT * FROM notifications WHERE user_id = '$user_id' ORDER BY created_at DESC";
+    $result = mysqli_query($CONNECT, $query);
     $notifications = [];
+
     while ($row = mysqli_fetch_assoc($result)) {
         $notifications[] = $row;
     }
-    return ['notifications' => $notifications];
+
+    return $notifications;
 }
 
-function markNotificationsAsRead($params) {
+function markNotificationsAsRead($user_id) {
     global $CONNECT;
-    $user_id = $params['user_id'] ?? 0;
-    $result = mysqli_query($CONNECT, "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0");
-    if ($result) {
-        return 'success';
-    } else {
-        return ['error' => 'Failed to update notifications'];
-    }
-}
 
-function getUnreadNotificationCount($params) {
-    global $CONNECT;
-    $user_id = $params['user_id'] ?? 0;
-    error_log("getUnreadNotificationCount called with user_id: $user_id");
+    $query = "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0";
+    $result = mysqli_query($CONNECT, $query);
 
-    if (empty($user_id)) {
-        return ['error' => 'Missing parameters: user_id'];
-    }
-
-    $result = mysqli_query($CONNECT, "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0");
-    if (!$result) {
-        error_log("Query failed: " . mysqli_error($CONNECT));
-        return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
-    }
-
-    $count = mysqli_fetch_assoc($result)['count'];
-    error_log("Unread notification count for user_id $user_id: $count");
-    return ['count' => $count];
+    return $result ? true : false;
 }
 ?>
