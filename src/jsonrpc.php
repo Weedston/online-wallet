@@ -6,7 +6,8 @@ error_reporting(E_ALL);
 require_once '../config.php';
 require_once 'functions.php';
 
-session_start();
+//$user_id = $_SESSION['user_id'];
+error_log("___--jsonrpc.php. user_id = SESSION['user_id']--____ user_id: " . print_r($user_id, true));
 
 $request = json_decode(file_get_contents('php://input'), true);
 

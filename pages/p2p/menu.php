@@ -7,7 +7,8 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-$user_id = $_SESSION['user_id'];
+//$user_id = $_SESSION['user_id'];
+//error_log("___--menu.php. user_id = SESSION['user_id']--____ user_id: " . print_r($user_id, true));
 ?>
 
 <nav>
@@ -88,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "getNotifications",
-            params: { user_id: <?php echo json_encode($user_id); ?> },
+            params: { user_id: <?php echo json_encode($_SESSION['user_id']); ?> },
             id: 1
         }));
     }
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "markNotificationsAsRead",
-            params: { user_id: <?php echo json_encode($user_id); ?> },
+            params: { user_id: <?php echo json_encode($_SESSION['user_id']); ?> },
             id: 1
         }));
     }
@@ -177,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var requestData = JSON.stringify({
             jsonrpc: "2.0",
             method: "getUnreadNotificationCount",
-            params: { user_id: <?php echo json_encode($user_id); ?> },
+            params: { user_id: <?php echo json_encode($_SESSION['user_id']); ?> },
             id: 1
         });
         console.log("Request data:", requestData);
