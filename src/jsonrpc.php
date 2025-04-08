@@ -6,12 +6,10 @@ error_reporting(E_ALL);
 require_once '../config.php';
 require_once 'functions.php';
 
-session_start();
-
 $request = json_decode(file_get_contents('php://input'), true);
 
 error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
-error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true, true));  // Логируем массив после json_decode()
+error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true));  // Логируем массив после json_decode()
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     error_log("Ошибка JSON: " . json_last_error_msg());
@@ -34,6 +32,7 @@ switch ($method) {
     case 'getUnreadNotificationCount':
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
+            error_log("Unread notification count: " . $result); // Логируем результат
             echo json_encode(['result' => ['count' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
@@ -41,7 +40,8 @@ switch ($method) {
         break;
     case 'getNotifications':
         if ($user_id > 0) {
-            $result = getNotifications($user_id);            
+            $result = getNotifications($user_id);
+            error_log("Notifications: " . print_r($result, true)); // Логируем результат
             echo json_encode(['result' => ['notifications' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
@@ -62,9 +62,15 @@ switch ($method) {
 
 function getUnreadNotificationCount($user_id) {
     global $CONNECT;
+
     $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
     $row = mysqli_fetch_assoc($result);
+
+    if ($row === null) {
+        return 0; // Возвращаем 0, если нет результатов
+    }
+
     return $row['count'];
 }
 
