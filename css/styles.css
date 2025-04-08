@@ -472,6 +472,34 @@ table td button:hover {
     color: #FFD700; /* Золотистый цвет текста */
 }
 
+/* Стиль самой полосы прокрутки */
+.notification-popup::-webkit-scrollbar {
+    width: 10px; /* Ширина полосы прокрутки */
+    height: 10px; /* Высота полосы прокрутки для горизонтальной */
+}
+
+/* Стиль "ползунка" полосы прокрутки */
+.notification-popup::-webkit-scrollbar-thumb {
+    background-color: #FF9900; /* Цвет полосы прокрутки */
+    border-radius: 5px; /* Скругленные углы */
+    border: 3px solid #2c2c2c; /* Рамка вокруг "ползунка", чтобы он не сливался с фоном */
+}
+
+/* Стиль фона полосы прокрутки */
+.notification-popup::-webkit-scrollbar-track {
+    background-color: #333333; /* Цвет фона полосы прокрутки */
+    border-radius: 5px;
+}
+
+/* Добавление стилей для горизонтальной полосы прокрутки, если она будет */
+.notification-popup::-webkit-scrollbar-horizontal {
+    height: 8px; /* Высота горизонтальной полосы */
+}
+
+/* Кастомизация для состояния наведения */
+.notification-popup::-webkit-scrollbar-thumb:hover {
+    background-color: #FFA500; /* Изменяем цвет при наведении */
+}
 
 .notification-popup h4 {
     margin-top: 0;
