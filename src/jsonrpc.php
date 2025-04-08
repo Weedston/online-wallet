@@ -6,6 +6,8 @@ error_reporting(E_ALL);
 require_once '../config.php';
 require_once 'functions.php';
 
+session_start();
+
 $request = json_decode(file_get_contents('php://input'), true);
 
 error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
@@ -30,15 +32,21 @@ if (!$method) {
 
 switch ($method) {
     case 'getUnreadNotificationCount':
+        if (is_array($user_id) && isset($user_id['user_id'])) {
+            $user_id = intval($user_id['user_id']);
+        }
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
-            error_log("Unread notification count: " . $result); // Логируем результат
+            error_log("Unread notification count: " . print_r($result, true)); // Логируем результат
             echo json_encode(['result' => ['count' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
         }
         break;
     case 'getNotifications':
+        if (is_array($user_id) && isset($user_id['user_id'])) {
+            $user_id = intval($user_id['user_id']);
+        }
         if ($user_id > 0) {
             $result = getNotifications($user_id);
             error_log("Notifications: " . print_r($result, true)); // Логируем результат
@@ -48,6 +56,9 @@ switch ($method) {
         }
         break;
     case 'markNotificationsAsRead':
+        if (is_array($user_id) && isset($user_id['user_id'])) {
+            $user_id = intval($user_id['user_id']);
+        }
         if ($user_id > 0) {
             $result = markNotificationsAsRead($user_id);
             error_log("Mark notifications as read result: " . json_encode($result)); // Логируем результат
@@ -62,7 +73,7 @@ switch ($method) {
 
 function getUnreadNotificationCount($user_id) {
     global $CONNECT;
-
+    error_log("___--getUnreadNotificationCount--____ user_id: " . print_r($user_id, true));
     $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
     $row = mysqli_fetch_assoc($result);
@@ -76,6 +87,7 @@ function getUnreadNotificationCount($user_id) {
 
 function getNotifications($user_id) {
     global $CONNECT;
+    error_log("___--getNotifications--____ user_id: " . print_r($user_id, true));
 
     $query = "SELECT * FROM notifications WHERE user_id = '$user_id' ORDER BY created_at DESC";
     $result = mysqli_query($CONNECT, $query);
@@ -90,6 +102,7 @@ function getNotifications($user_id) {
 
 function markNotificationsAsRead($user_id) {
     global $CONNECT;
+    error_log("___--markNotificationsAsRead--____ user_id: " . print_r($user_id, true));
 
     $query = "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
