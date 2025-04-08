@@ -107,7 +107,7 @@ function get_escrow_status($ad_id) {
 }
 
 // Обработчик запросов
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false && basename($_SERVER['PHP_SELF']) != 'send_message.php') {
     header('Content-Type: application/json');
     $rawInput = file_get_contents('php://input');
     $jsonrpc = json_decode($rawInput, true);
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $params = $jsonrpc['params'] ?? [];
     $ad_id = $params['ad_id'] ?? null;
 
-    if (!$method && $jsonrpc['method'] !== 'send_message') {
+    if (!$method) {
         echo json_encode(['error' => 'Missing parameters: method', 'jsonrpc' => $jsonrpc]);
         exit();
     }

@@ -275,7 +275,9 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
                 method: "send_message",
                 params: {
                     ad_id: <?php echo htmlspecialchars($ad_id); ?>,
-                    user_id: senderId,
+                    user_id: <?php echo htmlspecialchars($_SESSION['user_id']); ?>,
+					sender_id: senderId,
+					recipient_id: <?php echo htmlspecialchars($recipient_id); ?>,
                     message: message
                 },
                 id: 1
