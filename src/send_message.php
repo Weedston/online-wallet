@@ -20,13 +20,13 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
-$ad_id = intval($request['ad_id'] ?? 0);
-$sender_id = intval($request['sender_id'] ?? 0);
-$recipient_id = intval($request['recipient_id'] ?? 0);
-$message = trim($request['message'] ?? '');
+$ad_id = intval($request['params']['ad_id'] ?? 0);
+$sender_id = intval($request['params']['sender_id'] ?? 0);
+$recipient_id = intval($request['params']['recipient_id'] ?? 0);
+$message = trim($request['params']['message'] ?? '');
 $method = $request['method'] ?? '';
 
-error_log("!!!!!!!!!!!!!!!!PARAMS SEND MESSGAES!!!!!!!!: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message, method=$method");
+error_log("ПАРАМЕТРЫ: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message, method=$method");
 
 if ($method === 'send_message' && $ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $message = mysqli_real_escape_string($CONNECT, $message);
