@@ -34,7 +34,6 @@ switch ($method) {
     case 'getUnreadNotificationCount':
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
-            
             echo json_encode(['result' => ['count' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
@@ -42,8 +41,7 @@ switch ($method) {
         break;
     case 'getNotifications':
         if ($user_id > 0) {
-            $result = getNotifications($user_id);
-            
+            $result = getNotifications($user_id);            
             echo json_encode(['result' => ['notifications' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
@@ -64,11 +62,9 @@ switch ($method) {
 
 function getUnreadNotificationCount($user_id) {
     global $CONNECT;
-
     $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
     $row = mysqli_fetch_assoc($result);
-
     return $row['count'];
 }
 
