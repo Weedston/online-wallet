@@ -11,7 +11,7 @@ session_start();
 $request = json_decode(file_get_contents('php://input'), true);
 
 error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
-error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true));  // Логируем массив после json_decode()
+error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true, true));  // Логируем массив после json_decode()
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     error_log("Ошибка JSON: " . json_last_error_msg());
@@ -34,7 +34,7 @@ switch ($method) {
     case 'getUnreadNotificationCount':
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
-            error_log("Unread notification count: " . $result); // Логируем результат
+            error_log("Unread notification count: " . print_r($result, true)); // Логируем результат
             echo json_encode(['result' => ['count' => $result]]);
         } else {
             echo json_encode(['error' => 'Missing parameters: user_id']);
