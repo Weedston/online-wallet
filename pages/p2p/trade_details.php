@@ -61,11 +61,11 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
 
 // Меняем местами buyer_id и seller_id в зависимости от типа объявления
 if ($ad['trade_type'] === 'buy') {
-    $buyer_id_display = $buyer_id;
-    $seller_id_display = $seller_id;
+    $buyer_id_display = $buyer_id == $current_user_id ? "$buyer_id (You)" : $buyer_id;
+    $seller_id_display = $seller_id == $current_user_id ? "$seller_id (You)" : $seller_id;
 } else {
-    $buyer_id_display = $seller_id;
-    $seller_id_display = $buyer_id;
+    $buyer_id_display = $seller_id == $current_user_id ? "$seller_id (You)" : $seller_id;
+    $seller_id_display = $buyer_id == $current_user_id ? "$buyer_id (You)" : $buyer_id;
 }
 ?>
 
@@ -149,6 +149,10 @@ if ($ad['trade_type'] === 'buy') {
             <tr>
                 <th>Comment</th>
                 <td><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
+            </tr>
+            <tr>
+                <th>Ad Status</th>
+                <td id="ad-status"><?php echo htmlspecialchars($status); ?></td>
             </tr>
         </table>
         <div class="action-buttons">
@@ -345,7 +349,7 @@ if ($ad['trade_type'] === 'buy') {
                         try {
                             var response = JSON.parse(xhr.responseText);
                             if (response.result) {
-                                document.getElementById('trade-status').textContent = response.result.status;
+                                document.getElementById('ad-status').textContent = response.result.status;
                             } else if (response.error) {
                                 console.error("Ошибка получения статуса сделки: " + response.error.message);
                             }
