@@ -59,6 +59,14 @@ $is_buyer = ($current_user_id == $ad['buyer_id']);
 $is_seller = ($current_user_id == $ad['user_id']);
 $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
 
+// Меняем местами buyer_id и seller_id в зависимости от типа объявления
+if ($ad['trade_type'] === 'buy') {
+    $buyer_id_display = $buyer_id;
+    $seller_id_display = $seller_id;
+} else {
+    $buyer_id_display = $seller_id;
+    $seller_id_display = $buyer_id;
+}
 ?>
 
 <!DOCTYPE html>
@@ -99,11 +107,11 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
             </tr>
             <tr>
                 <th>Buyer ID</th>
-                <td><?php echo htmlspecialchars($buyer_id); ?></td>
+                <td><?php echo htmlspecialchars($buyer_id_display); ?></td>
             </tr>
             <tr>
                 <th>Seller ID</th>
-                <td><?php echo htmlspecialchars($seller_id); ?></td>
+                <td><?php echo htmlspecialchars($seller_id_display); ?></td>
             </tr>
             <tr>
                 <th>BTC Amount</th>
@@ -224,10 +232,14 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
 
         function displayMessage(username, message) {
             var chatBox = document.getElementById('chat-box');
-            var messageElement = document.createElement('div');
-            messageElement.textContent = username + ': ' + message;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (chatBox) {
+                var messageElement = document.createElement('div');
+                messageElement.textContent = username + ': ' + message;
+                chatBox.appendChild(messageElement);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else {
+                console.error("Элемент 'chat-box' не найден!");
+            }
         }
 
         document.getElementById("chat-form").addEventListener("submit", function(event) {
@@ -246,7 +258,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
             }
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/src/send_message.php', true);
+            xhr.open('POST', 'src/send_message.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
@@ -270,7 +282,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
                     }
                 }
             };
-             xhr.send(JSON.stringify({
+            xhr.send(JSON.stringify({
                 jsonrpc: "2.0",
                 method: "send_message",
                 params: {
@@ -285,7 +297,7 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
 
         function loadMessages() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.open('POST', 'src/jsonrpc.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
@@ -320,13 +332,12 @@ $current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
             }));
         }
 
-
         loadMessages();
         setInterval(loadMessages, 5000);
 
         function getEscrowStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/src/jsonrpc.php', true);
+            xhr.open('POST', 'src/jsonrpc.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
