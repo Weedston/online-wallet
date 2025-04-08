@@ -6,8 +6,7 @@ error_reporting(E_ALL);
 require_once '../config.php';
 require_once 'functions.php';
 
-//$user_id = $_SESSION['user_id'];
-error_log("___--jsonrpc.php. user_id = SESSION['user_id']--____ user_id: " . print_r($user_id, true));
+session_start();
 
 $request = json_decode(file_get_contents('php://input'), true);
 
@@ -33,9 +32,6 @@ if (!$method) {
 
 switch ($method) {
     case 'getUnreadNotificationCount':
-        if (is_array($user_id) && isset($user_id['user_id'])) {
-            $user_id = intval($user_id['user_id']);
-        }
         if ($user_id > 0) {
             $result = getUnreadNotificationCount($user_id);
             error_log("Unread notification count: " . print_r($result, true)); // Логируем результат
@@ -45,9 +41,6 @@ switch ($method) {
         }
         break;
     case 'getNotifications':
-        if (is_array($user_id) && isset($user_id['user_id'])) {
-            $user_id = intval($user_id['user_id']);
-        }
         if ($user_id > 0) {
             $result = getNotifications($user_id);
             error_log("Notifications: " . print_r($result, true)); // Логируем результат
@@ -57,9 +50,6 @@ switch ($method) {
         }
         break;
     case 'markNotificationsAsRead':
-        if (is_array($user_id) && isset($user_id['user_id'])) {
-            $user_id = intval($user_id['user_id']);
-        }
         if ($user_id > 0) {
             $result = markNotificationsAsRead($user_id);
             error_log("Mark notifications as read result: " . json_encode($result)); // Логируем результат
@@ -75,7 +65,7 @@ switch ($method) {
 function getUnreadNotificationCount($user_id) {
     global $CONNECT;
     error_log("___--getUnreadNotificationCount--____1 user_id: " . print_r($user_id, true));
-    $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id' AND is_read = 0";
+    $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = '$user_id[user_id]' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
     $row = mysqli_fetch_assoc($result);
 
@@ -90,7 +80,7 @@ function getNotifications($user_id) {
     global $CONNECT;
     error_log("___--getNotifications--____2 user_id: " . print_r($user_id, true));
 
-    $query = "SELECT * FROM notifications WHERE user_id = '$user_id' ORDER BY created_at DESC";
+    $query = "SELECT * FROM notifications WHERE user_id = '$user_id[user_id]' AND is_read = 0 ORDER BY created_at DESC";
     $result = mysqli_query($CONNECT, $query);
     $notifications = [];
 
@@ -105,7 +95,7 @@ function markNotificationsAsRead($user_id) {
     global $CONNECT;
     error_log("___--markNotificationsAsRead--____3 user_id: " . print_r($user_id, true));
 
-    $query = "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id' AND is_read = 0";
+    $query = "UPDATE notifications SET is_read = 1 WHERE user_id = '$user_id[user_id]' AND is_read = 0";
     $result = mysqli_query($CONNECT, $query);
 
     return $result ? true : false;

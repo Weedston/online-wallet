@@ -61,9 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
-                        console.log("Received notifications:", response); // Добавляем лог
-                        if (response.result) {
-                            var notifications = response.result.notifications;
+                        
+                        if (response) {
+                            var notifications = response;
+							console.log("Received notifications!!!!!!:", notifications);
                             var notificationList = document.getElementById('notification-list');
                             notificationList.innerHTML = '';
                             notifications.forEach(function(notification) {
@@ -143,14 +144,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         if (xhr.responseText) {
                             var response = JSON.parse(xhr.responseText);
-                            console.log("Parsed response:", response);
-                            if (response.result) {
-                                var count = response.result.count;
-                                console.log("Unread notification count parsed:", count);
+                            console.log("Parsed response+++:", response);
+                            if (response) {
+                                var count = response;
+                                console.log("Unread notification count parsed-----:", count);
                                 document.getElementById('notification-count').textContent = count;
-                            } else if (response.count !== undefined) {
-                                var count = response.count;
-                                console.log("Unread notification count (fallback):", count);
+                            } else if (response !== undefined) {
+                                var count = response;
+                                console.log("Unread notification count (fallback)!!!!!!:", count);
                                 document.getElementById('notification-count').textContent = count;
                             } else if (response.error) {
                                 console.error("Error: " + response.error.message);
