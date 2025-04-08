@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
+                        console.log("Received notifications:", response); // Добавляем лог
                         if (response.result) {
                             var notifications = response.result.notifications;
                             var notificationList = document.getElementById('notification-list');
@@ -102,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
+                        console.log("Notifications marked as read response:", response); // Добавляем лог
                         if (response.result) {
                             console.log("Notifications marked as read");
                             fetchUnreadNotificationCount(); // Обновить количество непрочитанных уведомлений
