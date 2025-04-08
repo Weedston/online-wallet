@@ -80,7 +80,7 @@ function getNotifications($user_id) {
     global $CONNECT;
     error_log("___--getNotifications--____2 user_id: " . print_r($user_id, true));
 
-    $query = "SELECT * FROM notifications WHERE user_id = '$user_id[user_id]' AND is_read = 0 ORDER BY created_at DESC";
+    $query = "SELECT * FROM notifications WHERE user_id = '$user_id[user_id]' ORDER BY created_at DESC";
     $result = mysqli_query($CONNECT, $query);
     $notifications = [];
 
