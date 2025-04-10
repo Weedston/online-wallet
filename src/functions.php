@@ -115,8 +115,10 @@ function get_escrow_status($ad_id) {
     // Преобразуем статус в более понятный для пользователя
     $user_friendly_status = isset($status_map[$escrow['status']]) ? $status_map[$escrow['status']] : $escrow['status'];
 
-    error_log("get_escrow_status result: " . json_encode($escrow));
-    return json_encode(['status' => $user_friendly_status]);  // Возвращаем удобочитаемый статус
+    return [
+    'status' => $user_friendly_status,
+    'raw_status' => $escrow['status']
+	];
 }
 
 
@@ -144,12 +146,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
     switch ($method) {
         case 'getEscrowStatus':
-            if (!$ad_id) {
-                echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
-                exit();
-            }
-            echo get_escrow_status($ad_id);
-            break;
+        $ad_id = $input['params']['ad_id'] ?? null;
+        $result = get_escrow_status($ad_id);
+        echo json_encode([
+            'jsonrpc' => '2.0',
+            'result' => $result,
+            'ad_id' => $input['id'] ?? null
+        ]);
+        break;
+		
         case 'loadMessages':
             if (!$ad_id) {
                 echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);

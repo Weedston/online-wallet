@@ -80,17 +80,14 @@ $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
 $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
 
-$escrow_status_json = get_escrow_status($ad_id);
-$escrow_status = json_decode($escrow_status_json, true);
+$escrow_status = get_escrow_status($ad_id); // уже массив
 
-if (json_last_error() !== JSON_ERROR_NONE) {
-    error_log("JSON decode error: " . json_last_error_msg());
-    $status = 'unknown';
-} elseif (isset($escrow_status['status'])) {
+if (isset($escrow_status['status'])) {
     $status = $escrow_status['status'];
 } else {
     $status = 'unknown';
 }
+
 
 $current_user_id = $_SESSION['user_id'];
 $is_buyer = ($current_user_id == $ad['buyer_id']);
@@ -189,34 +186,15 @@ if ($ad['trade_type'] === 'buy') {
                 <td><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
             </tr>
             <tr>
-                <th>Deposit status</th>
-                <td id="ad-status"><?php echo htmlspecialchars($status); ?></td>
-            </tr>
+				<th>Deposit status</th>
+				<td id="ad-status">Загрузка...</td>
+			</tr>
         </table>
-        <div class="action-buttons">
-            <?php
-            switch ($status) {
-                case 'btc_deposited':
-                    if ($current_user_role === 'seller') {
-                        echo '<button name="fiat_received">Подтвердить получение фиата</button>';
-                    }
-                    break;
+		<div class="action-buttons"></div>
 
-                case 'fiat_paid':
-                    if ($current_user_role === 'buyer') {
-                        echo '<button name="release_btc">Подписать и завершить сделку</button>';
-                    }
-                    break;
+		
+	</div>
 
-                case 'disputed':
-                    if ($current_user_role === 'admin') {
-                        echo '<button name="resolve_dispute_buyer">Решить в пользу покупателя</button>';
-                        echo '<button name="resolve_dispute_seller">Решить в пользу продавца</button>';
-                    }
-                    break;
-            }
-            ?>
-        </div>
         
         <div class="chat">
             <h3>Transaction chat</h3>
@@ -379,7 +357,7 @@ if ($ad['trade_type'] === 'buy') {
 
         function getEscrowStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/jsonrpc.php', true);
+            xhr.open('POST', 'src/functions.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
@@ -388,6 +366,47 @@ if ($ad['trade_type'] === 'buy') {
                             var response = JSON.parse(xhr.responseText);
                             if (response.result) {
                                 document.getElementById('ad-status').textContent = response.result.status;
+								const rawStatus = response.result.raw_status;
+								const userRole = "<?php echo $current_user_role; ?>"; // Передаём роль из PHP в JS
+								const adId = "<?php echo $ad_id; ?>";
+							let buttonsHtml = "";
+							console.log("User role:", userRole);
+							console.log("rawStatus:", rawStatus);
+							console.log("buttonsHtml:", buttonsHtml);
+							switch (rawStatus) {
+								case 'btc_deposited':
+									if (userRole === 'seller') {
+										buttonsHtml = `
+										<form method="POST" action="src/confirm_fiat_payment.php">
+											<input type="hidden" name="ad_id" value="${adId}">
+											<button type="submit" name="fiat_received" class="btn btn-success">Подтвердить получение фиата</button>
+										</form>
+										`;
+									}
+								break;
+								case 'fiat_paid':
+									if (userRole === 'buyer') {
+										buttonsHtml = `
+										<form method="POST" action="src/release_btc.php">
+											<input type="hidden" name="ad_id" value="${adId}">
+											<button type="submit" name="release_btc" class="btn btn-primary">Подписать и завершить сделку</button>
+										</form>
+										`;
+									}
+								break;
+								case 'disputed':
+									if (userRole === 'admin') {
+										buttonsHtml = `
+										<form method="POST" action="src/resolve_dispute.php">
+											<input type="hidden" name="ad_id" value="${adId}">
+											<button type="submit" name="resolve_dispute_buyer" class="btn btn-warning">Решить в пользу покупателя</button>
+											<button type="submit" name="resolve_dispute_seller" class="btn btn-warning">Решить в пользу продавца</button>
+										</form>
+										`;
+								}
+								break;
+						}
+						document.querySelector('.action-buttons').innerHTML = buttonsHtml;
                             } else if (response.error) {
                                 console.error("Ошибка получения статуса сделки: " + response.error.message);
                             }

@@ -14,15 +14,18 @@ function generateSidPhrase($wordCount = 18) {
 }
 
 $sidPhrase = generateSidPhrase();
+$pubkey = '';
 
 try {
     $newAddress = bitcoinRPC('getnewaddress');
-    $pubkey = bitcoinRPC('validateaddress', [$newAddress])['pubkey']; // Получение публичного ключа
+    $pubkey = bitcoinRPC('validateaddress', [$newAddress])['scriptPubKey'];
+	$privkey = bitcoinRPC('dumpprivkey', [$newAddress]);
+	 
 } catch (Exception $e) {
     echo 'Error: ' . $e->getMessage();
 }
 
-mysqli_query($CONNECT, "INSERT INTO members SET passw = '".$sidPhrase."', wallet = '".$newAddress."', pubkey = '".$pubkey."';"); // Добавление pubkey
+mysqli_query($CONNECT, "INSERT INTO members SET passw = '".$sidPhrase."', wallet = '".$newAddress."', pubkey = '".$pubkey."', privkey = '".$privkey."';");
 
 $row = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE passw = '".$sidPhrase."';"));
 if (!$row['id']) {
