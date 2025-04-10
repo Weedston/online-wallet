@@ -8,6 +8,44 @@ error_reporting(E_ALL);
 
 require_once 'src/functions.php';
 
+
+$current_user_id = $_SESSION['user_id'];
+$ad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if ($ad_id === 0) {
+    $_SESSION['flash_message'] = [
+        'type' => 'error',
+        'text' => 'Некорректный ID сделки.'
+    ];
+    header('Location: /p2p'); // Или куда перенаправлять в случае ошибки
+    exit();
+}
+
+$stmt = $CONNECT->prepare("SELECT * FROM ads WHERE id = ?");
+$stmt->bind_param("i", $ad_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    $_SESSION['flash_message'] = [
+        'type' => 'error',
+        'text' => 'Сделка не найдена.'
+    ];
+    header('Location: /p2p');
+    exit();
+}
+
+$ad = $result->fetch_assoc();
+
+if ($ad['user_id'] != $current_user_id && $ad['buyer_id'] != $current_user_id) {
+    $_SESSION['flash_message'] = [
+        'type' => 'error',
+        'text' => 'У вас нет доступа к этой сделке.'
+    ];
+    header('Location: /p2p');
+    exit();
+}
+
 $ad_id = null;
 if (isset($_GET['ad_id'])) {
     $ad_id = intval($_GET['ad_id']);
@@ -96,6 +134,18 @@ if ($ad['trade_type'] === 'buy') {
     </style>
 </head>
 <body>
+<?php if (isset($_SESSION['flash_message'])): ?>
+    <div class="notification-popup show <?= $_SESSION['flash_message']['type'] ?>">
+        <?= htmlspecialchars($_SESSION['flash_message']['text']) ?>
+    </div>
+    <script>
+        setTimeout(function() {
+            document.querySelector('.notification-popup').classList.remove('show');
+        }, 5000);
+    </script>
+    <?php unset($_SESSION['flash_message']); ?>
+<?php endif; ?>
+
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
         <h2>Trade Details</h2>

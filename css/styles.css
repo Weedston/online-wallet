@@ -575,3 +575,26 @@ table td button:hover {
     text-decoration: underline;
 }
 
+.notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #2c2c2c;
+    color: #FFD700;
+    border: 1px solid #FF9900;
+    padding: 15px;
+    z-index: 9999;
+    box-shadow: 0 2px 10px rgba(255, 165, 0, 0.5);
+    display: none;
+    border-radius: 8px;
+}
+
+.notification-popup.show {
+    display: block;
+}
+
+.notification-popup.error {
+    background-color: #4a0000;
+    color: #ffbaba;
+    border: 1px solid #ff5c5c;
+}
