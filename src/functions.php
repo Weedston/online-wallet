@@ -146,14 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
     switch ($method) {
         case 'getEscrowStatus':
-        $ad_id = $input['params']['ad_id'] ?? null;
-        $result = get_escrow_status($ad_id);
-        echo json_encode([
-            'jsonrpc' => '2.0',
-            'result' => $result,
-            'ad_id' => $input['id'] ?? null
-        ]);
-        break;
+			$ad_id = $input['params']['ad_id'] ?? null;
+			$result = get_escrow_status($ad_id);
+			echo json_encode([
+				'jsonrpc' => '2.0',
+				'result' => $result,
+				'id' => $input['id'] ?? null
+			]);
+		break;
 		
         case 'loadMessages':
             if (!$ad_id) {
