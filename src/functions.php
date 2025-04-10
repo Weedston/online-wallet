@@ -102,9 +102,23 @@ function get_escrow_status($ad_id) {
         return json_encode(['error' => 'Escrow not found', 'ad_id' => $ad_id]);
     }
 
+    // Массив соответствий для статусов
+    $status_map = [
+        'waiting_deposit' => 'Waiting for BTC deposit',
+        'btc_deposited' => 'BTC deposited',
+        'fiat_paid' => 'Fiat paid',
+        'btc_released' => 'BTC released',
+        'disputed' => 'Disputed transaction',
+        'refunded' => 'Funds refunded',
+    ];
+
+    // Преобразуем статус в более понятный для пользователя
+    $user_friendly_status = isset($status_map[$escrow['status']]) ? $status_map[$escrow['status']] : $escrow['status'];
+
     error_log("get_escrow_status result: " . json_encode($escrow));
-    return json_encode(['status' => $escrow['status']]);
+    return json_encode(['status' => $user_friendly_status]);  // Возвращаем удобочитаемый статус
 }
+
 
 // Обработчик запросов
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false && basename($_SERVER['PHP_SELF']) != 'send_message.php') {

@@ -10,7 +10,7 @@ require_once 'src/functions.php';
 
 
 $current_user_id = $_SESSION['user_id'];
-$ad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$ad_id = isset($_GET['ad_id']) ? intval($_GET['ad_id']) : 0;
 
 if ($ad_id === 0) {
     $_SESSION['flash_message'] = [
@@ -134,18 +134,6 @@ if ($ad['trade_type'] === 'buy') {
     </style>
 </head>
 <body>
-<?php if (isset($_SESSION['flash_message'])): ?>
-    <div class="notification-popup show <?= $_SESSION['flash_message']['type'] ?>">
-        <?= htmlspecialchars($_SESSION['flash_message']['text']) ?>
-    </div>
-    <script>
-        setTimeout(function() {
-            document.querySelector('.notification-popup').classList.remove('show');
-        }, 5000);
-    </script>
-    <?php unset($_SESSION['flash_message']); ?>
-<?php endif; ?>
-
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
         <h2>Trade Details</h2>
@@ -201,7 +189,7 @@ if ($ad['trade_type'] === 'buy') {
                 <td><?php echo htmlspecialchars($ad['comment'] ?? ''); ?></td>
             </tr>
             <tr>
-                <th>Ad Status</th>
+                <th>Deposit status</th>
                 <td id="ad-status"><?php echo htmlspecialchars($status); ?></td>
             </tr>
         </table>

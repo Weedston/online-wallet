@@ -7,9 +7,21 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-//$user_id = $_SESSION['user_id'];
-//error_log("___--menu.php. user_id = SESSION['user_id']--____ user_id: " . print_r($user_id, true));
 ?>
+
+<?php if (isset($_SESSION['flash_message'])): ?>
+    <div class="notification-popup show <?= $_SESSION['flash_message']['type'] ?>">
+        <?= htmlspecialchars($_SESSION['flash_message']['text']) ?>
+    </div>
+    <script>
+        setTimeout(function() {
+            const popup = document.querySelector('.notification-popup');
+            if (popup) popup.classList.remove('show');
+        }, 5000);
+    </script>
+    <?php unset($_SESSION['flash_message']); ?>
+<?php endif; ?>
+
 
 <nav>
     <ul>
