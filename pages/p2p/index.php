@@ -20,6 +20,7 @@ $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
 // Check if "Accept" button was pressed
+// Check if "Accept" button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
@@ -46,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     }
 
     if (empty($error_message)) {
-        // Get wallet addresses and public keys of participants from the database
+        // Get buyer's wallet address
         $buyer_wallet_result = mysqli_query($CONNECT, "SELECT wallet, pubkey FROM members WHERE id = '$buyer_id'");
         if ($buyer_wallet_row = mysqli_fetch_assoc($buyer_wallet_result)) {
             $buyer_wallet = $buyer_wallet_row['wallet'];
@@ -55,132 +56,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
             $error_message = "Error: Buyer wallet not found.";
         }
 
-        $seller_id = $ad['user_id'];
-        $seller_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$seller_id'");
-        if ($seller_pubkey_row = mysqli_fetch_assoc($seller_pubkey_result)) {
-            $seller_pubkey = $seller_pubkey_row['pubkey'];
-        } else {
-            $error_message = "Error: Seller public key not found.";
-        }
+        $central_wallet_address = "tb1qcj9684tlel0hazc0clahzzc2lp50m3t2nc0gju";  // Set the central wallet address
 
-        $arbiter_id = 182; // Set arbiter_id to 182
-        $arbiter_pubkey_result = mysqli_query($CONNECT, "SELECT pubkey FROM members WHERE id = '$arbiter_id'");
-        if ($arbiter_pubkey_row = mysqli_fetch_assoc($arbiter_pubkey_result)) {
-            $arbiter_pubkey = $arbiter_pubkey_row['pubkey'];
-        } else {
-            $error_message = "Error: Arbiter public key not found.";
-        }
-
+        // Validate the buyer's wallet
         if (empty($error_message)) {
-            // Log the public keys for debugging
-            error_log("Buyer Public Key: $buyer_pubkey");
-            error_log("Seller Public Key: $seller_pubkey");
-            error_log("Arbiter Public Key: $arbiter_pubkey");
+            // Get unspent transaction outputs (UTXOs) for the buyer
+            $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_wallet]]);
+            if (empty($unspent_outputs)) {
+                $error_message = "Error: No unspent outputs found for the buyer.";
+            } else {
+                $txid = $unspent_outputs[0]['txid'];
+                $vout = $unspent_outputs[0]['vout'];
+                $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
 
-            // Validate public keys
-            if (!ctype_xdigit($buyer_pubkey) || !ctype_xdigit($seller_pubkey) || !ctype_xdigit($arbiter_pubkey)) {
-                $error_message = "Error: One or more public keys are not valid hex strings.";
-                error_log("Invalid Public Key: Buyer: $buyer_pubkey, Seller: $seller_pubkey, Arbiter: $arbiter_pubkey");
-            }
-
-            if (empty($error_message)) {
-                // Create multisig address
-                $multisig_result = bitcoinRPC('createmultisig', [2, [$buyer_pubkey, $seller_pubkey, $arbiter_pubkey]]);
-                error_log("Multisig Result: " . json_encode($multisig_result)); // Log the multisig result
-                if (isset($multisig_result['address'])) {
-                    $multisig_address = $multisig_result['address'];
-                    $redeemScript = $multisig_result['redeemScript'];
-                } else {
-                    $error_message = "Error: Failed to create multisig address.";
-                    error_log("Multisig creation error: " . json_encode($multisig_result));
+                if ($amount < $btc_amount) {
+                    $error_message = "Error: Insufficient UTXO amount.";
                 }
 
                 if (empty($error_message)) {
-                    // Get unspent transaction outputs (UTXOs) for the buyer
-                    $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_wallet]]);
-                    if (empty($unspent_outputs)) {
-                        $error_message = "Error: No unspent outputs found for the buyer.";
-                    } else {
-                        $txid = $unspent_outputs[0]['txid'];
-                        $vout = $unspent_outputs[0]['vout'];
-                        $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
+                    // Create escrow transaction
+                    $inputs = [["txid" => $txid, "vout" => $vout]];
+                    $service_fee = $btc_amount * 0.01; // 1% service fee
+                    $escrow_amount = $btc_amount - $service_fee;
 
-                        if ($amount < $btc_amount) {
-                            $error_message = "Error: Insufficient UTXO amount.";
-                        }
+                    // Ensure the amounts are correctly formatted
+                    $escrow_amount = number_format($escrow_amount, 8, '.', '');
+                    $service_fee = number_format($service_fee, 8, '.', '');
 
-                        if (empty($error_message)) {
-                            // Create escrow transaction
-                            $inputs = [["txid" => $txid, "vout" => $vout]];
-                            $escrow_amount = $btc_amount * 0.99; // Subtract 1% service fee
-                            $service_fee = $btc_amount * 0.01; // 1% service fee
+                    // Sum of outputs must be equal to the input amount
+                    $change_amount = $amount - ($escrow_amount + $service_fee);
+                    if ($change_amount < 0) {
+                        $error_message = "Error: The sum of outputs is greater than the input amount.";
+                    }
 
-                            // Ensure the amounts are correctly formatted
-                            $escrow_amount = number_format($escrow_amount, 8, '.', '');
-                            $service_fee = number_format($service_fee, 8, '.', '');
+                    $outputs = [
+                        $central_wallet_address => (float)$escrow_amount,
+                        "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee  // Replace with actual service address
+                    ];
 
-                            // Sum of outputs must be equal to the input amount
-                            $change_amount = $amount - ($escrow_amount + $service_fee);
-                            if ($change_amount < 0) {
-                                $error_message = "Error: The sum of outputs is greater than the input amount.";
-                            }
+                    if ($change_amount > 0) {
+                        $outputs[$buyer_wallet] = (float)number_format($change_amount, 8, '.', '');
+                    }
 
-                            $outputs = [
-                                $multisig_address => (float)$escrow_amount,
-                                "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee
-                            ]; // Replace <service_address> with actual service address
-
-                            if ($change_amount > 0) {
-                                $outputs[$buyer_wallet] = (float)number_format($change_amount, 8, '.', '');
-                            }
-
-                            $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-                            error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
-                            if (isset($raw_tx_result)) {
-                                // Sign the transaction using the wallet
-                                $signed_tx_result = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx_result]);
-                                error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
-                                if (isset($signed_tx_result['hex'])) {
-                                    $signed_tx = $signed_tx_result['hex'];
-                                    $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-                                    if (isset($txid_result)) {
-                                        $txid = $txid_result;
-                                    } else {
-                                        $error_message = "Error: Failed to send raw transaction.";
-                                    }
-                                } else {
-                                    $error_message = "Error: Failed to sign raw transaction.";
-                                }
+                    $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+                    error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
+                    if (isset($raw_tx_result)) {
+                        // Sign the transaction using the wallet
+                        $signed_tx_result = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx_result]);
+                        error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
+                        if (isset($signed_tx_result['hex'])) {
+                            $signed_tx = $signed_tx_result['hex'];
+                            $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
+                            if (isset($txid_result)) {
+                                $txid = $txid_result;
                             } else {
-                                $error_message = "Error: Failed to create raw transaction.";
+                                $error_message = "Error: Failed to send raw transaction.";
                             }
-                        }
-                    }
-
-                    if (empty($error_message)) {
-                        // Insert escrow deposit information into database
-                        $insert_query = "INSERT INTO escrow_deposits (ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status) 
-                                         VALUES ('$ad_id', '$multisig_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited')";
-                        mysqli_query($CONNECT, $insert_query);
-
-                        // Update ad status to "pending" and save buyer info
-                        $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
-                        if (mysqli_query($CONNECT, $update_query)) {
-                            // Add notification for the ad creator
-                            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
-
-                            // Redirect user to trade details page
-                            header("Location: p2p-trade_details?ad_id=$ad_id");
-                            exit();
                         } else {
-                            $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
+                            $error_message = "Error: Failed to sign raw transaction.";
                         }
+                    } else {
+                        $error_message = "Error: Failed to create raw transaction.";
                     }
+                }
+            }
+
+            if (empty($error_message)) {
+                // Insert escrow deposit information into database
+                $insert_query = "INSERT INTO escrow_deposits (ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status, deposited) 
+                                 VALUES ('$ad_id', '$central_wallet_address', '$buyer_pubkey', '$ad[seller_pubkey]', '$ad[arbiter_pubkey]', '$txid', '$btc_amount', 'btc_deposited', 1)";
+                mysqli_query($CONNECT, $insert_query);
+
+                // Update ad status to "pending" and save buyer info
+                $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
+                if (mysqli_query($CONNECT, $update_query)) {
+                    // Add notification for the ad creator
+                    add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
+
+                    // Redirect user to trade details page
+                    header("Location: p2p-trade_details?ad_id=$ad_id");
+                    exit();
+                } else {
+                    $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
                 }
             }
         }
     }
 }
+
+
 
 // Get all active ads
 $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN members ON ads.user_id = members.id WHERE ads.status = 'active'");
