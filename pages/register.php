@@ -18,7 +18,7 @@ $pubkey = '';
 
 try {
     $newAddress = bitcoinRPC('getnewaddress');
-    $pubkey = bitcoinRPC('validateaddress', [$newAddress])['scriptPubKey'];
+    $pubkey = bitcoinRPC('validateaddress', [$newAddress])['pubkey'];
 	$privkey = bitcoinRPC('dumpprivkey', [$newAddress]);
 	 
 } catch (Exception $e) {

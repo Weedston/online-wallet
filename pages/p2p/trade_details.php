@@ -250,18 +250,7 @@ if ($ad['trade_type'] === 'buy') {
             });
         }
 
-        function displayMessage(username, message) {
-            var chatBox = document.getElementById('chat-box');
-            if (chatBox) {
-                var messageElement = document.createElement('div');
-                messageElement.textContent = username + ': ' + message;
-                chatBox.appendChild(messageElement);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } else {
-                console.error("Элемент 'chat-box' не найден!");
-            }
-        }
-
+        
         document.getElementById("chat-form").addEventListener("submit", function(event) {
             event.preventDefault();
 
@@ -288,7 +277,7 @@ if ($ad['trade_type'] === 'buy') {
                             if (xhr.responseText) {
                                 var response = JSON.parse(xhr.responseText);
                                 if (response.success) {
-                                    displayMessage('You', message);
+                                    
                                     messageInput.value = "";
                                 } else {
                                     console.error("Ошибка сервера:", response.error);
@@ -315,46 +304,62 @@ if ($ad['trade_type'] === 'buy') {
             }));
         });
 
-        function loadMessages() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'src/jsonrpc.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.result) {
-                                var messages = response.result;
-                                messages.forEach(function(message) {
-                                    displayMessage(message.username, message.message);
-                                });
-                            } else if (response.error) {
-                                console.error("Ошибка загрузки сообщений: " + response.error.message);
-                            }
-                        } catch (e) {
-                            console.error("Ошибка парсинга JSON:", e);
-                            console.error("Response:", xhr.responseText);
+let lastMessageId = 0; // Глобальная переменная для хранения ID последнего сообщения
+
+function loadMessages() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'src/jsonrpc.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.result) {
+                    var messages = response.result;
+                    let newLastMessageId = lastMessageId; // Переменная для отслеживания нового последнего ID
+                    messages.forEach(function(message) {
+                        // Добавляем только новые сообщения (с ID больше последнего)
+                        if (message.id > lastMessageId) {
+                            displayMessage(message.username, message.message);
+                            newLastMessageId = Math.max(newLastMessageId, message.id); // Обновляем последний ID
                         }
-                    } else {
-                        console.error("Request failed with status:", xhr.status);
-                    }
+                    });
+                    lastMessageId = newLastMessageId; // Обновляем последний ID после обработки всех сообщений
+                } else if (response.error) {
+                    console.error("Ошибка загрузки сообщений: " + response.error.message);
                 }
-            };
-            xhr.onerror = function() {
-                console.error("Request failed");
-            };
-            xhr.send(JSON.stringify({
-                jsonrpc: "2.0",
-                method: "loadMessages",
-                params: { ad_id: <?php echo $ad_id; ?> },
-                id: 1
-            }));
+            } catch (e) {
+                console.error("Ошибка парсинга JSON:", e);
+                console.error("Response:", xhr.responseText);
+            }
         }
+    };
+    xhr.onerror = function() {
+        console.error("Request failed");
+    };
+    xhr.send(JSON.stringify({
+        jsonrpc: "2.0",
+        method: "loadMessages",
+        params: { ad_id: <?php echo $ad_id; ?> },
+        id: 1
+    }));
+}
 
-        loadMessages();
-        setInterval(loadMessages, 5000);
+function displayMessage(username, message) {
+    var chatBox = document.getElementById('chat-box');
+    if (chatBox) {
+        var messageElement = document.createElement('div');
+        messageElement.textContent = username + ': ' + message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+}
 
+// Загружаем сообщения с интервалом 5 секунд
+loadMessages();
+setInterval(loadMessages, 2000);
+
+		
         function getEscrowStatus() {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'src/functions.php', true);
@@ -367,32 +372,61 @@ if ($ad['trade_type'] === 'buy') {
                             if (response.result) {
                                 document.getElementById('ad-status').textContent = response.result.status;
 								const rawStatus = response.result.raw_status;
-								const userRole = "<?php echo $current_user_role; ?>"; // Передаём роль из PHP в JS
+								const buyer_Confirmed = parseInt(response.result.buyer_confirmed);
+								const seller_Confirmed = parseInt(response.result.seller_confirmed);
+								const userRole = "<?php echo $current_user_role; ?>"; 
 								const adId = "<?php echo $ad_id; ?>";
 							let buttonsHtml = "";
-							console.log("User role:", userRole);
+							console.log("!!!!!!!!User role:", userRole);
 							console.log("rawStatus:", rawStatus);
-							console.log("buttonsHtml:", buttonsHtml);
+							console.log("buyerConfirmed:", buyer_Confirmed);
+							console.log("sellerConfirmed:", seller_Confirmed);
 							switch (rawStatus) {
 								case 'btc_deposited':
-									if (userRole === 'seller') {
+																	
+									if (userRole === 'buyer') {
 										buttonsHtml = `
-										<form method="POST" action="src/confirm_fiat_payment.php">
+										<form method="POST" action="src/confirm_fiat_paid.php">
 											<input type="hidden" name="ad_id" value="${adId}">
-											<button type="submit" name="fiat_received" class="btn btn-success">Подтвердить получение фиата</button>
+											<button type="submit" name="fiat_paid" class="btn btn-success">Я оплатил</button>
 										</form>
 										`;
 									}
 								break;
+								
 								case 'fiat_paid':
-									if (userRole === 'buyer') {
-										buttonsHtml = `
-										<form method="POST" action="src/release_btc.php">
-											<input type="hidden" name="ad_id" value="${adId}">
-											<button type="submit" name="release_btc" class="btn btn-primary">Подписать и завершить сделку</button>
-										</form>
-										`;
-									}
+    if (userRole === 'buyer') {
+        if (response.result.seller_confirmed === 1) {
+            // Показываем кнопку завершения сделки только когда продавец подтвердил получение фиата
+            buttonsHtml = `
+            <form method="POST" action="src/release_btc.php">
+                <input type="hidden" name="ad_id" value="${adId}">
+                <button type="submit" name="release_btc" class="btn btn-primary">Подписать и завершить сделку</button>
+            </form>
+            `;
+        } else {
+            buttonsHtml = `<p class="text-muted">Ожидается подтверждение фиата от продавца</p>`;
+        }
+    } 
+
+    if (userRole === 'seller') {
+        buttonsHtml = `
+        <form method="POST" action="src/confirm_fiat_payment.php">
+            <input type="hidden" name="ad_id" value="${adId}">
+            <button type="submit" name="fiat_received" class="btn btn-success">Подтвердить получение фиата</button>
+        </form>
+        `;
+
+        if (response.result.buyer_confirmed === 1 && response.result.seller_confirmed === 0) {
+            buttonsHtml += `
+            <form method="POST" action="src/resolve_dispute.php">
+                <input type="hidden" name="ad_id" value="${adId}">
+                <button type="submit" name="dispute" class="btn btn-danger">Оспорить</button>
+            </form>
+            `;
+        }
+    }
+                                    
 								break;
 								case 'disputed':
 									if (userRole === 'admin') {
@@ -406,6 +440,7 @@ if ($ad['trade_type'] === 'buy') {
 								}
 								break;
 						}
+						console.log("buttonsHtml:", buttonsHtml);
 						document.querySelector('.action-buttons').innerHTML = buttonsHtml;
                             } else if (response.error) {
                                 console.error("Ошибка получения статуса сделки: " + response.error.message);
@@ -419,17 +454,20 @@ if ($ad['trade_type'] === 'buy') {
                     }
                 }
             };
+			console.error("!!!---getEscrowStatus---!!!:", <?php echo $ad_id; ?>);
             xhr.onerror = function() {
                 console.error("Request failed");
             };
-            xhr.send(JSON.stringify({
+            console.log("Отправляемый ad_id:", "<?php echo $ad_id; ?>");
+
+			xhr.send(JSON.stringify({
                 jsonrpc: "2.0",
                 method: "getEscrowStatus",
-                params: { ad_id: <?php echo $ad_id; ?> },
+                params: { ad_id: "<?php echo $ad_id; ?>" },
                 id: 1
             }));
         }
-
+		getEscrowStatus();
         setInterval(getEscrowStatus, 5000);
     });
     </script>

@@ -75,34 +75,33 @@ function get_escrow_status($ad_id) {
 
     if (empty($ad_id)) {
         error_log("get_escrow_status error: ad_id is missing");
-        return json_encode(['error' => 'ad_id is missing']);
+        return ['error' => 'ad_id is missing'];
     }
 
-    $stmt = $CONNECT->prepare("SELECT status FROM escrow_deposits WHERE ad_id = ?");
+    $stmt = $CONNECT->prepare("SELECT status, buyer_confirmed, seller_confirmed FROM escrow_deposits WHERE ad_id = ?");
     if (!$stmt) {
         error_log("get_escrow_status prepare error: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Failed to prepare statement', 'mysqli_error' => mysqli_error($CONNECT)]);
+        return ['error' => 'Failed to prepare statement', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $stmt->bind_param("i", $ad_id);
     if (!$stmt->execute()) {
         error_log("get_escrow_status execute error: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Failed to execute statement', 'mysqli_error' => mysqli_error($CONNECT)]);
+        return ['error' => 'Failed to execute statement', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $escrow_result = $stmt->get_result();
     if (!$escrow_result) {
         error_log("get_escrow_status get_result error: " . mysqli_error($CONNECT));
-        return json_encode(['error' => 'Failed to get result', 'mysqli_error' => mysqli_error($CONNECT)]);
+        return ['error' => 'Failed to get result', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $escrow = mysqli_fetch_assoc($escrow_result);
     if (!$escrow) {
         error_log("get_escrow_status: Escrow not found for ad_id: $ad_id");
-        return json_encode(['error' => 'Escrow not found', 'ad_id' => $ad_id]);
+        return ['error' => 'Escrow not found', 'ad_id' => $ad_id];
     }
 
-    // Массив соответствий для статусов
     $status_map = [
         'waiting_deposit' => 'Waiting for BTC deposit',
         'btc_deposited' => 'BTC deposited',
@@ -112,14 +111,16 @@ function get_escrow_status($ad_id) {
         'refunded' => 'Funds refunded',
     ];
 
-    // Преобразуем статус в более понятный для пользователя
-    $user_friendly_status = isset($status_map[$escrow['status']]) ? $status_map[$escrow['status']] : $escrow['status'];
+    $user_friendly_status = $status_map[$escrow['status']] ?? $escrow['status'];
 
     return [
-    'status' => $user_friendly_status,
-    'raw_status' => $escrow['status']
-	];
+        'status' => $user_friendly_status,
+        'raw_status' => $escrow['status'],
+        'buyer_confirmed' => (int)$escrow['buyer_confirmed'],
+        'seller_confirmed' => (int)$escrow['seller_confirmed']
+    ];
 }
+
 
 
 // Обработчик запросов
@@ -146,7 +147,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
     switch ($method) {
         case 'getEscrowStatus':
+			$raw_input = file_get_contents("php://input");
+			error_log("+++ RAW INPUT: " . $raw_input);
+
+			$input = json_decode($raw_input, true);
 			$ad_id = $input['params']['ad_id'] ?? null;
+			error_log("+++---case get_escrow_status ad_id: $ad_id");
 			$result = get_escrow_status($ad_id);
 			echo json_encode([
 				'jsonrpc' => '2.0',
@@ -216,15 +222,20 @@ function load_messages($ad_id) {
     $response = [];
     while ($message = mysqli_fetch_assoc($messages)) {
         $username = ($message['user_id'] == $_SESSION['user_id']) ? 'You' : 'Not you';
-        $response[] = ['username' => $username, 'message' => htmlspecialchars($message['message'])];
+        $response[] = [
+            'id' => $message['id'], // добавляем сюда
+            'username' => $username,
+            'message' => htmlspecialchars($message['message'])
+        ];
     }
 
     if (empty($response)) {
         error_log("load_messages: No messages found for ad_id: $ad_id");
     }
 
-    return ['result' => $response];
+    return ['result' => $response]; // <-- не забываем вернуть результат
 }
+
 
 function get_recipient_id($ad_id, $sender_id) {
     global $CONNECT;
