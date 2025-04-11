@@ -107,6 +107,7 @@ function get_escrow_status($ad_id) {
         'btc_deposited' => 'BTC deposited',
         'fiat_paid' => 'Fiat paid',
         'btc_released' => 'BTC released',
+		'completed' => 'The deal is completed',
         'disputed' => 'Disputed transaction',
         'refunded' => 'Funds refunded',
     ];
