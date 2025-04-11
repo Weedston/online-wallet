@@ -190,6 +190,8 @@ if ($ad['trade_type'] === 'buy') {
 				<td id="ad-status">Загрузка...</td>
 			</tr>
         </table>
+		<div id="service-log"></div>
+		
 		<div class="action-buttons"></div>
 
 		
@@ -303,6 +305,41 @@ if ($ad['trade_type'] === 'buy') {
                 id: 1
             }));
         });
+
+
+function fetchServiceComments() {
+    fetch('src/functions.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'getServiceComments',
+            params: {
+                ad_id: <?= $ad_id ?>
+            },
+            id: 1
+        })
+    })
+	
+
+    .then(res => res.json())
+    .then(data => {
+        const comments = data.result || [];
+        const container = document.getElementById('service-log');
+        container.innerHTML = '';
+        comments.forEach(entry => {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>[${entry.timestamp}]</strong> (${entry.type}): ${entry.message}`;
+            container.appendChild(div);
+        });
+    });
+
+}
+
+fetchServiceComments();
+setInterval(fetchServiceComments, 5000);
 
 let lastMessageId = 0; // Глобальная переменная для хранения ID последнего сообщения
 

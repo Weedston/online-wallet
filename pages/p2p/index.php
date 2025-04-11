@@ -20,7 +20,6 @@ $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
 // Check if "Accept" button was pressed
-// Check if "Accept" button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
@@ -56,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
             $error_message = "Error: Buyer wallet not found.";
         }
 
-        $central_wallet_address = "tb1qcj9684tlel0hazc0clahzzc2lp50m3t2nc0gju";  // Set the central wallet address
+        $central_wallet_address = get_setting('escrow_wallet_address', $CONNECT);
+        //$central_wallet_address = "tb1qcj9684tlel0hazc0clahzzc2lp50m3t2nc0gju";  // Set the central wallet address
 
         // Validate the buyer's wallet
         if (empty($error_message)) {
@@ -74,24 +74,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                 }
 
                 if (empty($error_message)) {
-                    // Create escrow transaction
-                    $inputs = [["txid" => $txid, "vout" => $vout]];
+                    // Calculate network fee using estimatefee
+                    $estimate_fee = bitcoinRPC('estimatefee', [2]); // 2 blocks confirmation target
+                    $network_fee = $estimate_fee * 1000; // Fee per kilobyte, multiply by 1000 to get fee in BTC
+
+                    // Calculate service fee (1%)
                     $service_fee = $btc_amount * 0.01; // 1% service fee
-                    $escrow_amount = $btc_amount - $service_fee;
+                    $escrow_amount = $btc_amount - $service_fee - $network_fee; // Amount for escrow after service and network fees
 
                     // Ensure the amounts are correctly formatted
                     $escrow_amount = number_format($escrow_amount, 8, '.', '');
                     $service_fee = number_format($service_fee, 8, '.', '');
+                    $network_fee = number_format($network_fee, 8, '.', '');
 
                     // Sum of outputs must be equal to the input amount
-                    $change_amount = $amount - ($escrow_amount + $service_fee);
+                    $change_amount = $amount - ($escrow_amount + $service_fee + $network_fee);
                     if ($change_amount < 0) {
                         $error_message = "Error: The sum of outputs is greater than the input amount.";
                     }
 
+                    $service_fee_address = get_setting('service_fee_address', $CONNECT);
                     $outputs = [
                         $central_wallet_address => (float)$escrow_amount,
-                        "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn" => (float)$service_fee  // Replace with actual service address
+                        $service_fee_address => (float)$service_fee  // Replace with actual service address
                     ];
 
                     if ($change_amount > 0) {
@@ -100,24 +105,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
 
                     $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
                     error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
-                    if (isset($raw_tx_result)) {
-                        // Sign the transaction using the wallet
-                        $signed_tx_result = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx_result]);
-                        error_log("Signed TX Result: " . json_encode($signed_tx_result)); // Log the signed transaction result
-                        if (isset($signed_tx_result['hex'])) {
-                            $signed_tx = $signed_tx_result['hex'];
-                            $txid_result = bitcoinRPC('sendrawtransaction', [$signed_tx]);
-                            if (isset($txid_result)) {
-                                $txid = $txid_result;
-                            } else {
-                                $error_message = "Error: Failed to send raw transaction.";
-                            }
+                    if (isset($raw_tx_result)) if (isset($txid_result) && preg_match('/^[a-f0-9]{64}$/i', $txid_result)) {
+                        $txid = $txid_result;
+                        addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
+                        // Только здесь пишем в БД и обновляем объявление
+                        $insert_query = "INSERT INTO escrow_deposits (
+                            ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status
+                        ) VALUES (
+                            '$ad_id', '$escrow_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited'
+                        )";
+                        mysqli_query($CONNECT, $insert_query);
+
+                        $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
+                        if (mysqli_query($CONNECT, $update_query)) {
+                            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
+                            header("Location: p2p-trade_details?ad_id=$ad_id");
+                            exit();
                         } else {
-                            $error_message = "Error: Failed to sign raw transaction.";
+                            $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
                         }
                     } else {
-                        $error_message = "Error: Failed to create raw transaction.";
+                        $error_message = "Error: Failed to send raw transaction.";
                     }
+
                 }
             }
 

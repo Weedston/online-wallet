@@ -598,3 +598,91 @@ table td button:hover {
     color: #ffbaba;
     border: 1px solid #ff5c5c;
 }
+
+/* Контейнер для логов */
+#service-log {
+    background: #1e1e1e; /* Темный фон */
+    color: white; /* Белый цвет текста */
+    padding: 20px; /* Отступы внутри блока */
+    border-radius: 10px; /* Скругленные углы */
+    box-shadow: 0 4px 8px rgba(255, 165, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3); /* Тень */
+    max-height: 400px; /* Максимальная высота */
+    overflow-y: auto; /* Вертикальная прокрутка */
+    font-family: Arial, sans-serif; /* Шрифт */
+    margin: 20px auto; /* Центрирование блока */
+    width: 90%; /* Ширина блока */
+    border: 2px solid rgba(255, 165, 0, 0.5); /* Оранжевая рамка */
+}
+
+/* Заголовок внутри блока */
+#service-log h3 {
+    color: #FFD700; /* Золотистый цвет заголовка */
+    margin-bottom: 15px; /* Отступ снизу */
+    font-size: 1.5em; /* Размер шрифта заголовка */
+}
+
+/* Логи в блоке */
+#service-log .log-entry {
+    background-color: #2a2a2a; /* Тёмный фон для каждой записи */
+    margin-bottom: 10px; /* Отступ снизу */
+    padding: 10px; /* Отступы внутри записи */
+    border-radius: 5px; /* Скругленные углы */
+    border: 1px solid #444; /* Темная граница */
+}
+
+/* Для каждого сообщения в логе */
+#service-log .log-entry span {
+    color: #FFD700; /* Золотистый цвет для выделения */
+    font-weight: bold; /* Жирное выделение */
+}
+
+/* Для логов с ошибками */
+#service-log .log-entry.error {
+    background-color: #f44336; /* Красный фон для ошибок */
+    border-color: #d32f2f; /* Темно-красная рамка */
+}
+
+/* Для логов с успешными действиями */
+#service-log .log-entry.success {
+    background-color: #4CAF50; /* Зеленый фон для успеха */
+    border-color: #388e3c; /* Темно-зеленая рамка */
+}
+
+/* Для логов с предупреждениями */
+#service-log .log-entry.warning {
+    background-color: #ffeb3b; /* Желтый фон для предупреждений */
+    border-color: #fbc02d; /* Желтая рамка */
+    color: #000; /* Черный текст для лучшей читаемости */
+}
+
+/* Стиль для иконки ошибки */
+#service-log .log-entry .icon-error {
+    color: #d32f2f;
+    margin-right: 8px; /* Отступ от иконки */
+}
+
+/* Стиль для иконки успешной записи */
+#service-log .log-entry .icon-success {
+    color: #388e3c;
+    margin-right: 8px;
+}
+
+/* Стиль для иконки предупреждения */
+#service-log .log-entry .icon-warning {
+    color: #fbc02d;
+    margin-right: 8px;
+}
+
+/* Скролл в блоке логов */
+#service-log::-webkit-scrollbar {
+    width: 8px;
+}
+
+#service-log::-webkit-scrollbar-thumb {
+    background-color: #FF9900; /* Оранжевый цвет для скролл-бара */
+    border-radius: 5px;
+}
+
+#service-log::-webkit-scrollbar-track {
+    background-color: #333;
+}

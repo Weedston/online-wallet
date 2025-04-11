@@ -4,6 +4,38 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+function get_setting($name, $CONNECT) {
+    $stmt = $CONNECT->prepare("SELECT value FROM settings WHERE name = ?");
+    $stmt->bind_param("s", $name);
+    $stmt->execute();
+    $stmt->bind_result($value);
+    $stmt->fetch();
+    $stmt->close();
+    return $value;
+}
+
+function addServiceComment($ad_id, $comment_text, $type = 'info') {
+    global $CONNECT;
+
+    $timestamp = date('Y-m-d H:i:s');
+    $entry = [
+        'timestamp' => $timestamp,
+        'type' => $type,
+        'message' => $comment_text
+    ];
+
+    // Получаем текущее содержимое
+    $query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
+    $row = mysqli_fetch_assoc($query);
+    $comments = json_decode($row['service_comments'], true) ?: [];
+
+    $comments[] = $entry;
+    $encoded = mysqli_real_escape_string($CONNECT, json_encode($comments, JSON_UNESCAPED_UNICODE));
+
+    // Обновляем
+    mysqli_query($CONNECT, "UPDATE escrow_deposits SET service_comments = '$encoded' WHERE ad_id = '$ad_id'");
+}
+
 function add_notification($user_id, $message) {
     global $CONNECT;
 
@@ -161,7 +193,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 				'id' => $input['id'] ?? null
 			]);
 		break;
-		
+		case 'getServiceComments':
+		if (!$ad_id) {
+			echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
+			exit();
+		}
+		$query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
+		$row = mysqli_fetch_assoc($query);
+		$comments = json_decode($row['service_comments'], true) ?: [];
+
+		echo json_encode([
+			'jsonrpc' => '2.0',
+			'result' => $comments,
+			'id' => $jsonrpc['id'] ?? null
+		]);
+		break;		
         case 'loadMessages':
             if (!$ad_id) {
                 echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);

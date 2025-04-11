@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ad_id'])) {
     mysqli_stmt_close($stmt);
 
     // Получить подтверждения обеих сторон
-    $stmt = mysqli_prepare($CONNECT, "SELECT buyer_confirmed, seller_confirmed FROM escrow_deposits WHERE ad_id = ?");
+    $stmt = mysqli_prepare($CONNECT, "SELECT buyer_confirmed, seller_confirmed, buyer_id, amount_btc FROM escrow_deposits WHERE ad_id = ?");
     mysqli_stmt_bind_param($stmt, "i", $ad_id);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -27,85 +27,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ad_id'])) {
 
     // Если оба подтвердили, завершаем сделку
     if ($status['buyer_confirmed'] == 1 && $status['seller_confirmed'] == 1) {
-        $stmt = mysqli_prepare($CONNECT, "UPDATE escrow_deposits SET status = 'btc_released' WHERE ad_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $ad_id);
+        // Перевести BTC на адрес покупателя
+        $buyer_id = $status['buyer_id'];
+        $amount_btc = $status['amount_btc'];
+
+        // Получаем BTC-кошелек покупателя
+        $stmt = mysqli_prepare($CONNECT, "SELECT wallet FROM members WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $buyer_id);
         mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $buyer_wallet = mysqli_fetch_assoc($result)['wallet'];
         mysqli_stmt_close($stmt);
 
-        // (опционально) лог, уведомление и т.п.
+        // Получаем адрес для отправки BTC (из escrow_address)
+        $stmt = mysqli_prepare($CONNECT, "SELECT address FROM escrow_address WHERE ad_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $ad_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $escrow_address = mysqli_fetch_assoc($result)['address'];
+        mysqli_stmt_close($stmt);
+
+        // Вызываем функцию Bitcoin RPC для перевода средств
+        try {
+            // Переводим BTC с адреса escrow_address на адрес покупателя
+            $txid = bitcoinRPC('sendfrom', [$escrow_address, $buyer_wallet, $amount_btc]);
+
+            // Обновляем статус сделки и сохраняем transaction_id
+            $stmt = mysqli_prepare($CONNECT, "UPDATE escrow_deposits SET status = 'btc_released', transaction_id = ? WHERE ad_id = ?");
+            mysqli_stmt_bind_param($stmt, "si", $txid, $ad_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+            // (опционально) лог, уведомление и т.п.
+        } catch (Exception $e) {
+            // Обработка ошибки, если перевод не удался
+            echo "Ошибка при отправке BTC: " . $e->getMessage();
+            exit;
+        }
     }
 
-   //header("Location: ../p2p-trade_details?ad_id=$ad_id");
+    header("Location: /p2p-trade_details?ad_id=$ad_id");
     exit;
 } else {
     echo "Неверный запрос.";
 }
 
-// Подключаемся к RPC-серверу
-$rpc = bitcoinRPC();  // Функция для работы с Bitcoin RPC (предположительно, ты её уже реализовал)
-
-$query = "SELECT * FROM escrow_deposits WHERE ad_id = ?";
-$stmt = mysqli_prepare($CONNECT, $query);
-mysqli_stmt_bind_param($stmt, "i", $ad_id);
-mysqli_stmt_execute($stmt);
-$escrow = mysqli_stmt_get_result($stmt);
-$escrow_data = mysqli_fetch_assoc($escrow);
-mysqli_stmt_close($stmt);
-
-// Проверка статуса сделки
-if ($escrow_data['status'] !== 'btc_released') {
-    die('Сделка ещё не оплачена.');
-}
-
-// Получаем адрес покупателя и продавца, а также их приватные ключи
-$buyer_id = $escrow_data['buyer_id'];
-$seller_id = $escrow_data['seller_id'];
-
-// Получаем данные о пользователях
-$query = "SELECT * FROM members WHERE id IN (?, ?)";
-$stmt = mysqli_prepare($CONNECT, $query);
-mysqli_stmt_bind_param($stmt, "ii", $buyer_id, $seller_id);
-mysqli_stmt_execute($stmt);
-$members = mysqli_stmt_get_result($stmt);
-$member_data = mysqli_fetch_all($members, MYSQLI_ASSOC);
-mysqli_stmt_close($stmt);
-
-$buyer_privkey = $member_data[0]['privkey']; // Приватный ключ покупателя
-$seller_privkey = $member_data[1]['privkey']; // Приватный ключ продавца
-$buyer_address = $member_data[0]['wallet']; // Адрес покупателя
-
-// Создаём raw транзакцию
-$txid = $escrow_data['txid'];
-$vout_index = findVoutIndex($rpc, $txid, $escrow_data['escrow_address']);  // Функция для нахождения vout (выхода) по multisig-адресу
-
-$fee = 0.00001;  // Примерная комиссия
-$rawTx = $rpc->createrawtransaction(
-    [["txid" => $txid, "vout" => $vout_index]],  // Указываем выход из мультисиг
-    [$buyer_address => floatval($escrow_data['btc_amount'] - $fee)]  // Переводим сумму минус комиссия
-);
-
-// Подписываем транзакцию продавцом
-$signed1 = $rpc->signrawtransactionwithkey($rawTx, [$seller_privkey]);
-
-// Подписываем транзакцию покупателем
-$signed2 = $rpc->signrawtransactionwithkey($signed1['hex'], [$buyer_privkey]);
-
-if ($signed2['complete'] !== true) {
-    die('Не удалось подписать транзакцию.');
-}
-
-// Отправляем транзакцию в сеть
-$txid_sent = $rpc->sendrawtransaction($signed2['hex']);
-
-// Обновляем статус сделки в базе данных
-$stmt = mysqli_prepare($CONNECT, "UPDATE escrow_deposits SET status = 'btc_released', txid = ? WHERE ad_id = ?");
-mysqli_stmt_bind_param($stmt, "si", $txid_sent, $ad_id);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_close($stmt);
-
-// Дополнительно можно добавить логи и уведомления
-
-header("Location: ../p2p-trade_details?ad_id=$ad_id");  // Редирект на страницу сделки
+header("Location: /p2p-trade_details?ad_id=$ad_id");  // Редирект на страницу сделки
 exit;
-
 ?>
