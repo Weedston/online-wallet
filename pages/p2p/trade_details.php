@@ -436,10 +436,7 @@ setInterval(loadMessages, 2000);
         if (response.result.seller_confirmed === 1) {
             // Показываем кнопку завершения сделки только когда продавец подтвердил получение фиата
             buttonsHtml = `
-            <form method="POST" action="src/release_btc.php">
-                <input type="hidden" name="ad_id" value="${adId}">
-                <button type="submit" name="release_btc" class="btn btn-primary">Подписать и завершить сделку</button>
-            </form>
+            
             `;
         } else {
             buttonsHtml = `<p class="text-muted">Ожидается подтверждение фиата от продавца</p>`;
