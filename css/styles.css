@@ -618,7 +618,7 @@ table td button:hover {
 #service-log h3 {
     color: #FFD700; /* Золотистый цвет заголовка */
     margin-bottom: 15px; /* Отступ снизу */
-    font-size: 1.5em; /* Размер шрифта заголовка */
+    font-size: 1em; /* Размер шрифта заголовка */
 }
 
 /* Логи в блоке */
