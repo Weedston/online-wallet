@@ -14,6 +14,150 @@ function get_setting($name, $CONNECT) {
     return $value;
 }
 
+function getBTCBalance($address) {
+    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$address]]);
+    $balance = 0.0;
+    foreach ($utxos as $utxo) {
+        if (!empty($utxo['spendable'])) {
+            $balance += floatval($utxo['amount']);
+        }
+    }
+    return round($balance, 8);
+}
+
+function sendToEscrow($from_address, $amount_btc, $CONNECT) {
+	$service_fee_address = get_setting('service_fee_address', $CONNECT);
+	$escrow_address = get_setting('escrow_wallet_address', $CONNECT);
+    // Получаем UTXO для отправителя
+    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$from_address]]);
+    if (empty($utxos)) {
+        return ['success' => false, 'error' => 'No UTXO found for address.'];
+    }
+
+    // Находим подходящие UTXO
+    $total_input = 0;
+    $inputs = [];
+    foreach ($utxos as $utxo) {
+        $inputs[] = [
+            'txid' => $utxo['txid'],
+            'vout' => $utxo['vout']
+        ];
+        $total_input += $utxo['amount'];
+        if ($total_input >= ($amount_btc * 1.01)) break; // +1% с запасом под fee
+    }
+
+    // Оценка комиссии сети
+    $estimate_fee = bitcoinRPC('estimatefee', [2]);
+    if (!is_numeric($estimate_fee) || $estimate_fee <= 0) {
+        $estimate_fee = 0.00001;
+    }
+    $network_fee = $estimate_fee * 0.25; // ~250 байт
+
+    // Считаем комиссию сервиса
+    $service_fee = $amount_btc * 0.01;
+    $total_output = $amount_btc + $service_fee + $network_fee;
+
+    if ($total_input < $total_output) {
+        return ['success' => false, 'error' => 'Insufficient input funds (incl. fee and service fee).'];
+    }
+
+    // Выходы
+    $outputs = [
+        $escrow_address => round($amount_btc, 8),
+        $service_fee_address => round($service_fee, 8),
+    ];
+
+    // Возврат сдачи
+    $change = $total_input - $total_output;
+    if ($change > 0.000005) {
+        $outputs[$from_address] = round($change, 8);
+    }
+
+    // Создание транзакции
+    $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+    if (!$raw_tx) {
+        return ['success' => false, 'error' => 'Failed to create raw transaction.'];
+    }
+
+    // Подписание
+    $signed_tx = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx]);
+    if (empty($signed_tx['complete']) || !$signed_tx['complete']) {
+        return ['success' => false, 'error' => 'Transaction signing failed.'];
+    }
+
+    // Отправка
+    $txid = bitcoinRPC('sendrawtransaction', [$signed_tx['hex']]);
+    if (!$txid || !preg_match('/^[a-f0-9]{64}$/i', $txid)) {
+        return ['success' => false, 'error' => 'Failed to send transaction.'];
+    }
+
+    return ['success' => true, 'txid' => $txid];
+}
+
+
+function sendFromCentralWallet($to_address, $amount_btc, $CONNECT) {
+    $central_address = get_setting('escrow_wallet_address', $CONNECT);
+
+    // Получаем UTXO
+    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$central_address]]);
+    if (empty($utxos)) {
+        return ['error' => 'No UTXOs found for central wallet.'];
+    }
+
+    $utxo = $utxos[0];
+    $txid = $utxo['txid'];
+    $vout = $utxo['vout'];
+    $input_amount = $utxo['amount'];
+
+    // Комиссия (фиксированная или расчётная)
+    // Получаем стоимость комиссии за килобайт
+	$fee_per_kb = bitcoinRPC('estimatefee', [2]);
+
+	// Убедимся, что результат является числом
+	$fee_per_kb = is_numeric($fee_per_kb) ? (float)$fee_per_kb : 0.00001; // если не число, используем fallback
+
+    if ($fee_per_kb <= 0) $fee_per_kb = 0.00001; // fallback
+    $fee = $fee_per_kb * 0.25; // ≈250 байт
+
+    if ($amount_btc <= $fee) {
+        return ['error' => 'Amount is too small to cover network fee.'];
+    }
+
+    $send_amount = $amount_btc - $fee;
+
+    if ($send_amount <= 0) {
+        return ['error' => 'Final amount after fee is too small or negative.'];
+    }
+
+    // Если UTXO меньше, чем запрошено — ошибка
+    if ($input_amount < $amount_btc) {
+        return ['error' => "Insufficient balance in UTXO. Needed: $amount_btc, have: $input_amount"];
+    }
+
+    $inputs = [[ 'txid' => $txid, 'vout' => $vout ]];
+    $outputs = [
+        $to_address => (float)number_format($send_amount, 8, '.', '')
+    ];
+
+    // Добавим сдачу, если есть
+    $change = $input_amount - $amount_btc;
+    if ($change > 0.00001) {
+        $outputs[$central_address] = (float)number_format($change, 8, '.', '');
+    }
+
+    $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+    $signed_tx = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx]);
+
+    if (empty($signed_tx['complete']) || empty($signed_tx['hex'])) {
+        return ['error' => 'Failed to sign transaction.'];
+    }
+
+    $txid_sent = bitcoinRPC('sendrawtransaction', [$signed_tx['hex']]);
+
+    return ['txid' => $txid_sent];
+}
+
+
 function addServiceComment($ad_id, $comment_text, $type = 'info') {
     global $CONNECT;
 

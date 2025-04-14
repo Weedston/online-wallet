@@ -25,10 +25,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $response = [];
         if ($request['method'] == 'deleteAd') {
             $ad_id = intval($request['params']['ad_id']);
-            $delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
             $delete_payment_methods_query = "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'";
+			$delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
 
-            if (mysqli_query($CONNECT, $delete_query) && mysqli_query($CONNECT, $delete_payment_methods_query)) {
+            if (mysqli_query($CONNECT, $delete_payment_methods_query) && mysqli_query($CONNECT, $delete_query)) {
                 $response = [
                     'jsonrpc' => '2.0',
                     'result' => 'Ad successfully deleted!',

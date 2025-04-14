@@ -19,34 +19,34 @@ $balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id =
 $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
-// Check if "Accept" button was pressed
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     $ad_id = intval($_POST['ad_id']);
     $buyer_id = $_SESSION['user_id'];
     $btc_amount = floatval($_POST['btc_amount']);
 
-    // Get ad info
+    // Получаем данные объявления
     $ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
     $ad_result = mysqli_query($CONNECT, $ad_query);
     $ad = mysqli_fetch_assoc($ad_result);
 
-    // Balance check for "buy" trade type
+    // Проверка баланса покупателя, если это "buy"
     if ($ad['trade_type'] == 'buy') {
         $user_query = "SELECT balance FROM members WHERE id = '$buyer_id'";
         $user_result = mysqli_query($CONNECT, $user_query);
         $user = mysqli_fetch_assoc($user_result);
-        
+
         if ($btc_amount > $user['balance']) {
             $error_message = "Error: Insufficient BTC balance for the transaction.";
         }
     }
 
+    // Проверка диапазона
     if (empty($error_message) && ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc'])) {
         $error_message = "Error: The BTC amount must be within the specified range.";
     }
 
     if (empty($error_message)) {
-        // Get buyer's wallet address
+        // Получаем кошелек и pubkey покупателя
         $buyer_wallet_result = mysqli_query($CONNECT, "SELECT wallet, pubkey FROM members WHERE id = '$buyer_id'");
         if ($buyer_wallet_row = mysqli_fetch_assoc($buyer_wallet_result)) {
             $buyer_wallet = $buyer_wallet_row['wallet'];
@@ -55,106 +55,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
             $error_message = "Error: Buyer wallet not found.";
         }
 
-        $central_wallet_address = get_setting('escrow_wallet_address', $CONNECT);
-        //$central_wallet_address = "tb1qcj9684tlel0hazc0clahzzc2lp50m3t2nc0gju";  // Set the central wallet address
+        $escrow_address = get_setting('escrow_wallet_address', $CONNECT);
+        $service_fee_address = get_setting('service_fee_address', $CONNECT);
 
-        // Validate the buyer's wallet
         if (empty($error_message)) {
-            // Get unspent transaction outputs (UTXOs) for the buyer
-            $unspent_outputs = bitcoinRPC('listunspent', [1, 9999999, [$buyer_wallet]]);
-            if (empty($unspent_outputs)) {
-                $error_message = "Error: No unspent outputs found for the buyer.";
-            } else {
-                $txid = $unspent_outputs[0]['txid'];
-                $vout = $unspent_outputs[0]['vout'];
-                $amount = $unspent_outputs[0]['amount']; // Get the amount of the UTXO
+            // Отправляем BTC в эскроу с учетом комиссии
+            $tx_result = sendToEscrow($buyer_wallet, $btc_amount, $CONNECT);
 
-                if ($amount < $btc_amount) {
-                    $error_message = "Error: Insufficient UTXO amount.";
-                }
+            if ($tx_result['success']) {
+                $txid = $tx_result['txid'];
+                $seller_pubkey = $ad['seller_pubkey'];
+                $arbiter_pubkey = $ad['arbiter_pubkey'];
 
-                if (empty($error_message)) {
-                    // Calculate network fee using estimatefee
-                    $estimate_fee = bitcoinRPC('estimatefee', [2]); // 2 blocks confirmation target
-                    $network_fee = $estimate_fee * 1000; // Fee per kilobyte, multiply by 1000 to get fee in BTC
+                addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
 
-                    // Calculate service fee (1%)
-                    $service_fee = $btc_amount * 0.01; // 1% service fee
-                    $escrow_amount = $btc_amount - $service_fee - $network_fee; // Amount for escrow after service and network fees
-
-                    // Ensure the amounts are correctly formatted
-                    $escrow_amount = number_format($escrow_amount, 8, '.', '');
-                    $service_fee = number_format($service_fee, 8, '.', '');
-                    $network_fee = number_format($network_fee, 8, '.', '');
-
-                    // Sum of outputs must be equal to the input amount
-                    $change_amount = $amount - ($escrow_amount + $service_fee + $network_fee);
-                    if ($change_amount < 0) {
-                        $error_message = "Error: The sum of outputs is greater than the input amount.";
-                    }
-
-                    $service_fee_address = get_setting('service_fee_address', $CONNECT);
-                    $outputs = [
-                        $central_wallet_address => (float)$escrow_amount,
-                        $service_fee_address => (float)$service_fee  // Replace with actual service address
-                    ];
-
-                    if ($change_amount > 0) {
-                        $outputs[$buyer_wallet] = (float)number_format($change_amount, 8, '.', '');
-                    }
-
-                    $raw_tx_result = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-                    error_log("Raw TX Result: " . json_encode($raw_tx_result)); // Log the raw transaction result
-                    if (isset($raw_tx_result)) if (isset($txid_result) && preg_match('/^[a-f0-9]{64}$/i', $txid_result)) {
-                        $txid = $txid_result;
-                        addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
-                        // Только здесь пишем в БД и обновляем объявление
-                        $insert_query = "INSERT INTO escrow_deposits (
-                            ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status
-                        ) VALUES (
-                            '$ad_id', '$escrow_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited'
-                        )";
-                        mysqli_query($CONNECT, $insert_query);
-
-                        $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
-                        if (mysqli_query($CONNECT, $update_query)) {
-                            add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
-                            header("Location: p2p-trade_details?ad_id=$ad_id");
-                            exit();
-                        } else {
-                            $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
-                        }
-                    } else {
-                        $error_message = "Error: Failed to send raw transaction.";
-                    }
-
-                }
-            }
-
-            if (empty($error_message)) {
-                // Insert escrow deposit information into database
-                $insert_query = "INSERT INTO escrow_deposits (ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status, deposited) 
-                                 VALUES ('$ad_id', '$central_wallet_address', '$buyer_pubkey', '$ad[seller_pubkey]', '$ad[arbiter_pubkey]', '$txid', '$btc_amount', 'btc_deposited', 1)";
+                // Запись в escrow_deposits
+                $insert_query = "INSERT INTO escrow_deposits (
+                    ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status
+                ) VALUES (
+                    '$ad_id', '$escrow_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited'
+                )";
                 mysqli_query($CONNECT, $insert_query);
 
-                // Update ad status to "pending" and save buyer info
+                // Обновляем объявление
                 $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
                 if (mysqli_query($CONNECT, $update_query)) {
-                    // Add notification for the ad creator
                     add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
-
-                    // Redirect user to trade details page
                     header("Location: p2p-trade_details?ad_id=$ad_id");
                     exit();
                 } else {
                     $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
                 }
+            } else {
+                $error_message = $tx_result['error'] ?? 'Error: Failed to complete escrow transfer.';
             }
         }
     }
 }
 
 
+addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
 
 // Get all active ads
 $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN members ON ads.user_id = members.id WHERE ads.status = 'active'");

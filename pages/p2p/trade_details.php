@@ -190,7 +190,9 @@ if ($ad['trade_type'] === 'buy') {
 				<td id="ad-status">Загрузка...</td>
 			</tr>
         </table>
-		<div id="service-log"></div>
+		<div id="service-log">
+		
+		</div>
 		
 		<div class="action-buttons"></div>
 
@@ -329,6 +331,9 @@ function fetchServiceComments() {
         const comments = data.result || [];
         const container = document.getElementById('service-log');
         container.innerHTML = '';
+		const header = document.createElement('h3');
+		header.textContent = 'System Messages';
+		container.appendChild(header);
         comments.forEach(entry => {
             const div = document.createElement('div');
             div.innerHTML = `<strong>[${entry.timestamp}]</strong> (${entry.type}): ${entry.message}`;
