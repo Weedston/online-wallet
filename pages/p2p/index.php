@@ -19,55 +19,44 @@ $balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id =
 $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['access'])) {
+    // Защита от повторной отправки
+    if (!isset($_POST['form_token']) || $_POST['form_token'] !== $_SESSION['form_token']) {
+        die('Duplicate form submission or invalid token.');
+    }
+    unset($_SESSION['form_token']); // Предотвращаем повторную отправку
+
     $ad_id = intval($_POST['ad_id']);
-    $buyer_id = $_SESSION['user_id'];
-    $btc_amount = floatval($_POST['btc_amount']);
+    $user_id = $_SESSION['user_id'];
+    $btc_amount = null; // Можно получить из $ad, если нужно
 
-    // Получаем данные объявления
-    $ad_query = "SELECT * FROM ads WHERE id = '$ad_id'";
-    $ad_result = mysqli_query($CONNECT, $ad_query);
-    $ad = mysqli_fetch_assoc($ad_result);
+    // Получаем объявление
+    $ad_query = mysqli_query($CONNECT, "SELECT * FROM ads WHERE id = '$ad_id'");
+    $ad = mysqli_fetch_assoc($ad_query);
 
-    // Проверка баланса покупателя, если это "buy"
-    if ($ad['trade_type'] == 'buy') {
-        $user_query = "SELECT balance FROM members WHERE id = '$buyer_id'";
-        $user_result = mysqli_query($CONNECT, $user_query);
-        $user = mysqli_fetch_assoc($user_result);
-
-        if ($btc_amount > $user['balance']) {
-            $error_message = "Error: Insufficient BTC balance for the transaction.";
-        }
+    if (!$ad) {
+        die('Ad not found.');
     }
 
-    // Проверка диапазона
-    if (empty($error_message) && ($btc_amount < $ad['min_amount_btc'] || $btc_amount > $ad['max_amount_btc'])) {
-        $error_message = "Error: The BTC amount must be within the specified range.";
+    // Логика: определяем buyer и seller
+    if ($ad['trade_type'] === 'buy') {
+        $buyer_id = $ad['user_id'];
+        $seller_id = $user_id;
+    } else {
+        $buyer_id = $user_id;
+        $seller_id = $ad['user_id'];
     }
 
-    if (empty($error_message)) {
-        // Получаем кошелек и pubkey покупателя
-        $buyer_wallet_result = mysqli_query($CONNECT, "SELECT wallet, pubkey FROM members WHERE id = '$buyer_id'");
-        if ($buyer_wallet_row = mysqli_fetch_assoc($buyer_wallet_result)) {
-            $buyer_wallet = $buyer_wallet_row['wallet'];
-            $buyer_pubkey = $buyer_wallet_row['pubkey'];
-        } else {
-            $error_message = "Error: Buyer wallet not found.";
-        }
-
-        $escrow_address = get_setting('escrow_wallet_address', $CONNECT);
-        $service_fee_address = get_setting('service_fee_address', $CONNECT);
-
-        if (empty($error_message)) {
+if (empty($error_message)) {
             // Отправляем BTC в эскроу с учетом комиссии
-            $tx_result = sendToEscrow($buyer_wallet, $btc_amount, $CONNECT);
+            $tx_result = sendToEscrow($ad_id, $buyer_wallet, $btc_amount, $CONNECT);
 
             if ($tx_result['success']) {
                 $txid = $tx_result['txid'];
                 $seller_pubkey = $ad['seller_pubkey'];
                 $arbiter_pubkey = $ad['arbiter_pubkey'];
 
-                addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
+                //addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
 
                 // Запись в escrow_deposits
                 $insert_query = "INSERT INTO escrow_deposits (
@@ -78,23 +67,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
                 mysqli_query($CONNECT, $insert_query);
 
                 // Обновляем объявление
-                $update_query = "UPDATE ads SET status = 'pending', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
-                if (mysqli_query($CONNECT, $update_query)) {
-                    add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the pending status. Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction.");
-                    header("Location: p2p-trade_details?ad_id=$ad_id");
-                    exit();
-                } else {
-                    $error_message = "Error updating ad status: " . mysqli_error($CONNECT);
-                }
+    $update_query = "
+        UPDATE ads SET 
+            status = 'pending', 
+            buyer_id = '$buyer_id', 
+            seller_id = '$seller_id',
+            amount_btc = '$btc_amount' 
+        WHERE id = '$ad_id'
+    ";
+
+    if (mysqli_query($CONNECT, $update_query)) {
+        add_notification(
+            $ad['user_id'],
+            "Your ad #$ad_id has been accepted and is in the pending status. 
+            Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction."
+        );
+        header("Location: p2p-trade_details?ad_id=$ad_id");
+        exit();
+    } else {
+        echo "Error updating ad: " . mysqli_error($CONNECT);
+    }
             } else {
                 $error_message = $tx_result['error'] ?? 'Error: Failed to complete escrow transfer.';
             }
         }
+    $btc_amount = $ad['amount_btc'];
+
+    // Обновляем объявление
+    $update_query = "
+        UPDATE ads SET 
+            status = 'pending', 
+            buyer_id = '$buyer_id', 
+            seller_id = '$seller_id',
+            amount_btc = '$btc_amount' 
+        WHERE id = '$ad_id'
+    ";
+
+    if (mysqli_query($CONNECT, $update_query)) {
+        add_notification(
+            $ad['user_id'],
+            "Your ad #$ad_id has been accepted and is in the pending status. 
+            Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction."
+        );
+        header("Location: p2p-trade_details?ad_id=$ad_id");
+        exit();
+    } else {
+        echo "Error updating ad: " . mysqli_error($CONNECT);
     }
 }
 
-
-addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
 
 // Get all active ads
 $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN members ON ads.user_id = members.id WHERE ads.status = 'active'");
@@ -243,6 +264,8 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 <div class="error-message" id="btc-amount-error">BTC amount must be within the specified range.</div>
                 <div class="modal-buttons" id="modal-buttons">
                     <button class="btn cancel" type="button" onclick="closeModal()">Cancel</button>
+					<input type="hidden" name="ad_id" value="<?= $ad['id'] ?>">
+					<input type="hidden" name="form_token" value="<?= $_SESSION['form_token'] ?>">
                     <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
                 </div>
             </form>

@@ -88,6 +88,10 @@ if (isset($escrow_status['status'])) {
     $status = 'unknown';
 }
 
+$txid_confirmations = NULL;
+$query_tx = mysqli_query($CONNECT, "SELECT txid FROM escrow_deposits WHERE ad_id = '$ad_id'");
+$row = mysqli_fetch_assoc($query_tx);
+$txid_confirmations = $row['txid'];
 
 $current_user_id = $_SESSION['user_id'];
 $is_buyer = ($current_user_id == $ad['buyer_id']);
@@ -129,6 +133,8 @@ if ($ad['trade_type'] === 'buy') {
             margin-bottom: 20px;
         }
     </style>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 </head>
 <body>
     <div class="container">
@@ -343,8 +349,51 @@ function fetchServiceComments() {
 
 }
 
-fetchServiceComments();
-setInterval(fetchServiceComments, 5000);
+
+
+// Функция для проверки подтверждений
+         function checkConfirmations() {
+        const txid = "<?php echo $txid_confirmations; ?>";
+
+        if (!txid || txid.trim() === '') {
+            document.getElementById('confirmationsResult').innerText = "TXID не указан.";
+            return;
+        }
+
+        fetch('src/functions.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "getConfirmations",
+                params: { txid: txid },
+                id: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('confirmationsResult').innerText = 'Ошибка: ' + data.error.message;
+                console.error("RPC ошибка:", data.error);
+            } else {
+                document.getElementById('confirmationsResult').innerText = 'Confirmations: ' + data.result.confirmations;
+                console.log("Подтверждений:", data.result.confirmations);
+            }
+        })
+        .catch(error => {
+            document.getElementById('confirmationsResult').innerText = 'Error: ' + error.message;
+            console.error("Fetch error:", error);
+        });
+    }
+
+    // Запускаем проверку каждые 5 секунд
+	fetchServiceComments();
+	setInterval(fetchServiceComments, 5000);
+	checkConfirmations();
+    setInterval(checkConfirmations, 5000);
+
 
 let lastMessageId = 0; // Глобальная переменная для хранения ID последнего сообщения
 
@@ -377,7 +426,7 @@ function loadMessages() {
         }
     };
     xhr.onerror = function() {
-        console.error("Request failed");
+        
     };
     xhr.send(JSON.stringify({
         jsonrpc: "2.0",
@@ -509,6 +558,8 @@ setInterval(loadMessages, 2000);
 		getEscrowStatus();
         setInterval(getEscrowStatus, 5000);
     });
+	
+	
     </script>
 
 </body>

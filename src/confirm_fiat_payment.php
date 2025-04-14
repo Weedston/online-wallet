@@ -90,7 +90,7 @@ if ($status['buyer_confirmed'] == 1 && $status['seller_confirmed'] == 1) {
     $update_query = "UPDATE ads SET status = 'completed', buyer_id = '$buyer_id', amount_btc = '$btc_amount' WHERE id = '$ad_id'";
                         if (mysqli_query($CONNECT, $update_query)) {
                             add_notification($ad['user_id'], "Your ad #$ad_id has been accepted and is in the completed status.");
-                            header("Location: p2p-trade_details?ad_id=$ad_id");
+                            header("Location: /p2p-trade_details?ad_id=$ad_id");
                             exit();
                         } else {
                             $error_message = "Error updating ad status: " . mysqli_error($CONNECT);

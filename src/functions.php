@@ -14,6 +14,19 @@ function get_setting($name, $CONNECT) {
     return $value;
 }
 
+
+// Функция для получения подтверждений
+function getConfirmations($txid) {
+    $tx = bitcoinRPC('getrawtransaction', [$txid, true]);
+
+    if (isset($tx['confirmations'])) {
+        return $tx['confirmations'];
+    } else {
+        return 0; // Если нет подтверждений
+    }
+}
+
+
 function getBTCBalance($address) {
     $utxos = bitcoinRPC('listunspent', [1, 9999999, [$address]]);
     $balance = 0.0;
@@ -25,7 +38,7 @@ function getBTCBalance($address) {
     return round($balance, 8);
 }
 
-function sendToEscrow($from_address, $amount_btc, $CONNECT) {
+function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
 	$service_fee_address = get_setting('service_fee_address', $CONNECT);
 	$escrow_address = get_setting('escrow_wallet_address', $CONNECT);
     // Получаем UTXO для отправителя
@@ -91,9 +104,10 @@ function sendToEscrow($from_address, $amount_btc, $CONNECT) {
         return ['success' => false, 'error' => 'Failed to send transaction.'];
     }
 
+	addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $amount_btc BTC <p id='confirmationsResult'>Confirmations: ...</p>", 'deposit');
+
     return ['success' => true, 'txid' => $txid];
 }
-
 
 function sendFromCentralWallet($to_address, $amount_btc, $CONNECT) {
     $central_address = get_setting('escrow_wallet_address', $CONNECT);
@@ -173,12 +187,14 @@ function addServiceComment($ad_id, $comment_text, $type = 'info') {
     $row = mysqli_fetch_assoc($query);
     $comments = json_decode($row['service_comments'], true) ?: [];
 
+    // Добавляем новый комментарий
     $comments[] = $entry;
     $encoded = mysqli_real_escape_string($CONNECT, json_encode($comments, JSON_UNESCAPED_UNICODE));
 
     // Обновляем
     mysqli_query($CONNECT, "UPDATE escrow_deposits SET service_comments = '$encoded' WHERE ad_id = '$ad_id'");
 }
+
 
 function add_notification($user_id, $message) {
     global $CONNECT;
@@ -324,34 +340,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 
     switch ($method) {
         case 'getEscrowStatus':
-			$raw_input = file_get_contents("php://input");
-			error_log("+++ RAW INPUT: " . $raw_input);
+            $raw_input = file_get_contents("php://input");
+            error_log("+++ RAW INPUT: " . $raw_input);
 
-			$input = json_decode($raw_input, true);
-			$ad_id = $input['params']['ad_id'] ?? null;
-			error_log("+++---case get_escrow_status ad_id: $ad_id");
-			$result = get_escrow_status($ad_id);
-			echo json_encode([
-				'jsonrpc' => '2.0',
-				'result' => $result,
-				'id' => $input['id'] ?? null
-			]);
-		break;
-		case 'getServiceComments':
-		if (!$ad_id) {
-			echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
-			exit();
-		}
-		$query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
-		$row = mysqli_fetch_assoc($query);
-		$comments = json_decode($row['service_comments'], true) ?: [];
+            $input = json_decode($raw_input, true);
+            $ad_id = $input['params']['ad_id'] ?? null;
+            error_log("+++---case get_escrow_status ad_id: $ad_id");
+            $result = get_escrow_status($ad_id);
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'result' => $result,
+                'id' => $input['id'] ?? null
+            ]);
+            break;
 
-		echo json_encode([
-			'jsonrpc' => '2.0',
-			'result' => $comments,
-			'id' => $jsonrpc['id'] ?? null
-		]);
-		break;		
+        case 'getServiceComments':
+            if (!$ad_id) {
+                echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
+                exit();
+            }
+            $query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
+            $row = mysqli_fetch_assoc($query);
+            $comments = json_decode($row['service_comments'], true) ?: [];
+
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'result' => $comments,
+                'id' => $jsonrpc['id'] ?? null
+            ]);
+            break;
+
         case 'loadMessages':
             if (!$ad_id) {
                 echo json_encode(['error' => 'Missing parameters: ad_id', 'jsonrpc' => $jsonrpc]);
@@ -359,20 +377,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
             }
             echo json_encode(load_messages($ad_id));
             break;
+
         case 'getUnreadNotificationCount':
             echo json_encode(getUnreadNotificationCount($params));
             break;
+
         case 'getNotifications':
             echo json_encode(getNotifications($params));
             break;
+
         case 'markNotificationsAsRead':
             echo json_encode(markNotificationsAsRead($params));
             break;
+
+        case 'getConfirmations':
+            // Получаем TXID из параметров запроса
+            $txid = $params['txid'] ?? null;
+
+            if (!$txid) {
+                echo json_encode(['error' => 'Missing parameters: txid', 'jsonrpc' => $jsonrpc]);
+                exit();
+            }
+
+            // Получаем количество подтверждений для TXID
+            $confirmations = getConfirmations($txid);
+
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'result' => ['confirmations' => $confirmations],
+                'id' => $jsonrpc['id'] ?? null
+            ]);
+            break;
+
         default:
             echo json_encode(['error' => 'Unknown method']);
     }
     exit();
 }
+
 
 // Если запрос не POST или не имеет нужного типа содержимого, просто игнорируем
 error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
