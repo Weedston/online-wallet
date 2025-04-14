@@ -4,6 +4,8 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once 'functions.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fiat_paid'], $_POST['ad_id'])) {
     $ad_id = intval($_POST['ad_id']);
 
@@ -28,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fiat_paid'], $_POST['
     $update = $CONNECT->prepare("UPDATE escrow_deposits SET status = 'fiat_paid', buyer_confirmed = 1, updated_at = NOW() WHERE ad_id = ?");
     $update->bind_param("i", $ad_id);
     if ($update->execute()) {
+		addServiceComment($ad_id, "The buyer confirmed the payment in fiat money. Waiting for confirmation of receipt of the requested money by the seller.");
         error_log("confirm_fiat_paid: Статус обновлён до fiat_paid для ad_id = $ad_id");
     } else {
         error_log("confirm_fiat_paid: Ошибка обновления статуса: " . $CONNECT->error);

@@ -14,6 +14,19 @@ function get_setting($name, $CONNECT) {
     return $value;
 }
 
+function getUserRole($ad, $user_id) {
+    $is_author = ($ad['user_id'] == $user_id);
+
+    if ($ad['trade_type'] === 'buy') {
+        return $is_author ? 'buyer' : 'seller';
+    } elseif ($ad['trade_type'] === 'sell') {
+        return $is_author ? 'seller' : 'buyer';
+    }
+
+    return ''; // если trade_type некорректен
+}
+
+
 
 // Функция для получения подтверждений
 function getConfirmations($txid) {

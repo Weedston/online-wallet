@@ -17,7 +17,7 @@ $trades = mysqli_query($CONNECT, "
     FROM ads 
     JOIN members ON ads.user_id = members.id 
     WHERE (ads.status IN ('pending', 'completed')) 
-    AND (ads.user_id = '$user_id' OR ads.buyer_id = '$user_id')
+    AND (ads.user_id = '$user_id' OR ads.buyer_id = '$user_id' OR ads.seller_id = '$user_id')
     ORDER BY ads.updated_at DESC
 ");
 

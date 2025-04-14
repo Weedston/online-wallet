@@ -37,7 +37,7 @@ if ($result->num_rows === 0) {
 
 $ad = $result->fetch_assoc();
 
-if ($ad['user_id'] != $current_user_id && $ad['buyer_id'] != $current_user_id) {
+if ($ad['user_id'] != $current_user_id && $ad['buyer_id'] && $ad['seller_id'] != $current_user_id) {
     $_SESSION['flash_message'] = [
         'type' => 'error',
         'text' => 'У вас нет доступа к этой сделке.'
@@ -75,7 +75,7 @@ if (isset($ad['error'])) {
     exit();
 }
 
-$seller_id = $ad['user_id'];
+$seller_id = $ad['seller_id'];
 $buyer_id = $ad['buyer_id'];
 $sender_id = $_SESSION['user_id'];
 $recipient_id = ($sender_id == $seller_id) ? $buyer_id : $seller_id;
@@ -94,18 +94,20 @@ $row = mysqli_fetch_assoc($query_tx);
 $txid_confirmations = $row['txid'];
 
 $current_user_id = $_SESSION['user_id'];
-$is_buyer = ($current_user_id == $ad['buyer_id']);
-$is_seller = ($current_user_id == $ad['user_id']);
-$current_user_role = $is_buyer ? 'buyer' : ($is_seller ? 'seller' : '');
+$current_user_role = getUserRole($ad, $current_user_id);
 
-// Меняем местами buyer_id и seller_id в зависимости от типа объявления
+/*
+// Определим buyer_id и seller_id на основе trade_type
 if ($ad['trade_type'] === 'buy') {
-    $buyer_id_display = $buyer_id == $current_user_id ? "$buyer_id (You)" : $buyer_id;
-    $seller_id_display = $seller_id == $current_user_id ? "$seller_id (You)" : $seller_id;
-} else {
-    $buyer_id_display = $seller_id == $current_user_id ? "$seller_id (You)" : $seller_id;
-    $seller_id_display = $buyer_id == $current_user_id ? "$buyer_id (You)" : $buyer_id;
+    $buyer_id = $ad['user_id'];
+    $seller_id = $ad['buyer_id']; // он будет заполнен после принятия
+} elseif ($ad['trade_type'] === 'sell') {
+    $seller_id = $ad['user_id'];
+    $buyer_id = $ad['buyer_id']; // он будет заполнен после принятия
 }
+*/
+$buyer_id_display = ($buyer_id == $current_user_id) ? "$buyer_id (You)" : $buyer_id;
+$seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $seller_id;
 ?>
 
 <!DOCTYPE html>

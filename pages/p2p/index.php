@@ -19,37 +19,50 @@ $balance_result = mysqli_query($CONNECT, "SELECT balance FROM members WHERE id =
 $balance_row = mysqli_fetch_assoc($balance_result);
 $balance = $balance_row['balance'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['access'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     // Защита от повторной отправки
     if (!isset($_POST['form_token']) || $_POST['form_token'] !== $_SESSION['form_token']) {
-        die('Duplicate form submission or invalid token.');
+       // header('Location: /p2p');;
     }
     unset($_SESSION['form_token']); // Предотвращаем повторную отправку
 
     $ad_id = intval($_POST['ad_id']);
+	error_log("@@@@@@@Zdes est ad: $ad_id");
     $user_id = $_SESSION['user_id'];
-    $btc_amount = null; // Можно получить из $ad, если нужно
-
+    $btc_amount = $_POST['btc_amount']; 
+	error_log("BBBBBBBBBBBBBBBBBBBB: ad_id.: $ad_id");
+	error_log("EEEEEEEEEEEEEEEEEEEE: btc_amount.: $btc_amount");
     // Получаем объявление
     $ad_query = mysqli_query($CONNECT, "SELECT * FROM ads WHERE id = '$ad_id'");
     $ad = mysqli_fetch_assoc($ad_query);
-
     if (!$ad) {
         die('Ad not found.');
     }
 
-    // Логика: определяем buyer и seller
-    if ($ad['trade_type'] === 'buy') {
-        $buyer_id = $ad['user_id'];
-        $seller_id = $user_id;
-    } else {
-        $buyer_id = $user_id;
-        $seller_id = $ad['user_id'];
+
+	$user_role = getUserRole($ad, $user_id);
+
+if ($user_role === 'buyer') {
+    $buyer_id = $user_id;
+    $seller_id = $ad['user_id'];
+} elseif ($user_role === 'seller') {
+    $buyer_id = $ad['user_id'];
+    $seller_id = $user_id;
+} else {
+    // На случай, если пользователь не связан с объявлением (например, злоумышленник)
+    die("Access denied: unauthorized user.");
+}
+$wallet_query = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$seller_id'");
+    $seller_wallet = mysqli_fetch_assoc($wallet_query);
+	error_log("DDDDDDDDDDDDDDDDDD: seller_wallet: " . $seller_wallet['wallet']);
+    if (!$seller_wallet) {
+        die('seller wallet not found.');
     }
+
 
 if (empty($error_message)) {
             // Отправляем BTC в эскроу с учетом комиссии
-            $tx_result = sendToEscrow($ad_id, $buyer_wallet, $btc_amount, $CONNECT);
+            $tx_result = sendToEscrow($ad_id, $seller_wallet['wallet'], $btc_amount, $CONNECT);
 
             if ($tx_result['success']) {
                 $txid = $tx_result['txid'];
@@ -93,27 +106,7 @@ if (empty($error_message)) {
         }
     $btc_amount = $ad['amount_btc'];
 
-    // Обновляем объявление
-    $update_query = "
-        UPDATE ads SET 
-            status = 'pending', 
-            buyer_id = '$buyer_id', 
-            seller_id = '$seller_id',
-            amount_btc = '$btc_amount' 
-        WHERE id = '$ad_id'
-    ";
-
-    if (mysqli_query($CONNECT, $update_query)) {
-        add_notification(
-            $ad['user_id'],
-            "Your ad #$ad_id has been accepted and is in the pending status. 
-            Go to the <a href=\"p2p-trade_history\">Trade history</a> section and continue the transaction."
-        );
-        header("Location: p2p-trade_details?ad_id=$ad_id");
-        exit();
-    } else {
-        echo "Error updating ad: " . mysqli_error($CONNECT);
-    }
+    
 }
 
 
@@ -207,6 +200,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         <table>
             <thead>
                 <tr>
+					<th>Ad ID</th>
                     <th>User ID</th>
                     <th>Min BTC Amount</th>
                     <th>Max BTC Amount</th>
@@ -219,6 +213,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
             <tbody>
                 <?php while ($ad = mysqli_fetch_assoc($ads)) { 
                     $ad_id = $ad['id'];
+					 
                     $fiat_amount = $ad['max_amount_btc'] * $ad['rate'];
 
                     // Get payment methods for this ad
@@ -228,9 +223,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                         $payment_methods[] = $row['payment_method'];
                     }
                     $payment_methods_display = implode(', ', $payment_methods);
+					
                 ?>
                     <tr class="clickable-row" data-ad-id="<?php echo $ad_id; ?>" data-user-id="<?php echo htmlspecialchars($ad['user_id'] ?? ''); ?>" data-min-amount-btc="<?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?>" data-max-amount-btc="<?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?>" data-rate="<?php echo htmlspecialchars($ad['rate'] ?? ''); ?>" data-payment-methods="<?php echo htmlspecialchars($payment_methods_display ?? ''); ?>" data-fiat-amount="<?php echo number_format($fiat_amount, 2, '.', ' '); ?>" data-fiat-currency="<?php echo htmlspecialchars($ad['fiat_currency'] ?? ''); ?>" data-trade-type="<?php echo htmlspecialchars($ad['trade_type'] ?? ''); ?>" data-comment="<?php echo htmlspecialchars($ad['comment'] ?? ''); ?>">
-                        <td><?php echo htmlspecialchars($ad['user_id'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($ad['ad_id'] ?? ''); ?></td>
+						<td><?php echo htmlspecialchars($ad['user_id'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['rate'] ?? ''); ?></td>
@@ -264,8 +261,12 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
                 <div class="error-message" id="btc-amount-error">BTC amount must be within the specified range.</div>
                 <div class="modal-buttons" id="modal-buttons">
                     <button class="btn cancel" type="button" onclick="closeModal()">Cancel</button>
-					<input type="hidden" name="ad_id" value="<?= $ad['id'] ?>">
-					<input type="hidden" name="form_token" value="<?= $_SESSION['form_token'] ?>">
+					<?php
+						if (empty($_SESSION['form_token'])) {
+						$_SESSION['form_token'] = bin2hex(random_bytes(32));
+						}
+					?>
+					<input type="hidden" name="form_token" value="<?echo $_SESSION['form_token'] ?>">
                     <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
                 </div>
             </form>
@@ -298,6 +299,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         document.querySelectorAll('.clickable-row').forEach(row => {
             row.addEventListener('click', function() {
                 const adId = this.dataset.adId;
+				
                 const userId = this.dataset.userId;
                 const minAmountBtc = this.dataset.minAmountBtc;
                 const maxAmountBtc = this.dataset.maxAmountBtc;
@@ -314,6 +316,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
 
         function openModal(adId, userId, minAmountBtc, maxAmountBtc, rate, paymentMethods, fiatAmount, fiatCurrency, tradeType, comment) {
             document.getElementById('modal-ad-id').value = adId;
+			
             document.getElementById('modal-user-id').innerText = userId;
             document.getElementById('modal-min-amount-btc').innerText = minAmountBtc;
             document.getElementById('modal-max-amount-btc').innerText = maxAmountBtc;
