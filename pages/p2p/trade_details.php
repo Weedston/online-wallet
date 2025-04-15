@@ -347,6 +347,7 @@ function fetchServiceComments() {
             div.innerHTML = `<strong>[${entry.timestamp}]</strong> (${entry.type}): ${entry.message}`;
             container.appendChild(div);
         });
+		checkConfirmations();
     });
 
 }
@@ -393,8 +394,7 @@ function fetchServiceComments() {
     // Запускаем проверку каждые 5 секунд
 	fetchServiceComments();
 	setInterval(fetchServiceComments, 5000);
-	checkConfirmations();
-    setInterval(checkConfirmations, 5000);
+	
 
 
 let lastMessageId = 0; // Глобальная переменная для хранения ID последнего сообщения

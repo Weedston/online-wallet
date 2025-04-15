@@ -5,6 +5,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require_once 'src/functions.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -55,98 +57,20 @@ if (isset($_GET['ajax'])) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = floatval($_POST['amount']);
-    $recipient = $_POST['recipient'];
+    $recipient = trim($_POST['recipient']);
     $wallet_address = $_SESSION['wallet'];
 
-    // Запрашиваем UTXO
-    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$wallet_address]]);
+    $result = sendBitcoinWithFees($recipient, $amount, $wallet_address);
 
-    if (!is_array($utxos) || empty($utxos)) {
-        die("<p style='color:red;'>Error: No available UTXOs!</p>");
-    }
-
-    $serviceWallet = "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn";
-
-    // Запрашиваем комиссию
-    $feeEstimate = bitcoinRPC("estimatesmartfee", [6]);
-    if (!is_array($feeEstimate) || !isset($feeEstimate['feerate']) || $feeEstimate['feerate'] <= 0) {
-        $feeEstimate['feerate'] = 0.00001000;
-    }
-
-    $feeRatePerKb = $feeEstimate['feerate'];
-    $feeRatePerByte = $feeRatePerKb / 1000;
-
-    // Выбираем UTXO (суммируем баланс)
-    $totalInputAmount = 0;
-    $inputs = [];
-    
-    foreach ($utxos as $utxo) {
-        if (!isset($utxo['spendable']) || !$utxo['spendable']) {
-            continue; // Пропускаем UTXO, если он не тратимый
+    if (isset($result['error'])) {
+        echo "<p style='color:red;'>Error: " . $result['error'] . "</p>";
+        if (isset($result['response'])) {
+            echo "<pre>" . json_encode($result['response'], JSON_PRETTY_PRINT) . "</pre>";
         }
-
-        $inputs[] = [
-            "txid" => $utxo['txid'],
-            "vout" => $utxo['vout']
-        ];
-
-        $totalInputAmount += $utxo['amount'];
-
-        // Останавливаем, если собрали нужную сумму
-        if ($totalInputAmount >= ($amount + ($amount * 0.01) + 0.0001)) {
-            break;
-        }
+    } else {
+        echo "<p style='color:green;'>Transaction sent successfully! TXID: {$result['txid']}</p>";
     }
-
-    if ($totalInputAmount < ($amount + ($amount * 0.01))) {
-        die("<p style='color:red;'>Error: Not enough available UTXOs!</p>");
-    }
-
-    // Формируем выходные адреса
-    $serviceFee = round($amount * 0.01, 8);
-    $outputs = [
-        $recipient => round($amount, 8),
-        $serviceWallet => $serviceFee
-    ];
-
-    // Оцениваем размер транзакции (примерно)
-    $rawTxSize = 250;
-    $fee = round($rawTxSize * $feeRatePerByte, 8);
-
-    $change = round($totalInputAmount - $amount - $serviceFee - $fee, 8);
-
-    $balanceFormatted = number_format($totalInputAmount, 8, '.', '');
-    $neededFormatted = number_format($amount + $serviceFee + $fee, 8, '.', '');
-    $feeFormatted = number_format($fee, 8, '.', '');
-
-    if ($change < 0) {
-        die("<p style='color:red;'>Error: Not enough funds including fee! Balance: $balanceFormatted, Needed: $neededFormatted, Fee: $feeFormatted</p>");
-    }
-
-    if ($change > 0) {
-        $outputs[$wallet_address] = round($change, 8);
-    }
-
-    // Создаём raw-транзакцию
-    $rawTx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
-
-    // Подписываем транзакцию
-    $signedTx = bitcoinRPC('signrawtransactionwithwallet', [$rawTx]);
-
-    if (!isset($signedTx['hex']) || empty($signedTx['hex'])) {
-        die("<p style='color:red;'>Error: Failed to sign transaction! Response: " . json_encode($signedTx) . "</p>");
-    }
-
-    // Отправляем транзакцию
-    $txid = bitcoinRPC('sendrawtransaction', [$signedTx['hex']]);
-
-    echo "<script>alert('Transaction sent: $amount BTC to $recipient. TXID: $txid');</script>";
 }
-
-
-
-
-
 
 
 

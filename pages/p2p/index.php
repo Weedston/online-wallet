@@ -66,11 +66,10 @@ if (empty($error_message)) {
 
             if ($tx_result['success']) {
                 $txid = $tx_result['txid'];
-                $seller_pubkey = $ad['seller_pubkey'];
-                $arbiter_pubkey = $ad['arbiter_pubkey'];
+                //$seller_pubkey = $ad['seller_pubkey'];
+                //$arbiter_pubkey = $ad['arbiter_pubkey'];
 
-                //addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC", 'deposit');
-
+                
                 // Запись в escrow_deposits
                 $insert_query = "INSERT INTO escrow_deposits (
                     ad_id, escrow_address, buyer_pubkey, seller_pubkey, arbiter_pubkey, txid, btc_amount, status
@@ -78,6 +77,7 @@ if (empty($error_message)) {
                     '$ad_id', '$escrow_address', '$buyer_pubkey', '$seller_pubkey', '$arbiter_pubkey', '$txid', '$btc_amount', 'btc_deposited'
                 )";
                 mysqli_query($CONNECT, $insert_query);
+				addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC <p id='confirmationsResult'>Confirmations: ...</p> We are waiting for payment from the buyer", 'deposit');
 
                 // Обновляем объявление
     $update_query = "
@@ -106,8 +106,7 @@ if (empty($error_message)) {
         }
     $btc_amount = $ad['amount_btc'];
 
-    addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC <p id='confirmationsResult'>Confirmations: ...</p> We are waiting for payment from the buyer", 'deposit');
-}
+    }
 
 
 // Get all active ads
@@ -200,7 +199,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
         <table>
             <thead>
                 <tr>
-					<th>Ad ID</th>
+					
                     <th>User ID</th>
                     <th>Min BTC Amount</th>
                     <th>Max BTC Amount</th>
@@ -226,7 +225,7 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
 					
                 ?>
                     <tr class="clickable-row" data-ad-id="<?php echo $ad_id; ?>" data-user-id="<?php echo htmlspecialchars($ad['user_id'] ?? ''); ?>" data-min-amount-btc="<?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?>" data-max-amount-btc="<?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?>" data-rate="<?php echo htmlspecialchars($ad['rate'] ?? ''); ?>" data-payment-methods="<?php echo htmlspecialchars($payment_methods_display ?? ''); ?>" data-fiat-amount="<?php echo number_format($fiat_amount, 2, '.', ' '); ?>" data-fiat-currency="<?php echo htmlspecialchars($ad['fiat_currency'] ?? ''); ?>" data-trade-type="<?php echo htmlspecialchars($ad['trade_type'] ?? ''); ?>" data-comment="<?php echo htmlspecialchars($ad['comment'] ?? ''); ?>">
-                        <td><?php echo htmlspecialchars($ad['ad_id'] ?? ''); ?></td>
+                        
 						<td><?php echo htmlspecialchars($ad['user_id'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['min_amount_btc'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($ad['max_amount_btc'] ?? ''); ?></td>

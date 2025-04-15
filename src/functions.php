@@ -51,16 +51,85 @@ function getBTCBalance($address) {
     return round($balance, 8);
 }
 
+function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet = "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn", $serviceFeePercent = 0.01) {
+    // 1. Получаем доступные UTXO
+    $utxos = bitcoinRPC('listunspent', [1, 9999999, [$fromAddress]]);
+    if (!is_array($utxos) || empty($utxos)) {
+        return ["error" => "No available UTXOs!"];
+    }
+
+    // 2. Оцениваем комиссию сети
+    $feeEstimate = bitcoinRPC("estimatesmartfee", [6]);
+    $feeRatePerKb = (is_array($feeEstimate) && isset($feeEstimate['feerate']) && $feeEstimate['feerate'] > 0)
+        ? $feeEstimate['feerate']
+        : 0.00001000;
+    $feeRatePerByte = $feeRatePerKb / 1000;
+
+    // 3. Подбираем UTXO
+    $inputs = [];
+    $totalInput = 0;
+    $serviceFee = round($amount * $serviceFeePercent, 8);
+
+    foreach ($utxos as $utxo) {
+        if (empty($utxo['spendable'])) continue;
+
+        $inputs[] = [
+            "txid" => $utxo['txid'],
+            "vout" => $utxo['vout']
+        ];
+        $totalInput += $utxo['amount'];
+
+        if ($totalInput >= $amount + $serviceFee + 0.0001) break;
+    }
+
+    if ($totalInput < ($amount + $serviceFee)) {
+        return ["error" => "Not enough funds!"];
+    }
+
+    // 4. Оцениваем размер и комиссию транзакции
+    $txSizeBytes = 250;
+    $fee = round($txSizeBytes * $feeRatePerByte, 8);
+
+    $change = round($totalInput - $amount - $serviceFee - $fee, 8);
+    if ($change < 0) {
+        return ["error" => "Not enough funds including network fee!"];
+    }
+
+    // 5. Создаем выходы
+    $outputs = [
+        $recipient => round($amount, 8),
+        $serviceWallet => $serviceFee
+    ];
+    if ($change > 0) {
+        $outputs[$fromAddress] = $change;
+    }
+
+    // 6. Создаем и подписываем транзакцию
+    $rawTx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
+    $signedTx = bitcoinRPC('signrawtransactionwithwallet', [$rawTx]);
+
+    if (empty($signedTx['hex'])) {
+        return ["error" => "Failed to sign transaction!", "response" => $signedTx];
+    }
+
+    // 7. Отправляем транзакцию
+    $txid = bitcoinRPC('sendrawtransaction', [$signedTx['hex']]);
+    return ["txid" => $txid];
+}
+
+
 function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
-	$service_fee_address = get_setting('service_fee_address', $CONNECT);
-	$escrow_address = get_setting('escrow_wallet_address', $CONNECT);
-    // Получаем UTXO для отправителя
+    $service_fee_address = get_setting('service_fee_address', $CONNECT);
+    $escrow_address = get_setting('escrow_wallet_address', $CONNECT);
+    $dust_limit = 0.00000546; // Порог для bech32-адресов (примерно)
+
+    // Получаем UTXO
     $utxos = bitcoinRPC('listunspent', [1, 9999999, [$from_address]]);
     if (empty($utxos)) {
         return ['success' => false, 'error' => 'No UTXO found for address.'];
     }
 
-    // Находим подходящие UTXO
+    // Выбираем UTXO
     $total_input = 0;
     $inputs = [];
     foreach ($utxos as $utxo) {
@@ -69,58 +138,75 @@ function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
             'vout' => $utxo['vout']
         ];
         $total_input += $utxo['amount'];
-        if ($total_input >= ($amount_btc * 1.01)) break; // +1% с запасом под fee
+        if ($total_input >= ($amount_btc * 1.01)) break;
     }
 
-    // Оценка комиссии сети
+    // Оцениваем комиссию
     $estimate_fee = bitcoinRPC('estimatefee', [2]);
     if (!is_numeric($estimate_fee) || $estimate_fee <= 0) {
-        $estimate_fee = 0.00001;
+        $estimate_fee = 0.00001; // fallback
     }
-    $network_fee = $estimate_fee * 0.25; // ~250 байт
+    $network_fee = $estimate_fee * 0.25;
 
-    // Считаем комиссию сервиса
+    // Сервисная комиссия
     $service_fee = $amount_btc * 0.01;
-    $total_output = $amount_btc + $service_fee + $network_fee;
+
+    // Расчёт выходов
+    $outputs = [];
+    $outputs[$escrow_address] = number_format($amount_btc, 8, '.', '');
+
+    // Учитываем dust-защиту
+    if ($service_fee >= $dust_limit) {
+        $outputs[$service_fee_address] = number_format($service_fee, 8, '.', '');
+    } else {
+        $network_fee += $service_fee; // не отправляем dust
+    }
+
+    // Общая сумма к выводу
+    $total_output = array_sum(array_map('floatval', $outputs)) + $network_fee;
 
     if ($total_input < $total_output) {
-        return ['success' => false, 'error' => 'Insufficient input funds (incl. fee and service fee).'];
+        return ['success' => false, 'error' => 'Insufficient input funds (incl. fees).'];
     }
 
-    // Выходы
-    $outputs = [
-        $escrow_address => round($amount_btc, 8),
-        $service_fee_address => round($service_fee, 8),
-    ];
-
-    // Возврат сдачи
+    // Расчёт сдачи
     $change = $total_input - $total_output;
-    if ($change > 0.000005) {
-        $outputs[$from_address] = round($change, 8);
+    if ($change >= $dust_limit) {
+        $outputs[$from_address] = number_format($change, 8, '.', '');
+    } else {
+        $network_fee += $change; // тоже не создаём dust
     }
 
-    // Создание транзакции
+    // Логируем входы и выходы
+    error_log("=== BTC TX DEBUG ===");
+    error_log("INPUTS: " . print_r($inputs, true));
+    error_log("OUTPUTS: " . print_r($outputs, true));
+    error_log("Total input: $total_input | Total output: $total_output | Change: $change");
+
+    // Создаём транзакцию
     $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
     if (!$raw_tx) {
         return ['success' => false, 'error' => 'Failed to create raw transaction.'];
     }
 
-    // Подписание
+    // Подписываем
     $signed_tx = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx]);
     if (empty($signed_tx['complete']) || !$signed_tx['complete']) {
         return ['success' => false, 'error' => 'Transaction signing failed.'];
     }
 
-    // Отправка
+    // Отправляем
     $txid = bitcoinRPC('sendrawtransaction', [$signed_tx['hex']]);
     if (!$txid || !preg_match('/^[a-f0-9]{64}$/i', $txid)) {
-        return ['success' => false, 'error' => 'Failed to send transaction.'];
+        error_log("!+++!Error: Failed to send transaction. Error: $txid");
+        return ['success' => false, 'error' => "Failed to send transaction. Error: $txid"];
     }
 
-	addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $amount_btc BTC <p id='confirmationsResult'>Confirmations: ...</p>", 'deposit');
+    //addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $amount_btc BTC <p id='confirmationsResult'>Confirmations: ...</p>", 'deposit');
 
     return ['success' => true, 'txid' => $txid];
 }
+
 
 function sendFromCentralWallet($to_address, $amount_btc, $CONNECT) {
     $central_address = get_setting('escrow_wallet_address', $CONNECT);
@@ -195,18 +281,32 @@ function addServiceComment($ad_id, $comment_text, $type = 'info') {
         'message' => $comment_text
     ];
 
-    // Получаем текущее содержимое
     $query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
-    $row = mysqli_fetch_assoc($query);
-    $comments = json_decode($row['service_comments'], true) ?: [];
+    if (!$query) {
+        error_log("MySQL error: " . mysqli_error($CONNECT));
+        return;
+    }
 
-    // Добавляем новый комментарий
+    $row = mysqli_fetch_assoc($query);
+    if (!$row) {
+        error_log("No row found for ad_id = $ad_id, inserting new row.");
+        mysqli_query($CONNECT, "INSERT INTO escrow_deposits (ad_id, service_comments) VALUES ('$ad_id', '[]')");
+        $comments = [];
+    } else {
+        $comments = json_decode($row['service_comments'], true) ?: [];
+    }
+
+    error_log("=== addServiceComment DEBUG ===");
+    error_log("ad_id: " . print_r($ad_id, true));
+    error_log("comment_text: " . print_r($comment_text, true));
+    error_log("current_comments: " . print_r($comments, true));
+
     $comments[] = $entry;
     $encoded = mysqli_real_escape_string($CONNECT, json_encode($comments, JSON_UNESCAPED_UNICODE));
 
-    // Обновляем
     mysqli_query($CONNECT, "UPDATE escrow_deposits SET service_comments = '$encoded' WHERE ad_id = '$ad_id'");
 }
+
 
 
 function add_notification($user_id, $message) {
