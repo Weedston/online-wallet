@@ -130,7 +130,7 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
         .chat-box {
             border: 1px solid #ddd;
             padding: 10px;
-            height: 200px; /* Увеличим высоту для лучшего отображения */
+            height: 200px; 
             overflow-y: scroll;
             margin-bottom: 20px;
         }
@@ -226,7 +226,7 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
     document.addEventListener('DOMContentLoaded', function() {
         var cancelTradeButton = document.getElementById('cancel-trade');
         var confirmPaymentButton = document.getElementById('confirm-payment');
-        var current_user_role = "<?php echo $current_user_role; ?>"; // Добавляем инициализацию переменной
+        var current_user_role = "<?php echo $current_user_role; ?>"; 
 
         if (cancelTradeButton) {
             cancelTradeButton.addEventListener('click', function() {
@@ -378,11 +378,11 @@ function fetchServiceComments() {
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                document.getElementById('confirmationsResult').innerText = 'Ошибка: ' + data.error.message;
-                console.error("RPC ошибка:", data.error);
+                document.getElementById('confirmationsResult').innerText = 'Error: ' + data.error.message;
+                console.error("RPC error:", data.error);
             } else {
                 document.getElementById('confirmationsResult').innerText = 'Confirmations: ' + data.result.confirmations;
-                console.log("Подтверждений:", data.result.confirmations);
+                console.log("Confirm's:", data.result.confirmations);
             }
         })
         .catch(error => {
@@ -391,13 +391,13 @@ function fetchServiceComments() {
         });
     }
 
-    // Запускаем проверку каждые 5 секунд
+    
 	fetchServiceComments();
 	setInterval(fetchServiceComments, 5000);
 	
 
 
-let lastMessageId = 0; // Глобальная переменная для хранения ID последнего сообщения
+let lastMessageId = 0; // 
 
 function loadMessages() {
     var xhr = new XMLHttpRequest();
@@ -409,20 +409,20 @@ function loadMessages() {
                 var response = JSON.parse(xhr.responseText);
                 if (response.result) {
                     var messages = response.result;
-                    let newLastMessageId = lastMessageId; // Переменная для отслеживания нового последнего ID
+                    let newLastMessageId = lastMessageId; 
                     messages.forEach(function(message) {
-                        // Добавляем только новые сообщения (с ID больше последнего)
+                        
                         if (message.id > lastMessageId) {
                             displayMessage(message.username, message.message);
-                            newLastMessageId = Math.max(newLastMessageId, message.id); // Обновляем последний ID
+                            newLastMessageId = Math.max(newLastMessageId, message.id); 
                         }
                     });
-                    lastMessageId = newLastMessageId; // Обновляем последний ID после обработки всех сообщений
+                    lastMessageId = newLastMessageId; 
                 } else if (response.error) {
-                    console.error("Ошибка загрузки сообщений: " + response.error.message);
+                    console.error("Error load message: " + response.error.message);
                 }
             } catch (e) {
-                console.error("Ошибка парсинга JSON:", e);
+                console.error("Error parsing JSON:", e);
                 console.error("Response:", xhr.responseText);
             }
         }
@@ -481,7 +481,7 @@ setInterval(loadMessages, 2000);
 										buttonsHtml = `
 										<form method="POST" action="src/confirm_fiat_paid.php">
 											<input type="hidden" name="ad_id" value="${adId}">
-											<button type="submit" name="fiat_paid" class="btn btn-success">Я оплатил</button>
+											<button type="submit" name="fiat_paid" class="btn btn-success">I paid with a fiat</button>
 										</form>
 										`;
 									}
@@ -490,12 +490,12 @@ setInterval(loadMessages, 2000);
 								case 'fiat_paid':
     if (userRole === 'buyer') {
         if (response.result.seller_confirmed === 1) {
-            // Показываем кнопку завершения сделки только когда продавец подтвердил получение фиата
+            
             buttonsHtml = `
             
             `;
         } else {
-            buttonsHtml = `<p class="text-muted">Ожидается подтверждение фиата от продавца</p>`;
+            buttonsHtml = `<p class="text-muted">Confirmation of the fiat from the seller is expected</p>`;
         }
     } 
 
@@ -503,7 +503,7 @@ setInterval(loadMessages, 2000);
         buttonsHtml = `
         <form method="POST" action="src/confirm_fiat_payment.php">
             <input type="hidden" name="ad_id" value="${adId}">
-            <button type="submit" name="fiat_received" class="btn btn-success">Подтвердить получение фиата</button>
+            <button type="submit" name="fiat_received" class="btn btn-success">Confirm receipt of the fiat</button>
         </form>
         `;
 
@@ -511,7 +511,7 @@ setInterval(loadMessages, 2000);
             buttonsHtml += `
             <form method="POST" action="src/resolve_dispute.php">
                 <input type="hidden" name="ad_id" value="${adId}">
-                <button type="submit" name="dispute" class="btn btn-danger">Оспорить</button>
+                <button type="submit" name="dispute" class="btn btn-danger">Complain to arbitration</button>
             </form>
             `;
         }
@@ -533,10 +533,10 @@ setInterval(loadMessages, 2000);
 						console.log("buttonsHtml:", buttonsHtml);
 						document.querySelector('.action-buttons').innerHTML = buttonsHtml;
                             } else if (response.error) {
-                                console.error("Ошибка получения статуса сделки: " + response.error.message);
+                                console.error("Error in obtaining the transaction status: " + response.error.message);
                             }
                         } catch (e) {
-                            console.error("Ошибка парсинга JSON:", e);
+                            console.error("JSON parsing error:", e);
                             console.error("Response:", xhr.responseText);
                         }
                     } else {
