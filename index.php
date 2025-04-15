@@ -11,7 +11,7 @@ require 'vendor/autoload.php';
 use JsonRPC\Client;
 
 $rpcUser = 'wikly';
-$rpcPassword = '8A08d423';
+$rpcPassword = '********';
 $rpcHost = '127.0.0.1';
 $rpcPort = 48332;
 
