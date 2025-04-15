@@ -106,7 +106,7 @@ if (empty($error_message)) {
         }
     $btc_amount = $ad['amount_btc'];
 
-    addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC <p id='confirmationsResult'>Confirmations: ...</p>", 'deposit');
+    addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $btc_amount BTC <p id='confirmationsResult'>Confirmations: ...</p> We are waiting for payment from the buyer", 'deposit');
 }
 
 
