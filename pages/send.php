@@ -12,48 +12,71 @@ ini_set('display_errors', 1);
 
 $wallet_address = $_SESSION['wallet'];
 
-// 1️⃣ Получаем баланс
-$utxos = bitcoinRPC('listunspent', [1, 9999999, [$btc_address]]);
-	$balance = 0;
-	foreach ($utxos as $utxo) {
-		$balance += $utxo['amount'];
-	}
-//$received_balance = bitcoinRPC("getreceivedbyaddress", [$wallet_address]);
-//$balance = $received_balance; 
-
-// 2️⃣ Получаем комиссию сети
-$fee_response = bitcoinRPC("estimatesmartfee", [6]); // Запрашиваем комиссию
-
-// Проверяем, вернул ли RPC корректный массив с feerate
-if (!is_array($fee_response) || !isset($fee_response['feerate']) || $fee_response['feerate'] <= 0) {
-    $fee_response['feerate'] = 0.00001000; // Устанавливаем значение по умолчанию
+// Получаем баланс
+$wallet_address = $_SESSION['wallet'];
+$utxos = bitcoinRPC('listunspent', [1, 9999999, [$wallet_address]]);
+$balance = 0;
+foreach ($utxos as $utxo) {
+    $balance += $utxo['amount'];
 }
 
-// Теперь можно использовать $fee_response['feerate']
-$feerate = $fee_response['feerate'];
+function calculateNetworkFeeSatoshi($tx_size_bytes = 200) {
+    // Запрашиваем feerate с помощью bitcoinRPC
+    $response = bitcoinRPC("estimatesmartfee", [6]);
+    error_log(print_r($response, true)); // Для отладки
 
-$fee_per_kb = $fee_response["result"]["feerate"] ?? 0.0001; // Если нет данных, ставим 0.0001 BTC
-$tx_size_kb = 0.0002; // Примерный размер транзакции (200 байт = 0.0002 КБ)
-$network_fee = $feerate * $tx_size_kb; // Итоговая комиссия сети
+    // Устанавливаем значение по умолчанию
+    $default_feerate = 0.00001000;
 
-// 3️⃣ Рассчитываем максимальную сумму
-$site_fee_percentage = 0.01; // 1% комиссия сайта
+    // Проверка на ошибки в ответе
+    if (isset($response['errors']) && count($response['errors']) > 0) {
+        error_log("Ошибка при получении feerate. Используем значение по умолчанию.");
+        $feerate = $default_feerate;
+    } else {
+        if (isset($response['result']['feerate']) && $response['result']['feerate'] > 0) {
+            $feerate = $response['result']['feerate'];
+        } else {
+            error_log("Feerate отсутствует или нулевой. Используем значение по умолчанию.");
+            $feerate = $default_feerate;
+        }
+    }
+
+    // Расчет размера в kB
+    $tx_size_kb = $tx_size_bytes / 1000;
+
+    // Перевод в BTC (feerate уже в BTC за 1 кБ)
+    $fee_btc = $feerate * $tx_size_kb;
+
+    // Гарантируем хотя бы минимальную комиссию 1 сатоши
+    $min_fee_btc = 1 / 100000000;
+    $fee_btc = max($fee_btc, $min_fee_btc);
+
+    // Округление до 8 знаков
+    $fee_btc = number_format($fee_btc, 8, '.', '');
+
+    error_log("Feerate = $feerate, Network Fee = $fee_btc BTC");
+
+    return $fee_btc;
+}
+
+// Комиссия сайта и расчёт максимальной суммы вывода
+$site_fee_percentage = 0.01; // 1%
+$network_fee = calculateNetworkFeeSatoshi();
 if ($balance <= 0 || $balance <= $network_fee) {
-    $max_withdrawable = 0.0; // Если баланс меньше комиссии, выдаем 0
+    $max_withdrawable = 0.0;
 } else {
     $max_withdrawable = ($balance - $network_fee) / (1 + $site_fee_percentage);
 }
 
-// Если это AJAX-запрос, возвращаем JSON
+// AJAX-ответ
 if (isset($_GET['ajax'])) {
     echo json_encode([
-        "balance" => number_format($balance, 8),
-        "network_fee" => number_format($network_fee, 8),
-        "max_withdrawable" => number_format(max($max_withdrawable, 0), 8)
+        "balance" => number_format($balance, 8, '.', ''),
+        "network_fee" => number_format($network_fee, 8, '.', ''),
+        "max_withdrawable" => number_format(max($max_withdrawable, 0), 8, '.', '')
     ]);
     exit;
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = floatval($_POST['amount']);
@@ -93,7 +116,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .invalid { border: 2px solid red; }
         .valid { border: 2px solid green; }
         .error { color: red; display: none; }
-    </style>
+
+		.flash {
+			animation: flash-change 1s ease-in-out;
+		}
+
+		@keyframes flash-change {
+			0% { background-color: #ffff99; }
+			100% { background-color: transparent; }
+		}
+</style>
+
 <br><br>
 <a href="dashboard" class="btn">Back to Dashboard</a>
     <div style='min-height: 50vh;' class="container" >
@@ -110,113 +143,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			<input type="number" name="amount" id="amount" step="0.00000001" min="0" placeholder="Amount (BTC)" pattern="^[0-9]+(\.[0-9]{1,8})?$" required> 
 			<span id="amount-error" class="error">Incorrect Amount (BTC)!</span>
 			<p class="info">Maximum available amount: <strong id="maxAmount"></strong> BTC</p>
+			<p class="info">Site fee (1%): <strong id="siteFee">0.00000000</strong> BTC</p>
+			<p class="info">Network fee: <strong id="networkFee">0.00000000</strong> BTC</p>
+
 			<p class="info">Total transfer amount (including the commission): <strong id="totalDeduction">0.00000000</strong> BTC</p>
-
-<script>
-function fetchMaxWithdrawable() {
-    fetch('?ajax=1')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('balance_o').textContent = data.balance;
-			document.getElementById('maxAmount').textContent = data.max_withdrawable;
-            document.getElementById('amount').setAttribute("max", data.max_withdrawable);
-        })
-        .catch(error => console.error("Data upload error:", error));
-}
-
-
-function calculateTotalDeduction() {
-    let amount = parseFloat(document.getElementById('amount').value) || 0;
-    let networkFee = parseFloat(document.getElementById('maxAmount').textContent) * 0.01; // Комиссия сайта 1%
-    let totalDeduction = amount + networkFee;
-    document.getElementById('totalDeduction').textContent = totalDeduction.toFixed(8);
-}
-
-fetchMaxWithdrawable();
-document.getElementById('amount').addEventListener('input', calculateTotalDeduction);
-setInterval(fetchMaxWithdrawable, 60000);
-</script>
 
 			<button type="submit" class="btn" id="send-btn" disabled>Send</button>
 		</form>
 		
 	<div id="message"></div>
 	
-	<script>
-        $(document).ready(function() {
-            $("#btc-form").submit(function(event) {
-                event.preventDefault(); 
-                
-                var formData = $(this).serialize(); 
-                
-                $.ajax({
-                    type: "POST",
-                    url: "", 
-                    data: formData,
-                    success: function(response) {
-                        $("#message").html(response); 
-                    },
-                    error: function() {
-                        $("#message").html("<p style='color:red;'>Request error!</p>");
-                    }
-                });
-            });
-        });
-    </script>
-	
 <script>
-document.getElementById('recipient').addEventListener('input', function() {
-    const input = this;
-    const errorMessage = document.getElementById('address-error');
+function flashElement(el) {
+    el.classList.remove("flash");
+    void el.offsetWidth; // перезапуск анимации
+    el.classList.add("flash");
+}
 
-    const btcRegex = /^(1|3|bc1|tb1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
+function fetchMaxWithdrawable() {
+    fetch('?ajax=1')
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);  // Логируем данные, чтобы понять, что именно возвращается
+        const balanceEl = document.getElementById('balance_o');
+        const networkFeeEl = document.getElementById('networkFee');
+        const maxAmountEl = document.getElementById('maxAmount');
+        const siteFeeEl = document.getElementById('siteFee');
 
-    if (btcRegex.test(input.value)) {
-        input.classList.remove("invalid");
-        input.classList.add("valid");
-        errorMessage.style.display = "none";
-    } else {
-        input.classList.remove("valid");
-        input.classList.add("invalid");
-        errorMessage.style.display = "inline";
-    }
+        const oldBalance = balanceEl.textContent;
+        const oldNetworkFee = networkFeeEl.textContent;
+        const oldMax = maxAmountEl.textContent;
+
+        if (oldBalance !== data.balance) {
+            balanceEl.textContent = data.balance;
+            flashElement(balanceEl);
+        }
+
+        if (oldNetworkFee !== data.network_fee) {
+            networkFeeEl.textContent = data.network_fee;
+            flashElement(networkFeeEl);
+        }
+
+        if (oldMax !== data.max_withdrawable) {
+            maxAmountEl.textContent = data.max_withdrawable;
+            flashElement(maxAmountEl);
+        }
+
+        const max = parseFloat(data.max_withdrawable);
+        document.getElementById('amount').setAttribute("max", max);
+    })
+    .catch(error => {
+        console.error("Data upload error:", error);
+    });
+}
+
+function calculateTotalDeduction() {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const networkFee = parseFloat(document.getElementById('networkFee').textContent) || 0;
+    const siteFee = amount * 0.01;
+
+    document.getElementById('siteFee').textContent = siteFee.toFixed(8);
+    const total = amount + siteFee + networkFee;
+    document.getElementById('totalDeduction').textContent = total.toFixed(8);
+}
+
+fetchMaxWithdrawable();
+document.getElementById('amount').addEventListener('input', () => {
+    calculateTotalDeduction();
 });
+setInterval(() => {
+    fetchMaxWithdrawable();
+    calculateTotalDeduction();
+}, 5000);
 
-document.getElementById('btc-form').addEventListener('submit', function(event) {
-    const addressInput = document.getElementById('recipient');
+
+function validateAmountInput() {
     const amountInput = document.getElementById('amount');
-    const btcRegex = /^(1|3|bc1|tb1)[a-zA-HJ-NP-Z0-9]{25,42}$/;
-    const amountRegex = /^[0-9]+(\.[0-9]{1,8})?$/;
-
-    let valid = true;
-
-    if (!btcRegex.test(addressInput.value)) {
-        addressInput.classList.add("invalid");
-        document.getElementById('address-error').style.display = "inline";
-        valid = false;
-    }
-
-
-    if (!valid) {
-        event.preventDefault();
-        alert("Please enter the correct information.");
-    }
-});
-</script>
-
-<script>
-
-let userBalance = <?php echo json_encode($balance); ?>;
-
-
-document.getElementById('amount').addEventListener('input', function() {
-    const amountInput = this;
     const errorMessage = document.getElementById('amount-error');
     const sendButton = document.getElementById('send-btn');
     const amount = parseFloat(amountInput.value);
+    const max = parseFloat(amountInput.max);
 
-    
-    if (isNaN(amount) || amount <= 0 || amount > userBalance || tooManyDecimals(amount)) {
+    if (isNaN(amount) || amount <= 0 || tooManyDecimals(amount) || amount > max) {
         amountInput.classList.add("invalid");
         amountInput.classList.remove("valid");
         errorMessage.style.display = "inline";
@@ -227,21 +235,23 @@ document.getElementById('amount').addEventListener('input', function() {
         errorMessage.style.display = "none";
         sendButton.disabled = false;
     }
-});
 
+    fetchMaxWithdrawable(); // пересчёт при вводе
+}
 
 function tooManyDecimals(value) {
     let parts = value.toString().split(".");
     return parts.length > 1 && parts[1].length > 8;
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchMaxWithdrawable();
+    setInterval(fetchMaxWithdrawable, 60000);
+
+    document.getElementById('amount').addEventListener('input', validateAmountInput);
+});
 </script>
 
-        
+
     </div>
-
-	
-
-
 </body>
-
-

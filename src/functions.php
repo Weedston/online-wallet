@@ -177,12 +177,7 @@ function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
         $network_fee += $change; // тоже не создаём dust
     }
 
-    // Логируем входы и выходы
-    error_log("=== BTC TX DEBUG ===");
-    error_log("INPUTS: " . print_r($inputs, true));
-    error_log("OUTPUTS: " . print_r($outputs, true));
-    error_log("Total input: $total_input | Total output: $total_output | Change: $change");
-
+  
     // Создаём транзакцию
     $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
     if (!$raw_tx) {
@@ -198,7 +193,6 @@ function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
     // Отправляем
     $txid = bitcoinRPC('sendrawtransaction', [$signed_tx['hex']]);
     if (!$txid || !preg_match('/^[a-f0-9]{64}$/i', $txid)) {
-        error_log("!+++!Error: Failed to send transaction. Error: $txid");
         return ['success' => false, 'error' => "Failed to send transaction. Error: $txid"];
     }
 
@@ -283,23 +277,17 @@ function addServiceComment($ad_id, $comment_text, $type = 'info') {
 
     $query = mysqli_query($CONNECT, "SELECT service_comments FROM escrow_deposits WHERE ad_id = '$ad_id'");
     if (!$query) {
-        error_log("MySQL error: " . mysqli_error($CONNECT));
         return;
     }
 
     $row = mysqli_fetch_assoc($query);
     if (!$row) {
-        error_log("No row found for ad_id = $ad_id, inserting new row.");
         mysqli_query($CONNECT, "INSERT INTO escrow_deposits (ad_id, service_comments) VALUES ('$ad_id', '[]')");
         $comments = [];
     } else {
         $comments = json_decode($row['service_comments'], true) ?: [];
     }
 
-    error_log("=== addServiceComment DEBUG ===");
-    error_log("ad_id: " . print_r($ad_id, true));
-    error_log("comment_text: " . print_r($comment_text, true));
-    error_log("current_comments: " . print_r($comments, true));
 
     $comments[] = $entry;
     $encoded = mysqli_real_escape_string($CONNECT, json_encode($comments, JSON_UNESCAPED_UNICODE));
@@ -312,46 +300,38 @@ function addServiceComment($ad_id, $comment_text, $type = 'info') {
 function add_notification($user_id, $message) {
     global $CONNECT;
 
-    error_log("add_notification called with user_id: $user_id, message: $message");
 
     if (!$CONNECT) {
-        error_log("Error: Database connection is missing.");
         return false;
     }
 
     if (empty($user_id) || empty($message)) {
-        error_log("Error: user_id or message is empty.");
         return false;
     }
 
     $stmt = $CONNECT->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
     if (!$stmt) {
-        error_log("Error preparing statement: " . $CONNECT->error);
         return false;
     }
 
     $stmt->bind_param("is", $user_id, $message);
     if (!$stmt->execute()) {
-        error_log("Error executing statement: " . $stmt->error);
         $stmt->close();
         return false;
     }
 
     if ($stmt->affected_rows === 0) {
-        error_log("Error: No rows affected.");
         $stmt->close();
         return false;
     }
 
     $stmt->close();
-    error_log("add_notification executed successfully for user_id: $user_id, message: $message");
     return true;
 }
 
 function get_ad_info($ad_id) {
     global $CONNECT;
 
-    error_log("get_ad_info called with ad_id: $ad_id");
 
     $stmt = $CONNECT->prepare("SELECT * FROM ads WHERE id = ?");
     $stmt->bind_param("i", $ad_id);
@@ -359,14 +339,12 @@ function get_ad_info($ad_id) {
     $ad_result = $stmt->get_result();
 
     if (!$ad_result) {
-        error_log("Query failed: " . mysqli_error($CONNECT));
         return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $ad = mysqli_fetch_assoc($ad_result);
 
     if (!$ad) {
-        error_log("Ad not found for ad_id: $ad_id");
         return ['error' => 'Ad not found', 'ad_id' => $ad_id];
     }
 
@@ -376,34 +354,28 @@ function get_ad_info($ad_id) {
 function get_escrow_status($ad_id) {
     global $CONNECT;
 
-    error_log("get_escrow_status called with ad_id: $ad_id");
 
     if (empty($ad_id)) {
-        error_log("get_escrow_status error: ad_id is missing");
         return ['error' => 'ad_id is missing'];
     }
 
     $stmt = $CONNECT->prepare("SELECT status, buyer_confirmed, seller_confirmed FROM escrow_deposits WHERE ad_id = ?");
     if (!$stmt) {
-        error_log("get_escrow_status prepare error: " . mysqli_error($CONNECT));
         return ['error' => 'Failed to prepare statement', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $stmt->bind_param("i", $ad_id);
     if (!$stmt->execute()) {
-        error_log("get_escrow_status execute error: " . mysqli_error($CONNECT));
         return ['error' => 'Failed to execute statement', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $escrow_result = $stmt->get_result();
     if (!$escrow_result) {
-        error_log("get_escrow_status get_result error: " . mysqli_error($CONNECT));
         return ['error' => 'Failed to get result', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
     $escrow = mysqli_fetch_assoc($escrow_result);
     if (!$escrow) {
-        error_log("get_escrow_status: Escrow not found for ad_id: $ad_id");
         return ['error' => 'Escrow not found', 'ad_id' => $ad_id];
     }
 
@@ -435,7 +407,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     $rawInput = file_get_contents('php://input');
     $jsonrpc = json_decode($rawInput, true);
 
-    error_log("RAW JSON: " . $rawInput); // Логируем входящий JSON
 
     if ($jsonrpc === null) {
         echo json_encode(['error' => 'Invalid JSON', 'rawInput' => $rawInput]);
@@ -454,11 +425,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
     switch ($method) {
         case 'getEscrowStatus':
             $raw_input = file_get_contents("php://input");
-            error_log("+++ RAW INPUT: " . $raw_input);
 
             $input = json_decode($raw_input, true);
             $ad_id = $input['params']['ad_id'] ?? null;
-            error_log("+++---case get_escrow_status ad_id: $ad_id");
             $result = get_escrow_status($ad_id);
             echo json_encode([
                 'jsonrpc' => '2.0',
@@ -529,13 +498,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SERVER['CONTENT_TYPE']) && s
 }
 
 
-// Если запрос не POST или не имеет нужного типа содержимого, просто игнорируем
-error_log("Invalid request method or content type: " . $_SERVER['REQUEST_METHOD'] . ", " . ($_SERVER['CONTENT_TYPE'] ?? 'undefined'));
 
 function send_message($ad_id, $user_id, $message) {
     global $CONNECT;
 
-    error_log("send_message called with ad_id: $ad_id, user_id: $user_id, message: $message");
 
     $stmt = $CONNECT->prepare("INSERT INTO messages (ad_id, user_id, message) VALUES (?, ?, ?)");
     $stmt->bind_param("iis", $ad_id, $user_id, htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
@@ -544,7 +510,6 @@ function send_message($ad_id, $user_id, $message) {
         add_notification($recipient_id, "Новое сообщение в чате по объявлению #$ad_id");
         return ['result' => 'Message sent successfully'];
     } else {
-        error_log("Error executing statement: " . mysqli_error($CONNECT));
         return ['error' => 'Error: ' . mysqli_error($CONNECT)];
     }
 }
@@ -552,16 +517,13 @@ function send_message($ad_id, $user_id, $message) {
 function load_messages($ad_id) {
     global $CONNECT;
 
-    error_log("load_messages called with ad_id: $ad_id");
 
     if (empty($ad_id)) {
-        error_log("load_messages error: ad_id is missing");
         return ['error' => 'ad_id is missing'];
     }
 
     $messages = mysqli_query($CONNECT, "SELECT * FROM messages WHERE ad_id = '$ad_id' ORDER BY created_at ASC");
     if (!$messages) {
-        error_log("load_messages error: " . mysqli_error($CONNECT));
         return ['error' => 'Query failed', 'mysqli_error' => mysqli_error($CONNECT)];
     }
 
@@ -576,7 +538,6 @@ function load_messages($ad_id) {
     }
 
     if (empty($response)) {
-        error_log("load_messages: No messages found for ad_id: $ad_id");
     }
 
     return ['result' => $response]; // <-- не забываем вернуть результат
@@ -586,7 +547,6 @@ function load_messages($ad_id) {
 function get_recipient_id($ad_id, $sender_id) {
     global $CONNECT;
 
-    error_log("get_recipient_id called with ad_id: $ad_id, sender_id: $sender_id");
 
     $stmt = $CONNECT->prepare("SELECT user_id, buyer_id FROM ads WHERE id = ?");
     $stmt->bind_param("i", $ad_id);

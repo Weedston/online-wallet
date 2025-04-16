@@ -76,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         if (response) {
                             var notifications = response;
-							console.log("Received notifications!!!!!!:", notifications);
                             var notificationList = document.getElementById('notification-list');
                             notificationList.innerHTML = '';
                             notifications.forEach(function(notification) {
@@ -85,19 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 notificationList.appendChild(listItem);
                             });
                         } else if (response.error) {
-                            console.error("Error: " + response.error.message);
                         }
                     } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
                     }
                 } else {
-                    console.error("Request failed with status:", xhr.status);
                 }
             }
         };
         xhr.onerror = function() {
-            console.error("Request failed");
         };
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
@@ -117,24 +111,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
-                        console.log("Notifications marked as read response:", response); // Добавляем лог
                         if (response.result) {
-                            console.log("Notifications marked as read");
                             fetchUnreadNotificationCount(); // Обновить количество непрочитанных уведомлений
                         } else if (response.error) {
-                            console.error("Error: " + response.error.message);
                         }
                     } catch (e) {
-                        console.error("Parsing error:", e);
-                        console.error("Response:", xhr.responseText);
                     }
                 } else {
-                    console.error("Request failed with status:", xhr.status);
                 }
             }
         };
         xhr.onerror = function() {
-            console.error("Request failed");
         };
         xhr.send(JSON.stringify({
             jsonrpc: "2.0",
@@ -151,41 +138,31 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
-                console.log("Ответ сервера при получении количества непрочитанных уведомлений:", xhr.responseText);
                 if (xhr.status === 200) {
                     try {
                         if (xhr.responseText) {
                             var response = JSON.parse(xhr.responseText);
-                            console.log("Parsed response+++:", response);
                             if (response) {
                                 var count = response;
-                                console.log("Unread notification count parsed-----:", count);
                                 document.getElementById('notification-count').textContent = count;
                             } else if (response !== undefined) {
                                 var count = response;
-                                console.log("Unread notification count (fallback)!!!!!!:", count);
                                 document.getElementById('notification-count').textContent = count;
                             } else if (response.error) {
-                                console.error("Error: " + response.error.message);
                                 document.getElementById('notification-count').textContent = "0";
                             }
                         } else {
-                            console.error("Пустой ответ сервера");
                             document.getElementById('notification-count').textContent = "0";
                         }
                     } catch (e) {
-                        console.error("Ошибка парсинга JSON:", e);
-                        console.error("Response:", xhr.responseText);
                         document.getElementById('notification-count').textContent = "0";
                     }
                 } else {
-                    console.error("Request failed with status:", xhr.statusText);
                     document.getElementById('notification-count').textContent = "0";
                 }
             }
         };
         xhr.onerror = function() {
-            console.error("Request failed");
             document.getElementById('notification-count').textContent = "0";
         };
         var requestData = JSON.stringify({
@@ -194,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
             params: { user_id: <?php echo json_encode($_SESSION['user_id']); ?> },
             id: 1
         });
-        console.log("Request data:", requestData);
         xhr.send(requestData);
     }
 

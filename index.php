@@ -11,7 +11,7 @@ require 'vendor/autoload.php';
 use JsonRPC\Client;
 
 $rpcUser = 'wikly';
-$rpcPassword = '********';
+$rpcPassword = '8A08d423';
 $rpcHost = '127.0.0.1';
 $rpcPort = 48332;
 
@@ -50,7 +50,9 @@ if ($_SERVER['REQUEST_URI'] == '/') {
 		}
 	}
 
-$btc_address = $_SESSION['wallet']; 
+if (isset ($_SESSION['wallet'])) {
+    $btc_address = $_SESSION['wallet']; 
+}
 
 // Функция для создания мультиподписного кошелька
 function createMultisigAddress($keys) {

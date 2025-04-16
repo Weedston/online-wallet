@@ -11,11 +11,8 @@ require_once 'functions.php'; // Подключаем файл с функцие
 
 $request = json_decode(file_get_contents('php://input'), true);
 
-error_log("RAW JSON: " . file_get_contents('php://input')); // Логируем входящий JSON
-error_log("РАЗОБРАННЫЙ JSON: " . print_r($request, true));  // Логируем массив после json_decode()
 
 if (json_last_error() !== JSON_ERROR_NONE) {
-    error_log("Ошибка JSON: " . json_last_error_msg());
     echo json_encode(['error' => 'Invalid JSON']);
     exit();
 }
@@ -26,7 +23,6 @@ $recipient_id = intval($request['params']['recipient_id'] ?? 0);
 $message = trim($request['params']['message'] ?? '');
 $method = $request['method'] ?? '';
 
-error_log("ПАРАМЕТРЫ: ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message=$message, method=$method");
 
 if ($method === 'send_message' && $ad_id > 0 && $sender_id > 0 && $recipient_id > 0 && !empty($message)) {
     $message = mysqli_real_escape_string($CONNECT, $message);
@@ -34,13 +30,11 @@ if ($method === 'send_message' && $ad_id > 0 && $sender_id > 0 && $recipient_id 
     $result = mysqli_query($CONNECT, $query);
     if ($result) {
         if (add_notification($recipient_id, "A new chat message based on the ad #$ad_id. Go to the <a href=\"p2p-trade_history\">Trade history</a> section to continue the transaction.")) {
-            error_log("Уведомление успешно добавлено для пользователя ID: $recipient_id");
+         
         } else {
-            error_log("Ошибка добавления уведомления для пользователя ID: $recipient_id");
         }
         echo json_encode(['success' => true]);
     } else {
-        error_log("Ошибка SQL: " . mysqli_error($CONNECT));
         echo json_encode(['error' => 'Query failed: ' . mysqli_error($CONNECT)]);
     }
 } elseif ($method === 'loadMessages' && $ad_id > 0) {
@@ -52,7 +46,6 @@ if ($method === 'send_message' && $ad_id > 0 && $sender_id > 0 && $recipient_id 
     }
     echo json_encode(['result' => $response]);
 } else {
-    error_log("Ошибка: Не хватает параметров! ad_id=$ad_id, sender_id=$sender_id, recipient_id=$recipient_id, message='$message'");
     echo json_encode(['error' => 'Missing parameters']);
 }
 ?>

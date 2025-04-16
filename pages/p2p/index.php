@@ -27,11 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_ad'])) {
     unset($_SESSION['form_token']); // Предотвращаем повторную отправку
 
     $ad_id = intval($_POST['ad_id']);
-	error_log("@@@@@@@Zdes est ad: $ad_id");
+	
     $user_id = $_SESSION['user_id'];
     $btc_amount = $_POST['btc_amount']; 
-	error_log("BBBBBBBBBBBBBBBBBBBB: ad_id.: $ad_id");
-	error_log("EEEEEEEEEEEEEEEEEEEE: btc_amount.: $btc_amount");
     // Получаем объявление
     $ad_query = mysqli_query($CONNECT, "SELECT * FROM ads WHERE id = '$ad_id'");
     $ad = mysqli_fetch_assoc($ad_query);
@@ -54,7 +52,6 @@ if ($user_role === 'buyer') {
 }
 $wallet_query = mysqli_query($CONNECT, "SELECT wallet FROM members WHERE id = '$seller_id'");
     $seller_wallet = mysqli_fetch_assoc($wallet_query);
-	error_log("DDDDDDDDDDDDDDDDDD: seller_wallet: " . $seller_wallet['wallet']);
     if (!$seller_wallet) {
         die('seller wallet not found.');
     }

@@ -135,7 +135,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                         document.getElementById('eur-rate').textContent = `1 BTC = ${data.eur.toFixed(2)} EUR`;
                         document.getElementById('rub-rate').textContent = `1 BTC = ${data.rub.toFixed(2)} RUB`;
                     } else {
-                        console.error('BTC rates data is null');
                     }
                 })
                 .catch(error => console.error('Error fetching BTC rates:', error));

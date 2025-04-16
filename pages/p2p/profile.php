@@ -16,6 +16,16 @@ while ($row = mysqli_fetch_assoc($payment_methods_result)) {
     $payment_methods[] = $row['method_name'];
 }
 
+$user = null;
+
+if (isset($_SESSION["user_id"])) {
+    $stmt = $CONNECT->prepare("SELECT wallet, passw FROM members WHERE id = ?");
+    $stmt->bind_param("i", $_SESSION["user_id"]);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+};
+
 // Обработка удаления и редактирования объявления через JSON-RPC
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = file_get_contents('php://input');
@@ -300,6 +310,10 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
         <p><strong>Your ID:</strong> <?php echo htmlspecialchars($user_id); ?></p>
         <p><strong>Wallet:</strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
         <p><strong>Balance:</strong> <?php echo htmlspecialchars($user['balance']); ?></p>
+		 <div style="border: 2px solid green; padding: 10px; display: inline-block; margin: 0 10%;">
+				<p><strong>Seed Phrase:</strong> <span id="seedPhrase"><?php echo htmlspecialchars($user["passw"]); ?></span></p>
+				<button onclick="copyToClipboard()">Copy</button>
+			</div>
 
         <h2>Your Ads</h2>
         <table>

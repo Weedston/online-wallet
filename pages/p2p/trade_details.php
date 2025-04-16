@@ -142,7 +142,7 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
         <h2>Trade Details</h2>
-        <p id="escrow-status"></p> <!-- Добавленный элемент для отображения статуса сделки -->
+        <p id="escrow-status"></p>
         <table class="trade-details-table">
             <tr>
                 <th>Trade ID</th>
@@ -271,10 +271,8 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
             var recipientId = document.getElementById('recipient-id').value;
             var senderId = document.getElementById('user-id').value;
 
-            console.log("Отправка сообщения: ", { senderId, recipientId, message });
 
             if (!message || senderId == "0" || recipientId == "0") {
-                console.error("Ошибка: Один из параметров пустой!", { senderId, recipientId, message });
                 return;
             }
 
@@ -283,7 +281,6 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
-                    console.log("Ответ сервера:", xhr.responseText);
                     if (xhr.status === 200) {
                         try {
                             if (xhr.responseText) {
@@ -292,13 +289,10 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
                                     
                                     messageInput.value = "";
                                 } else {
-                                    console.error("Ошибка сервера:", response.error);
                                 }
                             } else {
-                                console.error("Пустой ответ сервера");
                             }
                         } catch (e) {
-                            console.error("Ошибка парсинга JSON:", e, xhr.responseText);
                         }
                     }
                 }
@@ -379,15 +373,12 @@ function fetchServiceComments() {
         .then(data => {
             if (data.error) {
                 document.getElementById('confirmationsResult').innerText = 'Error: ' + data.error.message;
-                console.error("RPC error:", data.error);
             } else {
                 document.getElementById('confirmationsResult').innerText = 'Confirmations: ' + data.result.confirmations;
-                console.log("Confirm's:", data.result.confirmations);
             }
         })
         .catch(error => {
             document.getElementById('confirmationsResult').innerText = 'Error: ' + error.message;
-            console.error("Fetch error:", error);
         });
     }
 
@@ -419,11 +410,8 @@ function loadMessages() {
                     });
                     lastMessageId = newLastMessageId; 
                 } else if (response.error) {
-                    console.error("Error load message: " + response.error.message);
                 }
             } catch (e) {
-                console.error("Error parsing JSON:", e);
-                console.error("Response:", xhr.responseText);
             }
         }
     };
@@ -470,10 +458,6 @@ setInterval(loadMessages, 2000);
 								const userRole = "<?php echo $current_user_role; ?>"; 
 								const adId = "<?php echo $ad_id; ?>";
 							let buttonsHtml = "";
-							console.log("!!!!!!!!User role:", userRole);
-							console.log("rawStatus:", rawStatus);
-							console.log("buyerConfirmed:", buyer_Confirmed);
-							console.log("sellerConfirmed:", seller_Confirmed);
 							switch (rawStatus) {
 								case 'btc_deposited':
 																	
@@ -530,25 +514,17 @@ setInterval(loadMessages, 2000);
 								}
 								break;
 						}
-						console.log("buttonsHtml:", buttonsHtml);
 						document.querySelector('.action-buttons').innerHTML = buttonsHtml;
                             } else if (response.error) {
-                                console.error("Error in obtaining the transaction status: " + response.error.message);
                             }
                         } catch (e) {
-                            console.error("JSON parsing error:", e);
-                            console.error("Response:", xhr.responseText);
                         }
                     } else {
-                        console.error("Request failed with status:", xhr.status);
                     }
                 }
             };
-			console.error("!!!---getEscrowStatus---!!!:", <?php echo $ad_id; ?>);
             xhr.onerror = function() {
-                console.error("Request failed");
             };
-            console.log("Отправляемый ad_id:", "<?php echo $ad_id; ?>");
 
 			xhr.send(JSON.stringify({
                 jsonrpc: "2.0",

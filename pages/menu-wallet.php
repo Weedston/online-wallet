@@ -6,7 +6,7 @@
         <li><a href="/p2p" class="p2p-link">P2P Market</a></li> <!-- Выделение этой ссылки -->
         <li><a href="/logout">Logout</a></li>
         <?php
-        if (isset($_SESSION['admin']) || $_SESSION['admin'] == true) {
+        if (isset($_SESSION['admin']) ) {
             echo '<li><a href="/adm_support">Admin Support</a></li>';        
         }
         ?>
