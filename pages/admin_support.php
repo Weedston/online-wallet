@@ -137,7 +137,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
 </head>
 
 <body><br><br>
-<a href="dashboard" class="btn">Back to Dashboard</a>
+	<?php include 'pages/p2p/menu_adm.php'; ?>
     <div style='min-height: 50vh;' class="container">
         <h2>Admin Support Panel</h2>
 		<h3>Total Site Visits: <span id="visitCount">0</span></h3>

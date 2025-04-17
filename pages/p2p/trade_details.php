@@ -142,7 +142,7 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
         <h2>Trade Details</h2>
-        <p id="escrow-status"></p>
+        <p id="escrow-status"></p> 
         <table class="trade-details-table">
             <tr>
                 <th>Trade ID</th>
@@ -195,7 +195,7 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
             </tr>
             <tr>
 				<th>Deposit status</th>
-				<td id="ad-status">Загрузка...</td>
+				<td id="ad-status">Loading...</td>
 			</tr>
         </table>
 		<div id="service-log">
@@ -230,13 +230,13 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
 
         if (cancelTradeButton) {
             cancelTradeButton.addEventListener('click', function() {
-                if (confirm('Вы уверены, что хотите отменить сделку?')) {
+                if (confirm('Are you sure you want to cancel the deal?')) {
                     var xhr = new XMLHttpRequest();
                     xhr.open('POST', 'src/functions.php', true);
                     xhr.setRequestHeader('Content-Type', 'application/json');
                     xhr.onreadystatechange = function() {
                         if (xhr.readyState === 4 && xhr.status === 200) {
-                            alert('Сделка успешно отменена.');
+                            alert('The transaction was successfully cancelled.');
                             window.location.reload();
                         }
                     };
@@ -247,13 +247,13 @@ $seller_id_display = ($seller_id == $current_user_id) ? "$seller_id (You)" : $se
 
         if (confirmPaymentButton) {
             confirmPaymentButton.addEventListener('click', function() {
-                if (confirm('Вы уверены, что хотите подтвердить оплату?')) {
+                if (confirm('Are you sure you want to confirm the payment?')) {
                     var xhr = new XMLHttpRequest();
                     xhr.open('POST', 'src/functions.php', true);
                     xhr.setRequestHeader('Content-Type', 'application/json');
                     xhr.onreadystatechange = function() {
                         if (xhr.readyState === 4 && xhr.status === 200) {
-                            alert('Оплата успешно подтверждена.');
+                            alert('The payment has been successfully confirmed.');
                             window.location.reload();
                         }
                     };
@@ -348,7 +348,7 @@ function fetchServiceComments() {
 
 
 
-// Функция для проверки подтверждений
+
          function checkConfirmations() {
         const txid = "<?php echo $txid_confirmations; ?>";
 
@@ -495,8 +495,7 @@ setInterval(loadMessages, 2000);
             buttonsHtml += `
             <form method="POST" action="src/resolve_dispute.php">
                 <input type="hidden" name="ad_id" value="${adId}">
-                <button type="submit" name="dispute" class="btn btn-danger">Complain to arbitration</button>
-            </form>
+                            </form>
             `;
         }
     }

