@@ -20,48 +20,11 @@ foreach ($utxos as $utxo) {
     $balance += $utxo['amount'];
 }
 
-function calculateNetworkFeeSatoshi($tx_size_bytes = 200) {
-    // Запрашиваем feerate с помощью bitcoinRPC
-    $response = bitcoinRPC("estimatesmartfee", [6]);
-    error_log(print_r($response, true)); // Для отладки
 
-    // Устанавливаем значение по умолчанию
-    $default_feerate = 0.00001000;
-
-    // Проверка на ошибки в ответе
-    if (isset($response['errors']) && count($response['errors']) > 0) {
-        error_log("Ошибка при получении feerate. Используем значение по умолчанию.");
-        $feerate = $default_feerate;
-    } else {
-        if (isset($response['result']['feerate']) && $response['result']['feerate'] > 0) {
-            $feerate = $response['result']['feerate'];
-        } else {
-            error_log("Feerate отсутствует или нулевой. Используем значение по умолчанию.");
-            $feerate = $default_feerate;
-        }
-    }
-
-    // Расчет размера в kB
-    $tx_size_kb = $tx_size_bytes / 1000;
-
-    // Перевод в BTC (feerate уже в BTC за 1 кБ)
-    $fee_btc = $feerate * $tx_size_kb;
-
-    // Гарантируем хотя бы минимальную комиссию 1 сатоши
-    $min_fee_btc = 1 / 100000000;
-    $fee_btc = max($fee_btc, $min_fee_btc);
-
-    // Округление до 8 знаков
-    $fee_btc = number_format($fee_btc, 8, '.', '');
-
-    error_log("Feerate = $feerate, Network Fee = $fee_btc BTC");
-
-    return $fee_btc;
-}
 
 // Комиссия сайта и расчёт максимальной суммы вывода
 $site_fee_percentage = 0.01; // 1%
-$network_fee = calculateNetworkFeeSatoshi();
+$network_fee = calculateTotalNetworkFeeBTC();
 if ($balance <= 0 || $balance <= $network_fee) {
     $max_withdrawable = 0.0;
 } else {
@@ -143,7 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			<input type="number" name="amount" id="amount" step="0.00000001" min="0" placeholder="Amount (BTC)" pattern="^[0-9]+(\.[0-9]{1,8})?$" required> 
 			<span id="amount-error" class="error">Incorrect Amount (BTC)!</span>
 			<p class="info">Maximum available amount: <strong id="maxAmount"></strong> BTC</p>
-			<p class="info">Site fee (1%): <strong id="siteFee">0.00000000</strong> BTC</p>
+			<p class="info">Servise fee (1%): <strong id="siteFee">0.00000000</strong> BTC</p>
 			<p class="info">Network fee: <strong id="networkFee">0.00000000</strong> BTC</p>
 
 			<p class="info">Total transfer amount (including the commission): <strong id="totalDeduction">0.00000000</strong> BTC</p>

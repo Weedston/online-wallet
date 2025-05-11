@@ -84,19 +84,25 @@ $message_display = isset($settings['message_display']) ? $settings['message_disp
             margin: 20px auto;
             background-color: #f0fff0;
         }
+		
     </style>
 <div class="container">
      
         <section class="hero">
-            <h1>Anonymous & Secure & Fast BTC Wallet</h1>
-            <p>Your gateway to the decentralized world.</p>
+            <h1 style="color: orange; text-shadow: 1px 1px 2px #ffffff88;">
+				Anonymous & Secure & Fast BTC Wallet
+			</h1>
+			<p style="color: orange; text-shadow: 1px 1px 2px #ffffff88;">
+				Your gateway to the decentralized world.
+			</p>
+
 			<br>
 			<h1>Our advantages:</h1>
 			<p>Own secure and fault-tolerant servers. No personal information is recorded, as well as transaction information. One-click registration is simple and does not require any personal information. All current transactions are temporarily displayed in your merchant profile. We do not provide any data to the authorities, as there is no stored data.</p>
             <p>In our anonymous Bitcoin wallet service, there are no minimum and maximum restrictions on deposits and withdrawals.</p>
-			<p>All transactions are performed automatically without human intervention. <br> And also - fast support!</p>
+			<p>All transactions are performed automatically without human intervention. <br> And also - fast support!</p><p><b>We guarantee the full and honest operation of our service!</b></p>
 			<p>There is also a section available for P2P exchange of BTC for fiat money.</p>
-			<p>Total number of successful service transactions: <?php echo $visit_count; ?></p>
+			
 			<?php if ($message_display == '1' && !empty($message)): ?>
             			<div class="message-box">
                			 <p><?= $message ?></p>

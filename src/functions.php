@@ -51,21 +51,44 @@ function getBTCBalance($address) {
     return round($balance, 8);
 }
 
+function calculateTotalNetworkFeeBTC($tx_size_bytes = 250) {
+    // Получаем feerate за 1 kB
+    $response = bitcoinRPC("estimatesmartfee", [6]);
+    error_log(print_r($response, true)); // отладка
+
+    $default_feerate_btc_per_kb = 0.00001000; // 1 сатоши за байт
+
+    if (isset($response['feerate']) && $response['feerate'] > 0) {
+        $feerate_btc_per_kb = $response['feerate'];
+    } else {
+        error_log("Feerate missing, using default");
+        $feerate_btc_per_kb = $default_feerate_btc_per_kb;
+    }
+
+    // Размер в кБ
+    $tx_size_kb = $tx_size_bytes / 1000;
+
+    // Общая комиссия в BTC
+    $total_fee_btc = $feerate_btc_per_kb * $tx_size_kb;
+
+    // Гарантированный минимум: 1 сатоши
+    $min_fee_btc = 1 / 100000000;
+    $total_fee_btc = max($total_fee_btc, $min_fee_btc);
+
+    $total_fee_btc = number_format($total_fee_btc, 8, '.', '');
+    error_log("Estimated Network Fee: $total_fee_btc BTC");
+
+    return $total_fee_btc;
+}
+
 function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet = "tb1qtdxq5dzdv29tkw7t3d07qqeuz80y9k80ynu5tn", $serviceFeePercent = 0.01) {
-    // 1. Получаем доступные UTXO
     $utxos = bitcoinRPC('listunspent', [1, 9999999, [$fromAddress]]);
     if (!is_array($utxos) || empty($utxos)) {
         return ["error" => "No available UTXOs!"];
     }
 
-    // 2. Оцениваем комиссию сети
-    $feeEstimate = bitcoinRPC("estimatesmartfee", [6]);
-    $feeRatePerKb = (is_array($feeEstimate) && isset($feeEstimate['feerate']) && $feeEstimate['feerate'] > 0)
-        ? $feeEstimate['feerate']
-        : 0.00001000;
-    $feeRatePerByte = $feeRatePerKb / 1000;
+    $networkFee = calculateTotalNetworkFeeBTC(); // финальная комиссия
 
-    // 3. Подбираем UTXO
     $inputs = [];
     $totalInput = 0;
     $serviceFee = round($amount * $serviceFeePercent, 8);
@@ -79,23 +102,17 @@ function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet =
         ];
         $totalInput += $utxo['amount'];
 
-        if ($totalInput >= $amount + $serviceFee + 0.0001) break;
+        if ($totalInput >= $amount + $serviceFee + $networkFee) break;
     }
 
-    if ($totalInput < ($amount + $serviceFee)) {
-        return ["error" => "Not enough funds!"];
+    if ($totalInput < ($amount + $serviceFee + $networkFee)) {
+        return ["error" => "Not enough funds including network + service fee"];
     }
 
-    // 4. Оцениваем размер и комиссию транзакции
-    $txSizeBytes = 250;
-    $fee = round($txSizeBytes * $feeRatePerByte, 8);
+    $change = round($totalInput - $amount - $serviceFee - $networkFee, 8);
 
-    $change = round($totalInput - $amount - $serviceFee - $fee, 8);
-    if ($change < 0) {
-        return ["error" => "Not enough funds including network fee!"];
-    }
+    error_log("Amount = $amount BTC, Service Fee = $serviceFee BTC, Network Fee = $networkFee BTC, Change = $change BTC");
 
-    // 5. Создаем выходы
     $outputs = [
         $recipient => round($amount, 8),
         $serviceWallet => $serviceFee
@@ -104,7 +121,6 @@ function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet =
         $outputs[$fromAddress] = $change;
     }
 
-    // 6. Создаем и подписываем транзакцию
     $rawTx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
     $signedTx = bitcoinRPC('signrawtransactionwithwallet', [$rawTx]);
 
@@ -112,10 +128,10 @@ function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet =
         return ["error" => "Failed to sign transaction!", "response" => $signedTx];
     }
 
-    // 7. Отправляем транзакцию
     $txid = bitcoinRPC('sendrawtransaction', [$signedTx['hex']]);
     return ["txid" => $txid];
 }
+
 
 
 function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
