@@ -121,6 +121,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
     exit;
 }
 
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
+    // Используем bitcoinRPC, чтобы получить последние транзакции
+    $transactions = bitcoinRPC('listtransactions');
+    
+    // Проверяем результат
+    if (is_array($transactions)) {
+        // Отправляем JSON-ответ
+        echo json_encode(['transactions' => $transactions]);
+    } else {
+        echo json_encode(['error' => 'Ошибка получения транзакций: ' . $transactions]);
+    }
+    exit;
+}
+
 
 ?>
 <!DOCTYPE html>
@@ -135,7 +149,33 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
     <title>Anonymous BTC Wallet</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+<style>
+        /* Добавим стили для области с транзакциями */
+        #btcTransactions {
+            max-height: 300px; /* Ограничиваем высоту */
+            overflow-y: auto; /* Добавляем вертикальную прокрутку */
+            border: 1px solid #ccc; /* Рамка для выделения */
+            padding: 10px; /* Внутренний отступ */
+            background-color: #f9f9f9; /* Фон для визуального отделения */
+        }
 
+        #btcTransactions ul {
+            list-style-type: none; /* Убираем маркеры списка */
+            padding: 0;
+            margin: 0;
+        }
+
+        #btcTransactions li {
+            margin-bottom: 10px; /* Расстояние между элементами списка */
+            padding: 10px; /* Внутренний отступ элемента */
+            border-bottom: 1px solid #ddd; /* Разделительная линия */
+        }
+
+        #btcTransactions li:last-child {
+            border-bottom: none; /* Убираем линию у последнего элемента */
+        }
+    </style>
+	
 <body><br><br>
 	<?php include 'pages/p2p/menu_adm.php'; ?>
     <div style='min-height: 50vh;' class="container">
@@ -227,6 +267,13 @@ setInterval(fetchVisitCount, 10000);
             <button type="submit" class="btn">Send Message</button>
         </form>
 		
+		
+        <h3>Последние BTC транзакции</h3>
+        <div id="btcTransactions">
+            <p>Загрузка данных...</p>
+        </div>
+		
+		
 		<h3>All Users</h3>
         <table>
             <tr>
@@ -246,4 +293,35 @@ setInterval(fetchVisitCount, 10000);
         </table>
         
     </div>
+	
+	        <script>
+            function fetchBTCTransactions() {
+                fetch("?ajax=btc_transactions", { method: "GET" })
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('btcTransactions');
+                        if (data.transactions) {
+                            container.innerHTML = '<ul>' + data.transactions.map(tx => `
+                                <li>
+                                    <strong>TXID:</strong> ${tx.txid} <br>
+                                    <strong>Amount:</strong> ${tx.amount} BTC <br>
+                                    <strong>Confirmations:</strong> ${tx.confirmations}
+                                </li>
+                            `).join('') + '</ul>';
+                        } else {
+                            container.innerHTML = `<p>${data.error || 'Ошибка загрузки данных.'}</p>`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        document.getElementById('btcTransactions').innerHTML = '<p>Ошибка загрузки данных.</p>';
+                    });
+            }
+
+            // Загружаем данные при загрузке страницы
+            fetchBTCTransactions();
+
+            // Обновляем каждые 10 секунд
+            setInterval(fetchBTCTransactions, 10000);
+        </script>
 </body>
