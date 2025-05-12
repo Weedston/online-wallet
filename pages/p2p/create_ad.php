@@ -79,11 +79,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create P2P Exchange Ad</title>
+    <title><?= htmlspecialchars($translations['p2p_creatad_title']) ?></title>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
         /* Modal window */
@@ -152,8 +152,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
     <div class="container ad-container">
         <!-- BTC rates and balance info box -->
         <div class="btc-price-box">
-            <p>Your Balance: <?php echo $balance; ?> BTC</p>
-            <p>Current BTC Rates:</p>
+            <p><?= htmlspecialchars($translations['p2p_creatad_balance']) ?><?php echo $balance; ?> BTC</p>
+            <p><?= htmlspecialchars($translations['p2p_creatad_currate']) ?></p>
             <ul>
                 <li id="usd-rate">1 BTC = N/A USD</li>
                 <li id="eur-rate">1 BTC = N/A EUR</li>
@@ -163,30 +163,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 
         <!-- Ad creation form -->
         <div class="ad-form">
-            <h2>Create a P2P Exchange Ad</h2>
+            <h2><?= htmlspecialchars($translations['p2p_creatad_h2']) ?></h2>
             <form method="POST">
                 <!-- Form fields -->
                 <p>
-                <label for="trade_type">Trade Type:</label>
+                <label for="trade_type"><?= htmlspecialchars($translations['p2p_creatad_tradetype']) ?></label>
                 <select name="trade_type" id="trade_type" required>
-                    <option value="buy">Buy BTC</option>
-                    <option value="sell">Sell BTC</option>
+                    <option value="buy"><?= htmlspecialchars($translations['p2p_creatad_buy']) ?></option>
+                    <option value="sell"><?= htmlspecialchars($translations['p2p_creatad_sell']) ?></option>
                 </select>
                 </p><p>
 
-                <label for="min_amount_btc">Min Amount of BTC:</label>
+                <label for="min_amount_btc"><?= htmlspecialchars($translations['p2p_creatad_minbtc']) ?></label>
                 <input type="number" name="min_amount_btc" id="min_amount_btc" step="0.00000001" required>
                 </p><p>
 
-                <label for="max_amount_btc">Max Amount of BTC:</label>
+                <label for="max_amount_btc"><?= htmlspecialchars($translations['p2p_creatad_maxbtc']) ?></label>
                 <input type="number" name="max_amount_btc" id="max_amount_btc" step="0.00000001" required>
                 </p><p>
 
-                <label for="rate">Rate (Fiat per BTC):</label>
+                <label for="rate"><?= htmlspecialchars($translations['p2p_creatad_rate']) ?></label>
                 <input type="number" name="rate" id="rate" step="0.01" required>
                 </p><p>
 
-                <label for="fiat_currency">Fiat Currency:</label>
+                <label for="fiat_currency"><?= htmlspecialchars($translations['p2p_creatad_fiatcurr']) ?></label>
                 <select name="fiat_currency" id="fiat_currency" required>
                     <?php while ($currency = mysqli_fetch_assoc($fiat_currencies)) { ?>
                         <option value="<?php echo htmlspecialchars($currency['currency_code']); ?>">
@@ -196,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                 </select>
                 </p><p>
 
-                <label for="payment_methods">Payment Methods:</label>
+                <label for="payment_methods"><?= htmlspecialchars($translations['p2p_creatad_paymeth']) ?></label>
                 <select name="payment_methods[]" id="payment_methods" multiple required>
                     <?php foreach ($payment_methods as $method) { ?>
                         <option value="<?php echo htmlspecialchars($method); ?>">
@@ -206,14 +206,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
                 </select>
                 </p><p>
 
-                <label for="comment">Comment:</label>
+                <label for="comment"><?= htmlspecialchars($translations['p2p_creatad_comment']) ?></label>
                 <textarea name="comment" id="comment" rows="4" cols="50"></textarea>
                 </p>
 
                 <!-- New block to display trade info -->
                 <p id="trade_info" style="color: #FFD700;"></p>
                 
-                <button type="submit" name="create_ad" class="btn">Create Ad</button>
+                <button type="submit" name="create_ad" class="btn"><?= htmlspecialchars($translations['p2p_creatad_btn']) ?></button>
             </form>
         </div>
     </div>

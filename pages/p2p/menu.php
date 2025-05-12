@@ -25,25 +25,25 @@ if (session_status() == PHP_SESSION_NONE) {
 
 <nav>
     <ul>
-        <li><a href="dashboard">Dashboard</a></li>
-        <li><a href="transfer">Transfer</a></li>
-        <li><a href="support">Support</a></li>
-        <li><a href="p2p">P2P Exchange</a></li>
-        <li><a href="p2p-create">Create Ad</a></li>
-        <li><a href="p2p-trade_history">Trade History</a></li>
-        <li><a href="p2p-profile">Profile</a></li>
-        <li><a href="logout">Logout</a></li>
+        <li><a href="dashboard"><?= htmlspecialchars($translations['p2p_menu_dash']) ?></a></li>
+        <li><a href="transfer"><?= htmlspecialchars($translations['p2p_menu_transfer']) ?></a></li>
+        <li><a href="support"><?= htmlspecialchars($translations['p2p_menu_support']) ?></a></li>
+        <li><a href="p2p"><?= htmlspecialchars($translations['p2p_menu_p2p_exch']) ?></a></li>
+        <li><a href="p2p-create"><?= htmlspecialchars($translations['p2p_menu_createad']) ?></a></li>
+        <li><a href="p2p-trade_history"><?= htmlspecialchars($translations['p2p_menu_tradehist']) ?></a></li>
+        <li><a href="p2p-profile"><?= htmlspecialchars($translations['p2p_menu_profile']) ?></a></li>
+        <li><a href="logout"><?= htmlspecialchars($translations['p2p_menu_logout']) ?></a></li>
         <li>
             <a href="#" id="notification-bell">
                 <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
                 <span class="notification-badge" id="notification-count">0</span>
             </a>
             <div id="notification-popup" class="notification-popup">
-                <h4>Notifications</h4>
+                <h4><?= htmlspecialchars($translations['p2p_menu_notifications']) ?></h4>
                 <ul id="notification-list">
                     <!-- Уведомления будут загружены тут -->
                 </ul>
-                <a href="notifications" class="view-all-link">View All Notifications</a>
+                <a href="notifications" class="view-all-link"><?= htmlspecialchars($translations['p2p_menu_allnotif']) ?></a>
             </div>
         </li>
     </ul>

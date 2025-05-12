@@ -116,11 +116,11 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
+    <title><?= htmlspecialchars($translations['p2p_profile_title']) ?></title>
     <link rel="stylesheet" href="../../css/styles.css">
     <script>
         async function deleteAd(adId) {
@@ -247,7 +247,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
         });
     </script>
     <style>
-        /* Модальное окно */
+        
         .modal {
             display: none;
             position: fixed;
@@ -306,29 +306,29 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
 <body>
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
-        <h2>User Profile</h2>
-        <p><strong>Your ID:</strong> <?php echo htmlspecialchars($user_id); ?></p>
-        <p><strong>Wallet:</strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
-        <p><strong>Balance:</strong> <?php echo htmlspecialchars($user['balance']); ?></p>
+        <h2><?= htmlspecialchars($translations['p2p_profile_title']) ?></h2>
+        <p><strong><?= htmlspecialchars($translations['p2p_profile_userid']) ?></strong> <?php echo htmlspecialchars($user_id); ?></p>
+        <p><strong><?= htmlspecialchars($translations['p2p_profile_wallet']) ?></strong> <?php echo htmlspecialchars($user['wallet']); ?></p>
+        <p><strong><?= htmlspecialchars($translations['p2p_profile_balance']) ?></strong> <?php echo htmlspecialchars($user['balance']); ?></p>
 		 <div style="border: 2px solid green; padding: 10px; display: inline-block; margin: 0 10%;">
-				<p><strong>Seed Phrase:</strong> <span id="seedPhrase"><?php echo htmlspecialchars($user["passw"]); ?></span></p>
-				<button onclick="copyToClipboard()">Copy</button>
+				<p><strong><?= htmlspecialchars($translations['p2p_profile_seed']) ?></strong> <span id="seedPhrase"><?php echo htmlspecialchars($user["passw"]); ?></span></p>
+				<button onclick="copyToClipboard()"><?= htmlspecialchars($translations['p2p_profile_copy']) ?></button>
 			</div>
 
-        <h2>Your Ads</h2>
+        <h2><?= htmlspecialchars($translations['p2p_profile_h2']) ?></h2>
         <table>
             <thead>
                 <tr>
-                    <th>Ad ID</th>
-                    <th>Date</th>
-                    <th>Min BTC Amount</th>
-                    <th>Max BTC Amount</th>
-                    <th>Rate</th>
-                    <th>Payment Methods</th>
-                    <th>Fiat Amount</th>
-                    <th>Trade Type</th>
-                    <th>Comment</th>
-                    <th>Action</th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_adid']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_date']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_minbtcam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_maxbtcam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_rate']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_paymmeth']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_fiatam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_tradetype']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_comment']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_profile_action']) ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -374,39 +374,38 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
         </table>
     </div>
 
-    <!-- Модальное окно для редактирования объявления -->
-    <!-- Модальное окно для редактирования объявления -->
+
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h2>Edit Ad</h2>
-        <p><strong>Ad ID:</strong> <span id="edit-id"></span></p>
+        <h2><?= htmlspecialchars($translations['p2p_profile_modal_edit']) ?></h2>
+        <p><strong><?= htmlspecialchars($translations['p2p_profile_adid']) ?>:</strong> <span id="edit-id"></span></p>
         <form onsubmit="event.preventDefault(); editAd();">
             <input type="hidden" id="edit-ad-id">
-            <label for="edit-date">Date:</label>
+            <label for="edit-date"><?= htmlspecialchars($translations['p2p_profile_date']) ?>:</label>
             <input type="text" id="edit-date" readonly>
-            <label for="edit-min-amount">Min BTC Amount:</label>
+            <label for="edit-min-amount"><?= htmlspecialchars($translations['p2p_profile_minbtcam']) ?>:</label>
             <input type="number" id="edit-min-amount" step="0.00000001" required oninput="calculateFiatAmount()">
-            <label for="edit-max-amount">Max BTC Amount:</label>
+            <label for="edit-max-amount"><?= htmlspecialchars($translations['p2p_profile_maxbtcam']) ?>:</label>
             <input type="number" id="edit-max-amount" step="0.00000001" required oninput="calculateFiatAmount()">
-            <label for="edit-rate">Rate:</label>
+            <label for="edit-rate"><?= htmlspecialchars($translations['p2p_profile_rate']) ?>:</label>
             <input type="number" id="edit-rate" step="0.01" required oninput="calculateFiatAmount()">
-            <label for="edit-payment-methods">Payment Methods:</label>
+            <label for="edit-payment-methods"><?= htmlspecialchars($translations['p2p_profile_paymmeth']) ?>:</label>
             <select id="edit-payment-methods" multiple required>
                 <?php foreach ($payment_methods as $method) { ?>
                     <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
                 <?php } ?>
             </select>
-            <label for="edit-min-fiat-amount">Min Fiat Amount:</label>
+            <label for="edit-min-fiat-amount"><?= htmlspecialchars($translations['p2p_profile_modal_minfiat']) ?></label>
             <input type="number" id="edit-min-fiat-amount" readonly>
-            <label for="edit-max-fiat-amount">Max Fiat Amount:</label>
+            <label for="edit-max-fiat-amount"><?= htmlspecialchars($translations['p2p_profile_modal_maxfiat']) ?></label>
             <input type="number" id="edit-max-fiat-amount" readonly>
-            <label for="edit-trade-type">Trade Type:</label>
+            <label for="edit-trade-type"><?= htmlspecialchars($translations['p2p_profile_tradetype']) ?>:</label>
             <input type="text" id="edit-trade-type" readonly>
-            <label for="edit-comment">Comment:</label>
+            <label for="edit-comment"><?= htmlspecialchars($translations['p2p_profile_comment']) ?>:</label>
             <textarea id="edit-comment" rows="4"></textarea>
-            <button type="submit" class="btn">Save</button>
-            <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+            <button type="submit" class="btn"><?= htmlspecialchars($translations['p2p_profile_save']) ?></button>
+            <button type="button" class="btn" onclick="closeModal()"><?= htmlspecialchars($translations['p2p_profile_cancel']) ?></button>
         </form>
     </div>
 </div>

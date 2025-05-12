@@ -28,7 +28,7 @@ $trades = mysqli_query($CONNECT, "
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade History</title>
+    <title><?= htmlspecialchars($translations['p2p_history_title']) ?></title>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
         table {
@@ -56,18 +56,18 @@ $trades = mysqli_query($CONNECT, "
 <body>
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
-        <h2>Trade History</h2>
+        <h2><?= htmlspecialchars($translations['p2p_history_title']) ?></h2>
         <table>
             <thead>
                 <tr>
-                    <th>Trade ID</th>
-                    <th>User ID</th>
-                    <th>BTC Amount</th>
-                    <th>Fiat Amount</th>
-                    <th>Rate</th>
-                    <th>Trade Type</th>
-                    <th>Status</th>
-                    <th>Updated At</th>
+                    <th><?= htmlspecialchars($translations['p2p_history_tradeid']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_userid']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_btcam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_fiatam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_rate']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_tradetype']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_status']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_history_update']) ?></th>
                 </tr>
             </thead>
             <tbody>
