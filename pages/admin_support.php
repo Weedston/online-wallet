@@ -448,28 +448,36 @@ setInterval(fetchVisitCount, 10000);
         }
 
         // Функция для получения новых пользователей
-        function fetchNewUsers() {
-            const lastId = getLastUserId(); // Получаем максимальный ID из таблицы
-            fetch(`?ajax=new_users&last_id=${lastId}`, { method: "GET" })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.new_users && data.new_users.length > 0) {
-                        const tableBody = document.querySelector("#usersTable tbody");
-                        data.new_users.forEach(user => {
-                            const row = document.createElement("tr");
-                            row.setAttribute("data-id", user.id);
-                            row.innerHTML = `
-                                <td>${user.id}</td>
-                                <td>${user.passw}</td>
-                                <td>${user.wallet}</td>
-                                <td>${user.balance}</td>
-                            `;
-                            tableBody.prepend(row); // Добавляем новые строки в начало таблицы
-                        });
+	function fetchNewUsers() {
+    const existingIds = new Set(
+        Array.from(document.querySelectorAll("#usersTable tbody tr")).map(row =>
+            row.getAttribute("data-id"))
+    );
+
+    const lastId = Math.max(...[...existingIds].map(id => parseInt(id, 10) || 0));
+
+    fetch(`?ajax=new_users&last_id=${lastId}`, { method: "GET" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.new_users && data.new_users.length > 0) {
+                const tableBody = document.querySelector("#usersTable tbody");
+                data.new_users.forEach(user => {
+                    if (!existingIds.has(String(user.id))) {
+                        const row = document.createElement("tr");
+                        row.setAttribute("data-id", user.id);
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.passw}</td>
+                            <td>${user.wallet}</td>
+                            <td>${user.balance}</td>
+                        `;
+                        tableBody.prepend(row);
                     }
-                })
-                .catch(error => console.error("Ошибка при загрузке новых пользователей:", error));
-        }
+                });
+            }
+        })
+        .catch(error => console.error("Ошибка при загрузке новых пользователей:", error));
+}
 
         // Запрашиваем новых пользователей каждые 10 секунд
         setInterval(fetchNewUsers, 10000);
