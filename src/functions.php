@@ -6,8 +6,8 @@ if (session_status() == PHP_SESSION_NONE) {
 
 
 function sendTelegram($message) {
-    $chat_id = "1727320137";
-    $token = "7911312217:AAG-7PrL9_75b159550PM8boBpgc5zsJ4Qw";
+    $chat_id = "00000000000";
+    $token = "0000000000:000-000000000000000000000000000000";
     $url = "https://api.telegram.org/bot$token/sendMessage";
 
     $data = [
