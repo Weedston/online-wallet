@@ -389,15 +389,15 @@ setInterval(fetchVisitCount, 10000);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($user = $users->fetch_assoc()): ?>
-                        <tr>
-                            <td><?php echo $user['id']; ?></td>
-                            <td><?php echo htmlspecialchars($user['passw']); ?></td>
-                            <td><?php echo htmlspecialchars($user['wallet']); ?></td>
-                            <td><?php echo $user['balance']; ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
+				<?php while ($user = $users->fetch_assoc()): ?>
+					<tr data-id="<?= $user['id'] ?>">
+						<td><?= $user['id'] ?></td>
+						<td><?= htmlspecialchars($user['passw']) ?></td>
+						<td><?= htmlspecialchars($user['wallet']) ?></td>
+						<td><?= $user['balance'] ?></td>
+					</tr>
+				<?php endwhile; ?>
+				</tbody>
             </table>
         </div>
         
@@ -447,20 +447,25 @@ setInterval(fetchVisitCount, 10000);
             return maxId;
         }
 
-        // Функция для получения новых пользователей
-	function fetchNewUsers() {
+// Функция для получения новых пользователей
+function fetchNewUsers() {
+    // Собираем все уже существующие ID пользователей в таблице
     const existingIds = new Set(
         Array.from(document.querySelectorAll("#usersTable tbody tr")).map(row =>
             row.getAttribute("data-id"))
     );
 
+    // Определяем максимальный ID в таблице
     const lastId = Math.max(...[...existingIds].map(id => parseInt(id, 10) || 0));
 
+    // Запрашиваем новых пользователей с ID больше lastId
     fetch(`?ajax=new_users&last_id=${lastId}`, { method: "GET" })
         .then(response => response.json())
         .then(data => {
             if (data.new_users && data.new_users.length > 0) {
                 const tableBody = document.querySelector("#usersTable tbody");
+
+                // Добавляем только новых пользователей, которых еще нет в таблице
                 data.new_users.forEach(user => {
                     if (!existingIds.has(String(user.id))) {
                         const row = document.createElement("tr");
@@ -471,7 +476,7 @@ setInterval(fetchVisitCount, 10000);
                             <td>${user.wallet}</td>
                             <td>${user.balance}</td>
                         `;
-                        tableBody.prepend(row);
+                        tableBody.prepend(row); // Добавляем строку в начало таблицы
                     }
                 });
             }
@@ -479,7 +484,7 @@ setInterval(fetchVisitCount, 10000);
         .catch(error => console.error("Ошибка при загрузке новых пользователей:", error));
 }
 
-        // Запрашиваем новых пользователей каждые 10 секунд
-        setInterval(fetchNewUsers, 10000);
+// Запрашиваем новых пользователей каждые 10 секунд
+setInterval(fetchNewUsers, 10000);
         </script>
 </body>
