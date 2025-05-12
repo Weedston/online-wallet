@@ -111,11 +111,11 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Exchange BTC to Fiat</title>
+    <title><?= htmlspecialchars($translations['p2p_title']) ?></title>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
         /* Modal window */
@@ -192,18 +192,18 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
 <body>
     <div class="container">
         <?php include 'pages/p2p/menu.php'; ?>
-        <h2>Active P2P Exchange Ads</h2>
+        <h2><?= htmlspecialchars($translations['p2p_h2']) ?></h2>
         <table>
             <thead>
                 <tr>
 					
-                    <th>User ID</th>
-                    <th>Min BTC Amount</th>
-                    <th>Max BTC Amount</th>
-                    <th>Rate</th>
-                    <th>Payment Methods</th>
-                    <th>Fiat Amount</th>
-                    <th>Trade Type</th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_usid']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_minbtc']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_maxbtc']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_rate']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_paymeth']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_fiatam']) ?></th>
+                    <th><?= htmlspecialchars($translations['p2p_tbl_tradetype']) ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -239,31 +239,31 @@ $ads = mysqli_query($CONNECT, "SELECT ads.*, members.username FROM ads JOIN memb
     <div id="adModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Ad Details</h2>
-            <p><strong>User ID:</strong> <span id="modal-user-id"></span></p>
-            <p><strong>Min BTC Amount:</strong> <span id="modal-min-amount-btc"></span></p>
-            <p><strong>Max BTC Amount:</strong> <span id="modal-max-amount-btc"></span></p>
-            <p><strong>Rate:</strong> <span id="modal-rate"></span></p>
-            <p><strong>Payment Methods:</strong> <span id="modal-payment-methods"></span></p>
-            <p><strong>Fiat Amount:</strong> <span id="modal-fiat-amount"></span></p>
-            <p><strong>Fiat Currency:</strong> <span id="modal-fiat-currency"></span></p>
-            <p><strong>Trade Type:</strong> <span id="modal-trade-type"></span></p>
-            <p><strong>Comment:</strong> <span id="modal-comment"></span></p>
-            <p><strong>Your Balance:</strong> <span id="modal-user-balance" class="balance-highlight"><?php echo $balance; ?> BTC</span></p>
+            <h2><?= htmlspecialchars($translations['p2p_modal_h2']) ?></h2>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_userid']) ?></strong> <span id="modal-user-id"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_minbtc']) ?></strong> <span id="modal-min-amount-btc"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_maxbtc']) ?></strong> <span id="modal-max-amount-btc"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_rate']) ?></strong> <span id="modal-rate"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_paymeth']) ?></strong> <span id="modal-payment-methods"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_fiatam']) ?></strong> <span id="modal-fiat-amount"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_fiatcur']) ?></strong> <span id="modal-fiat-currency"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_tradetype']) ?></strong> <span id="modal-trade-type"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_comment']) ?></strong> <span id="modal-comment"></span></p>
+            <p><strong><?= htmlspecialchars($translations['p2p_modal_balance']) ?></strong> <span id="modal-user-balance" class="balance-highlight"><?php echo $balance; ?> BTC</span></p>
             <form method="POST" action="" style="display:inline;">
                 <input type="hidden" id="modal-ad-id" name="ad_id" value="">
-                <label for="btc-amount">BTC Amount:</label>
+                <label for="btc-amount"><?= htmlspecialchars($translations['p2p_modal_btcam']) ?></label>
                 <input type="number" id="btc-amount" name="btc_amount" step="0.00000001" required oninput="validateBtcAmount()">
-                <div class="error-message" id="btc-amount-error">BTC amount must be within the specified range.</div>
+                <div class="error-message" id="btc-amount-error"><?= htmlspecialchars($translations['p2p_modal_btcamerr']) ?></div>
                 <div class="modal-buttons" id="modal-buttons">
-                    <button class="btn cancel" type="button" onclick="closeModal()">Cancel</button>
+                    <button class="btn cancel" type="button" onclick="closeModal()"><?= htmlspecialchars($translations['p2p_modal_cancelbtn']) ?></button>
 					<?php
 						if (empty($_SESSION['form_token'])) {
 						$_SESSION['form_token'] = bin2hex(random_bytes(32));
 						}
 					?>
 					<input type="hidden" name="form_token" value="<?echo $_SESSION['form_token'] ?>">
-                    <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn">Accept</button>
+                    <button type="submit" name="accept_ad" class="btn" id="modal-accept-btn"><?= htmlspecialchars($translations['p2p_modal_acceptbtn']) ?></button>
                 </div>
             </form>
         </div>
