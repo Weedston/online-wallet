@@ -24,10 +24,30 @@ function FormChars($p1)
 	return nl2br(htmlspecialchars(trim($p1), ENT_QUOTES), false);
 }
 
+function loadLanguage($lang = 'en') {
+    $path = __DIR__ . "/languages/$lang.php";
 
+    if (file_exists($path)) {
+        return include $path;
+    }
 
+    // Если файл языка не найден, возвращаем английский по умолчанию
+    return include __DIR__ . '/languages/en.php';
+}
 
+$default_language = 'en';
 
+// Если пользователь выбирает язык через GET параметр, сохраняем его в сессии
+if (isset($_GET['lang'])) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+
+// Получаем язык из сессии или используем язык по умолчанию
+$lang = isset($_SESSION['lang']) ? $_SESSION['lang'] : $default_language;
+
+// Пример использования
+//$lang = isset($_GET['lang']) ? $_GET['lang'] : 'en'; // Например, выбираем язык через GET параметр
+$translations = loadLanguage($lang);
 
 if ($_SERVER['REQUEST_URI'] == '/') {
 	$Page = 'index';
@@ -54,33 +74,6 @@ if (isset ($_SESSION['wallet'])) {
     $btc_address = $_SESSION['wallet']; 
 }
 
-// Функция для создания мультиподписного кошелька
-function createMultisigAddress($keys) {
-    $rpc = new BitcoinRPC();
-    $response = $rpc->createmultisig(2, $keys);
-    return $response->address;
-}
-
-// Функция для депонирования BTC
-function createEscrowTransaction($inputs, $outputs) {
-    $rpc = new BitcoinRPC();
-    $raw_tx = $rpc->createrawtransaction($inputs, $outputs);
-    return $raw_tx;
-}
-
-// Функция для подписания транзакции
-function signTransaction($raw_tx, $keys, $inputs) {
-    $rpc = new BitcoinRPC();
-    $signed_tx = $rpc->signrawtransactionwithkey($raw_tx, $keys, $inputs);
-    return $signed_tx->hex;
-}
-
-// Функция для отправки транзакции
-function sendTransaction($signed_tx) {
-    $rpc = new BitcoinRPC();
-    $txid = $rpc->sendrawtransaction($signed_tx);
-    return $txid;
-}
 
 //include 'pages/top.php';
 

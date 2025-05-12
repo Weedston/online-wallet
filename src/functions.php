@@ -4,6 +4,29 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+
+function sendTelegram($message) {
+    $chat_id = "1727320137";
+    $token = "7911312217:AAG-7PrL9_75b159550PM8boBpgc5zsJ4Qw";
+    $url = "https://api.telegram.org/bot$token/sendMessage";
+
+    $data = [
+        'chat_id' => $chat_id,
+        'text' => $message,
+        'parse_mode' => 'HTML'
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $data
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+}
+
+
 function get_setting($name, $CONNECT) {
     $stmt = $CONNECT->prepare("SELECT value FROM settings WHERE name = ?");
     $stmt->bind_param("s", $name);

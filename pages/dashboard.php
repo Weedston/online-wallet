@@ -51,10 +51,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
 }
 
 
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,7 +63,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
 	<meta name="description" content="Create a secure and anonymous Bitcoin wallet with no KYC verification. Store, send, and receive BTC privately and safely.">
 	<meta name="robots" content="index, follow">
 
-    <title>Anonymous BTC Wallet</title>
+    <title><?= htmlspecialchars($translations['title']) ?></title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -71,11 +72,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
 <?php include 'pages/menu-wallet.php'; ?>
 	<div class="nav-bar"></div> <!-- Добавление полоски -->
     <div style='min-height: 50vh;' class="container" >
-        <h2>Welcome to Your Dashboard</h2>
-        <p>Balance: <span id="balance_o">0.00000000</span> BTC</p>
-        <p><strong>Wallet Address:</strong> <?php echo $btc_address; ?></p>
+        <h2><?= htmlspecialchars($translations['dashboard_welcome']) ?></h2>
+        <p><?= htmlspecialchars($translations['dashboard_balance']) ?><span id="balance_o">0.00000000</span> BTC</p>
+        <p><strong><?= htmlspecialchars($translations['dashboard_address']) ?></strong> <?php echo $btc_address; ?></p>
 		<p><?php echo '<img src="images/qrcode.png" alt="QR Code" id="qrcode">'; ?></p>
-		<p>Transactions:</p>
+		<p><?= htmlspecialchars($translations['dashboard_transactions']) ?></p>
 		<div id="transactions">
 			<p>Uploading transactions...</p>
 		</div>

@@ -23,7 +23,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,26 +31,26 @@ $result = $stmt->get_result();
 	<meta name="description" content="Create a secure and anonymous Bitcoin wallet with no KYC verification. Store, send, and receive BTC privately and safely.">
 	<meta name="robots" content="index, follow">
 
-    <title>Anonymous BTC Wallet</title>
+    <title><?= htmlspecialchars($translations['title']) ?></title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
 <br><br>
-<a href="dashboard" class="btn">Back to Dashboard</a>
+<a href="dashboard" class="btn"><?= htmlspecialchars($translations['menubutton_dashb']) ?></a>
     <div style='min-height: 10vh;' class="container" >
-        <h2>Support</h2>
+        <h2><?= htmlspecialchars($translations['support_h2_support']) ?></h2>
 <form method="POST" class="support-form">
-    <textarea name="message" class="message-textarea" placeholder="Describe your issue..." required></textarea>
-    <button type="submit" class="btn submit-button">Submit</button>
+    <textarea name="message" class="message-textarea" placeholder="<?= htmlspecialchars($translations['support_describe']) ?>" required></textarea>
+    <button type="submit" class="btn submit-button"><?= htmlspecialchars($translations['support_submit_btn']) ?></button>
 </form>
 <div class="support-requests">
-    <h3>Your Requests</h3>
+    <h3><?= htmlspecialchars($translations['support_h3_requests']) ?></h3>
     <div class="card-container">
         <?php while ($row = $result->fetch_assoc()): ?>
             <div class="request-card">
-                <p><strong>Request:</strong> <?php echo $row['message'] ? htmlspecialchars($row['message']) : 'No message'; ?></p>
-                <p><strong>Response:</strong> <?php echo $row['response'] ? htmlspecialchars($row['response']) : 'No response yet'; ?></p>
+                <p><strong><?= htmlspecialchars($translations['support_requests']) ?></strong> <?php echo $row['message'] ? htmlspecialchars($row['message']) : 'No message'; ?></p>
+                <p><strong><?= htmlspecialchars($translations['support_response']) ?></strong> <?php echo $row['response'] ? htmlspecialchars($row['response']) : 'No response yet'; ?></p>
                 <p><small><?php echo $row['created_at']; ?></small></p>
             </div>
         <?php endwhile; ?>

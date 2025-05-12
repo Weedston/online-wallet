@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	<meta name="description" content="Create a secure and anonymous Bitcoin wallet with no KYC verification. Store, send, and receive BTC privately and safely.">
 	<meta name="robots" content="index, follow">
 
-    <title>Anonymous BTC Wallet</title>
+    <title><?= htmlspecialchars($translations['title']) ?></title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -91,27 +91,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </style>
 
 <br><br>
-<a href="dashboard" class="btn">Back to Dashboard</a>
+<a href="dashboard" class="btn"><?= htmlspecialchars($translations['menubutton_dashb']) ?></a>
     <div style='min-height: 50vh;' class="container" >
 	<br>
-	<p><strong id="balance_o">Balance:</strong> BTC</p>
-	<p>The system charges a 1% transfer fee.</p>
-        <h2>Send BTC</h2>
+	<p><?= htmlspecialchars($translations['transfer_balance']) ?><strong id="balance_o"> </strong> BTC</p>
+	<p><?= htmlspecialchars($translations['transfer_pers']) ?></p>
+        <h2><?= htmlspecialchars($translations['transfer_send']) ?></h2>
 		<form id="btc-form" method="POST">
-			<label>BTC-address:</label>
-			<input type="text" id="recipient" name="recipient" placeholder="Recipient Wallet Address" required>
-			<span id="address-error" class="error">Incorrect Recipient Wallet Address!</span>
+			<label><?= htmlspecialchars($translations['transfer_send_addr']) ?></label>
+			<input type="text" id="recipient" name="recipient" placeholder="<?= htmlspecialchars($translations['transfer_rec_addr']) ?>" required>
+			<span id="address-error" class="error"><?= htmlspecialchars($translations['transfer_err_addr']) ?></span>
     
-			<label>Amount (BTC):</label>
-			<input type="number" name="amount" id="amount" step="0.00000001" min="0" placeholder="Amount (BTC)" pattern="^[0-9]+(\.[0-9]{1,8})?$" required> 
-			<span id="amount-error" class="error">Incorrect Amount (BTC)!</span>
-			<p class="info">Maximum available amount: <strong id="maxAmount"></strong> BTC</p>
-			<p class="info">Servise fee (1%): <strong id="siteFee">0.00000000</strong> BTC</p>
-			<p class="info">Network fee: <strong id="networkFee">0.00000000</strong> BTC</p>
+			<label><?= htmlspecialchars($translations['transfer_amount']) ?></label>
+			<input type="number" name="amount" id="amount" step="0.00000001" min="0" placeholder="<?= htmlspecialchars($translations['transfer_amount']) ?>" pattern="^[0-9]+(\.[0-9]{1,8})?$" required> 
+			<span id="amount-error" class="error"><?= htmlspecialchars($translations['transfer_err_amount']) ?></span>
+			<p class="info"><?= htmlspecialchars($translations['transfer_max_amount']) ?><strong id="maxAmount"></strong> BTC</p>
+			<p class="info"><?= htmlspecialchars($translations['transfer_serv_fee']) ?><strong id="siteFee">0.00000000</strong> BTC</p>
+			<p class="info"><?= htmlspecialchars($translations['transfer_net_fee']) ?><strong id="networkFee">0.00000000</strong> BTC</p>
 
-			<p class="info">Total transfer amount (including the commission): <strong id="totalDeduction">0.00000000</strong> BTC</p>
+			<p class="info"><?= htmlspecialchars($translations['transfer_total_trans']) ?><strong id="totalDeduction">0.00000000</strong> BTC</p>
 
-			<button type="submit" class="btn" id="send-btn" disabled>Send</button>
+			<button type="submit" class="btn" id="send-btn" disabled><?= htmlspecialchars($translations['transfer_send_button']) ?></button>
 		</form>
 		
 	<div id="message"></div>

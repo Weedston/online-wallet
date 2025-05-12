@@ -122,12 +122,41 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
 }
 
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
-    // Используем bitcoinRPC, чтобы получить последние транзакции
-    $transactions = bitcoinRPC('listtransactions');
+    require_once 'src/functions.php'; // подключи здесь свою функцию sendTelegram()
     
-    // Проверяем результат
+    // Получаем последние транзакции
+    $transactions = bitcoinRPC('listtransactions', ['*', 50]);
+
     if (is_array($transactions)) {
-        // Отправляем JSON-ответ
+        foreach ($transactions as $tx) {
+            if ($tx['category'] === 'receive') {
+                $txid = $tx['txid'];
+                $amount = $tx['amount'];
+                $address = $tx['address'];
+                $confirmations = $tx['confirmations'];
+
+                // Проверяем, есть ли транзакция уже в БД
+                $stmt = $CONNECT->prepare("SELECT id FROM btc_notifications WHERE txid = ?");
+                $stmt->bind_param("s", $txid);
+                $stmt->execute();
+                $stmt->store_result();
+
+                if ($stmt->num_rows === 0) {
+                    // Сохраняем и отправляем уведомление
+                    $stmt = $CONNECT->prepare("INSERT INTO btc_notifications (txid, address, amount, confirmations) VALUES (?, ?, ?, ?)");
+                    $stmt->bind_param("ssdi", $txid, $address, $amount, $confirmations);
+                    $stmt->execute();
+
+                    // Отправляем в Telegram
+                    $msg = "📥 <b>New BTC Transaction</b>\n\n".
+                           "🔐 Address: <code>$address</code>\n".
+                           "💰 Amount: <b>$amount BTC</b>\n".
+                           "⛓ Confirmations: <b>$confirmations</b>";
+                    sendTelegram($msg);
+                }
+            }
+        }
+
         echo json_encode(['transactions' => $transactions]);
     } else {
         echo json_encode(['error' => 'Ошибка получения транзакций: ' . $transactions]);
@@ -149,30 +178,40 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
     <title>Anonymous BTC Wallet</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<style>
-        /* Добавим стили для области с транзакциями */
+    <style>
+        /* Стили для блока транзакций */
         #btcTransactions {
             max-height: 300px; /* Ограничиваем высоту */
             overflow-y: auto; /* Добавляем вертикальную прокрутку */
-            border: 1px solid #ccc; /* Рамка для выделения */
-            padding: 10px; /* Внутренний отступ */
-            background-color: #f9f9f9; /* Фон для визуального отделения */
+            background: #1e1e1e; /* Темный фон */
+            color: white; /* Белый текст */
+            padding: 15px; /* Внутренние отступы */
+            border-radius: 10px; /* Скругляем углы */
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.3); /* Тень */
+            border: 2px solid rgba(255, 165, 0, 0.5); /* Оранжевая рамка */
         }
 
         #btcTransactions ul {
-            list-style-type: none; /* Убираем маркеры списка */
+            list-style: none; /* Убираем стандартные маркеры списка */
             padding: 0;
             margin: 0;
         }
 
         #btcTransactions li {
-            margin-bottom: 10px; /* Расстояние между элементами списка */
-            padding: 10px; /* Внутренний отступ элемента */
-            border-bottom: 1px solid #ddd; /* Разделительная линия */
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #2a2a2a; /* Тёмный фон для каждого элемента */
+            border-radius: 5px; /* Скругляем углы */
+            border: 1px solid #444; /* Граница */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Легкая тень */
         }
 
         #btcTransactions li:last-child {
-            border-bottom: none; /* Убираем линию у последнего элемента */
+            margin-bottom: 0; /* Убираем отступ у последнего элемента */
+        }
+
+        #btcTransactions li strong {
+            color: #FF9900; /* Оранжевый цвет для выделения ключевых данных */
         }
     </style>
 	
@@ -304,7 +343,7 @@ setInterval(fetchVisitCount, 10000);
                             container.innerHTML = '<ul>' + data.transactions.map(tx => `
                                 <li>
                                     <strong>TXID:</strong> ${tx.txid} <br>
-                                    <strong>Amount:</strong> ${tx.amount} BTC <br>
+                                    <strong>Amount:</strong> ${(+tx.amount).toFixed(8)} BTC <br>
                                     <strong>Confirmations:</strong> ${tx.confirmations}
                                 </li>
                             `).join('') + '</ul>';

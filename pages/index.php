@@ -5,6 +5,18 @@ if (isset($_SESSION['user_id'])) {
     exit();
 }
 
+if (!isset($_SESSION['visit_counted'])) {
+    $_SESSION['visit_counted'] = true;
+
+    $CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) 
+                     ON DUPLICATE KEY UPDATE count = count + 1");
+}
+
+// Получаем актуальное значение счётчика
+$result = $CONNECT->query("SELECT count FROM visit_counter WHERE page = 'total'");
+$row = $result->fetch_assoc();
+$visit_count = $row['count'];
+
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
 $passw = FormChars($_POST['sid']);
@@ -36,10 +48,6 @@ $wallet = $row['wallet'];
 }
 
 }
-$CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) 
-                 ON DUPLICATE KEY UPDATE count = LAST_INSERT_ID(count + 1)");
-
-$visit_count = $CONNECT->insert_id;
 
 // Получаем текущие значения из таблицы
 $query = "SELECT * FROM `settings` WHERE `name` IN ('escrow_wallet_address', 'service_fee_address', 'message', 'message_display')";
@@ -59,7 +67,7 @@ $message_display = isset($settings['message_display']) ? $settings['message_disp
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,7 +75,7 @@ $message_display = isset($settings['message_display']) ? $settings['message_disp
 	<meta name="description" content="Create a secure and anonymous Bitcoin wallet with no KYC verification. Store, send, and receive BTC privately and safely.">
 	<meta name="robots" content="index, follow">
 
-    <title>Anonymous BTC Wallet</title>
+    <title><?= htmlspecialchars($translations['title']) ?></title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -84,24 +92,38 @@ $message_display = isset($settings['message_display']) ? $settings['message_disp
             margin: 20px auto;
             background-color: #f0fff0;
         }
-		
+		.lang-switch a {
+		color: orange;
+		text-decoration: none;
+		margin: 0 5px;
+		}
+		.lang-switch a:hover {
+		text-decoration: underline;
+		}
     </style>
+	<div style="text-align:right; margin:10px;">
+    <a href="?lang=en" style="color: orange; text-decoration: none;">EN</a> |
+    <a href="?lang=ru" style="color: orange; text-decoration: none;">RU</a>
+	</div>
+
 <div class="container">
      
         <section class="hero">
             <h1 style="color: orange; text-shadow: 1px 1px 2px #ffffff88;">
-				Anonymous & Secure & Fast BTC Wallet
+				<?= htmlspecialchars($translations['welcome_heading']) ?>
 			</h1>
 			<p style="color: orange; text-shadow: 1px 1px 2px #ffffff88;">
-				Your gateway to the decentralized world.
+				<?= htmlspecialchars($translations['welcome_subheading']) ?>
 			</p>
 
 			<br>
-			<h1>Our advantages:</h1>
-			<p>Own secure and fault-tolerant servers. No personal information is recorded, as well as transaction information. One-click registration is simple and does not require any personal information. All current transactions are temporarily displayed in your merchant profile. We do not provide any data to the authorities, as there is no stored data.</p>
-            <p>In our anonymous Bitcoin wallet service, there are no minimum and maximum restrictions on deposits and withdrawals.</p>
-			<p>All transactions are performed automatically without human intervention. <br> And also - fast support!</p><p><b>We guarantee the full and honest operation of our service!</b></p>
-			<p>There is also a section available for P2P exchange of BTC for fiat money.</p>
+			<h1><?= htmlspecialchars($translations['advantages_heading']) ?></h1>
+			<p><?= htmlspecialchars($translations['advantages_text1']) ?></p>
+			<p><?= htmlspecialchars($translations['advantages_text2']) ?></p>
+			<p><?= htmlspecialchars($translations['advantages_text3']) ?></p>
+			<p><?= htmlspecialchars($translations['advantages_text4']) ?></p>
+			<p><b><?= htmlspecialchars($translations['advantages_text5']) ?></b></p>
+			<p><?= htmlspecialchars($translations['advantages_text6']) ?></p>
 			
 			<?php if ($message_display == '1' && !empty($message)): ?>
             			<div class="message-box">
@@ -113,10 +135,10 @@ $message_display = isset($settings['message_display']) ? $settings['message_disp
       
 		<div class="form-container"> 
 		<form method="post" name="mainform" onsubmit="return checkform()" class="login-form">
-			<h2>Sign In</h2>
-			<input type="text" name="sid" placeholder="Your SID Phrase">
-			<button class="btn">Log In</button>
-			<p>Don't have an account? <a href="/register">Sign Up</a></p>
+			<h2><?= htmlspecialchars($translations['sign_in']) ?></h2>
+			<input type="text" name="sid" placeholder="<?= htmlspecialchars($translations['sid_placeholder']) ?>">
+			<button class="btn"><?= htmlspecialchars($translations['log_in']) ?></button>
+			<p><?= $translations['no_account'] ?></p>
 		</form>
 		</div>
 
