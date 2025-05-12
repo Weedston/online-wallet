@@ -74,6 +74,6 @@ function bitcoinRPC($method, $params = []) {
     return 'Unknown ERROR: ' . $response;
 }
 
-define('TELEGRAM_BOT_TOKEN', '7911312217:AAG-7PrL9_75b159550PM8boBpgc5zsJ4Qw');
-define('TELEGRAM_CHAT_ID', '1727320137');
+define('TELEGRAM_BOT_TOKEN', '1111:2222w');
+define('TELEGRAM_CHAT_ID', '3333333333');
 ?>
