@@ -194,6 +194,26 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_i
     exit;
 }
 
+$today = date('Y-m-d');
+$weekAgo = date('Y-m-d', strtotime('-7 days'));
+$monthAgo = date('Y-m-d', strtotime('-30 days'));
+
+// Сегодня
+$res_today = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter WHERE visit_date = '$today'");
+$todayCount = $res_today->fetch_assoc()['total'] ?? 0;
+
+// За неделю
+$res_week = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter WHERE visit_date >= '$weekAgo'");
+$weekCount = $res_week->fetch_assoc()['total'] ?? 0;
+
+// За месяц
+$res_month = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter WHERE visit_date >= '$monthAgo'");
+$monthCount = $res_month->fetch_assoc()['total'] ?? 0;
+
+// Всего
+$res_total = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter");
+$totalCount = $res_total->fetch_assoc()['total'] ?? 0;
+
 
 ?>
 <!DOCTYPE html>
@@ -277,6 +297,29 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_i
         .users-table-container tr:nth-child(odd) {
             background-color: #1e1e1e; /* Чередование строк */
         }
+		.stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1a1a1a;
+        color: #ffcc99;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(255, 140, 0, 0.4);
+    }
+    .stats-table th, .stats-table td {
+        padding: 12px 16px;
+        text-align: left;
+    }
+    .stats-table thead {
+        background-color: #ff6600;
+        color: #fff;
+    }
+    .stats-table tbody tr:nth-child(even) {
+        background-color: #2a2a2a;
+    }
+    .stats-table tbody tr:hover {
+        background-color: #333;
+    }
     </style>
 	
 <body><br><br>
@@ -284,6 +327,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_i
     <div style='min-height: 50vh;' class="container">
         <h2>Admin Support Panel</h2>
 		<h3>Total Site Visits: <span id="visitCount">0</span></h3>
+		<table class="stats-table">
+		<thead>
+        <tr>
+            <th>Период</th>
+            <th>Посещений</th>
+        </tr>
+		</thead>
+		<tbody>
+        <tr><td>Сегодня</td><td><?= $todayCount ?></td></tr>
+        <tr><td>Последние 7 дней</td><td><?= $weekCount ?></td></tr>
+        <tr><td>Последние 30 дней</td><td><?= $monthCount ?></td></tr>
+        <tr><td><strong>Всего</strong></td><td><strong><?= $totalCount ?></strong></td></tr>
+		</tbody>
+		</table>
 		<h3>Total Balance Wallet: <span id="totalBalance">0</span></h3>
         <?php foreach ($requests as $user_id => $data): ?>
             <div class="user-group">

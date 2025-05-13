@@ -5,17 +5,18 @@ if (isset($_SESSION['user_id'])) {
     exit();
 }
 
-if (!isset($_SESSION['visit_counted'])) {
-    $_SESSION['visit_counted'] = true;
 
-    $CONNECT->query("INSERT INTO visit_counter (page, count) VALUES ('total', 1) 
+
+
+$today = date('Y-m-d');
+
+if (!isset($_SESSION['visit_counted_date']) || $_SESSION['visit_counted_date'] !== $today) {
+    $_SESSION['visit_counted_date'] = $today;
+
+    $CONNECT->query("INSERT INTO visit_counter (page, visit_date, count) 
+                     VALUES ('total', '$today', 1) 
                      ON DUPLICATE KEY UPDATE count = count + 1");
 }
-
-// Получаем актуальное значение счётчика
-$result = $CONNECT->query("SELECT count FROM visit_counter WHERE page = 'total'");
-$row = $result->fetch_assoc();
-$visit_count = $row['count'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
