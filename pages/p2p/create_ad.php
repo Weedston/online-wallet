@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 // Проверка капчи
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-    $recaptcha_secret = '6LdEiTgrAAAAAIkfnAIYE2nM0bqDGhKvVlw7P-IY';
+    $recaptcha_secret = '----------------IY';
 
     $verify = file_get_contents($recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
     $response_data = json_decode($verify);
