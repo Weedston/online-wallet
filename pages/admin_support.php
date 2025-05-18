@@ -86,36 +86,41 @@ $users_mess = $CONNECT->query("SELECT id, passw, wallet, balance FROM members OR
 	
 // Если запрос AJAX — возвращаем JSON
 if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
-    // Выполняем запрос к базе данных
-    $visit_result = $CONNECT->query("SELECT count FROM visit_counter WHERE page = 'total'");
-        // Запрашиваем баланс
-	$balance_data = bitcoinRPC('getbalance');
-	
+    // Выполняем запрос к базе данных для сегодняшних посещений
+    $today = date('Y-m-d');
+    $visit_result = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter WHERE visit_date = '$today'");
+    
+    // Запрашиваем баланс
+    $balance_data = bitcoinRPC('getbalance');
+    
     // Подготавливаем ответ
     $response = [];
-    // Проверяем, получены ли данные из базы
+    
+    // Проверяем, получены ли данные по посещениям
     if ($visit_result && $visit_result->num_rows > 0) {
-        $visit_count = $visit_result->fetch_assoc()['count'];
+        $visit_count = $visit_result->fetch_assoc()['total'] ?? 0;
         $response['count'] = $visit_count;
     } else {
         $response['error'] = 'ERROR';
     }
-	
-   if (is_numeric($balance_data)) {
-    // Преобразуем в число с плавающей точкой
-    $result = floatval($balance_data);
-    
-    // Форматируем до 8 знаков после запятой
-    $formatted_balance = number_format($result, 8, '.', '');
 
-    // Логируем отформатированный баланс
-    error_log('Formatted balance: ' . $formatted_balance);
+    // Получаем и обрабатываем баланс
+    if (is_numeric($balance_data)) {
+        // Преобразуем в число с плавающей точкой
+        $result = floatval($balance_data);
+        
+        // Форматируем до 8 знаков после запятой
+        $formatted_balance = number_format($result, 8, '.', '');
+        
+        // Логируем отформатированный баланс
+        error_log('Formatted balance: ' . $formatted_balance);
+        
+        $response['balance'] = $formatted_balance;
+    } else {
+        // Если ответ не числовой, возвращаем ошибку
+        $response['balance_error'] = 'Полученное значение не является числом: ' . var_export($balance_data, true);
+    }
 
-    $response['balance'] = $formatted_balance;
-} else {
-    // Если ответ не числовой, возвращаем ошибку
-    $response['balance_error'] = 'Полученное значение не является числом: ' . var_export($balance_data, true);
-}
     // Отправляем JSON-ответ
     echo json_encode($response);
     exit;
@@ -326,21 +331,22 @@ $totalCount = $res_total->fetch_assoc()['total'] ?? 0;
 	<?php include 'pages/p2p/menu_adm.php'; ?>
     <div style='min-height: 50vh;' class="container">
         <h2>Admin Support Panel</h2>
-		<h3>Total Site Visits: <span id="visitCount">0</span></h3>
-		<table class="stats-table">
-		<thead>
+<h3>Total Site Visits <span id="visitCount"></span></h3>
+
+<table class="stats-table">
+    <thead>
         <tr>
             <th>Период</th>
             <th>Посещений</th>
         </tr>
-		</thead>
-		<tbody>
-        <tr><td>Сегодня</td><td><?= $todayCount ?></td></tr>
+    </thead>
+    <tbody>
+        <tr><td>Сегодня</td><td><span id="todayVisits">0</span></td></tr>
         <tr><td>Последние 7 дней</td><td><?= $weekCount ?></td></tr>
         <tr><td>Последние 30 дней</td><td><?= $monthCount ?></td></tr>
         <tr><td><strong>Всего</strong></td><td><strong><?= $totalCount ?></strong></td></tr>
-		</tbody>
-		</table>
+    </tbody>
+</table>
 		<h3>Total Balance Wallet: <span id="totalBalance">0</span></h3>
         <?php foreach ($requests as $user_id => $data): ?>
             <div class="user-group">
@@ -379,9 +385,8 @@ $totalCount = $res_total->fetch_assoc()['total'] ?? 0;
             });
         });
     });
-</script>
 
-<script>
+
 function fetchVisitCount() {
     fetch("?ajax=2", { method: "GET" })
         .then(response => {
@@ -391,26 +396,31 @@ function fetchVisitCount() {
             return response.json();
         })
         .then(data => {
+            // Обновление количества посещений за сегодня
             if (data.count !== undefined) {
                 console.log("Visit Count: ", data.count);
-                document.getElementById("visitCount").innerText = data.count;
+                document.getElementById("todayVisits").innerText = data.count;
             } else {
                 console.error("Error in server response (count):", data);
             }
 
+            // Обновление баланса
             if (data.balance !== undefined) {
-                console.log("Balance: ", data.balance);
-                document.getElementById("totalBalance").innerText = data.balance;
-            } else {
-                console.error("Error in server response (balance):", data);
+                console.log("Wallet Balance: ", data.balance);
+                document.getElementById("totalBalance").innerText = data.balance + " BTC";
+            } else if (data.balance_error !== undefined) {
+                console.error("Balance error: ", data.balance_error);
+                document.getElementById("totalBalance").innerText = "Ошибка баланса";
             }
         })
         .catch(error => console.error("Fetch error:", error));
 }
 
 
+// Загружаем данные при загрузке страницы
 fetchVisitCount();
 
+// Обновляем каждые 10 секунд
 setInterval(fetchVisitCount, 10000);
 </script>
 

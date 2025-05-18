@@ -79,7 +79,7 @@ return [
 	'p2p_menu_allnotif' => 'View All Notifications',
 	'p2p_creatad_title' => 'Create P2P Exchange Ad',
 	'p2p_creatad_balance' => 'Your Balance: ',
-	'p2p_creatad_currate' => 'Current BTC Rates:</',
+	'p2p_creatad_currate' => 'Current BTC Rates:',
 	'p2p_creatad_h2' => 'Create a P2P Exchange Ad',
 	'p2p_creatad_tradetype' => 'Trade Type:',
 	'p2p_creatad_buy' => 'Buy BTC',

@@ -29,8 +29,27 @@ $balance = $balance_row['balance'];
 $error_message = '';
 $success_message = '';
 
+$recaptcha_failed = false;
 // Handle ad creation form
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
+// Проверка капчи
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+    $recaptcha_secret = '6LdEiTgrAAAAAIkfnAIYE2nM0bqDGhKvVlw7P-IY';
+
+    $verify = file_get_contents($recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
+    $response_data = json_decode($verify);
+
+    if (!($response_data->success ?? false)) {
+        $recaptcha_failed = true;
+    }
+
+    // ⛔ Не продолжаем, если капча не пройдена
+    if ($recaptcha_failed) {
+        // Покажем сообщение через модалку — но не пишем в БД
+        // просто дойдём до шаблона, который это отобразит
+    } else {
+	
     $min_amount_btc = number_format(floatval($_POST['min_amount_btc']), 8, '.', '');
     $max_amount_btc = number_format(floatval($_POST['max_amount_btc']), 8, '.', '');
     $rate = number_format(floatval($_POST['rate']), 2, '.', '');
@@ -75,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
             $error_message = 'Error: ' . mysqli_error($CONNECT);
         }
     }
+	}
 }
 ?>
 
@@ -212,13 +232,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 
                 <!-- New block to display trade info -->
                 <p id="trade_info" style="color: #FFD700;"></p>
-                
+                <div style="display: flex; justify-content: center;">
+				<center><div class="g-recaptcha" data-sitekey="6LdEiTgrAAAAAAKdDlOJixXe-NCKt2BZHQkOc3dX"></div></center>
+				</div>
+
                 <button type="submit" name="create_ad" class="btn"><?= htmlspecialchars($translations['p2p_creatad_btn']) ?></button>
             </form>
         </div>
     </div>
 </div>
-
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <?php if (!empty($error_message)) { ?>
     <div id="errorModal" class="modal" style="display: block;">
         <div class="modal-content">
@@ -281,5 +304,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
         tradeInfo.textContent = infoText;
     }
 </script>
+<div id="recaptcha-error" class="modal" style="display:none;">
+  <div class="modal-content">
+    <p>Mistake: Confirm that you are not a robot.</p>
+    <button onclick="document.getElementById('recaptcha-error').style.display='none'">Ок</button>
+  </div>
+</div>
+<?php if ($recaptcha_failed): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('recaptcha-error').style.display = 'flex';
+});
+</script>
+<?php endif; ?>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #1e1001;
+  color: #ffae42;
+  padding: 25px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+  text-align: center;
+  max-width: 90%;
+  font-family: sans-serif;
+}
+
+.modal-content p {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.modal-content button {
+  background-color: #ff7700;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal-content button:hover {
+  background-color: #cc5c00;
+}
+</style>
 </body>
 </html>

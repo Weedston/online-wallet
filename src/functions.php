@@ -6,8 +6,8 @@ if (session_status() == PHP_SESSION_NONE) {
 
 
 function sendTelegram($message) {
-    $chat_id = "00000000000";
-    $token = "0000000000:000-000000000000000000000000000000";
+    $chat_id = "1727320137";
+    $token = "7911312217:AAG-7PrL9_75b159550PM8boBpgc5zsJ4Qw";
     $url = "https://api.telegram.org/bot$token/sendMessage";
 
     $data = [
@@ -158,14 +158,13 @@ function sendBitcoinWithFees($recipient, $amount, $fromAddress, $serviceWallet =
 
 
 function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
-    $service_fee_address = get_setting('service_fee_address', $CONNECT);
     $escrow_address = get_setting('escrow_wallet_address', $CONNECT);
-    $dust_limit = 0.00000546; // Порог для bech32-адресов (примерно)
+    $dust_limit = 0.00000546;
 
     // Получаем UTXO
     $utxos = bitcoinRPC('listunspent', [1, 9999999, [$from_address]]);
-    if (empty($utxos)) {
-        return ['success' => false, 'error' => 'No UTXO found for address.'];
+    if (!is_array($utxos) || count($utxos) === 0) {
+        return ['success' => false, 'error' => 'No UTXO found or invalid response.'];
     }
 
     // Выбираем UTXO
@@ -177,68 +176,61 @@ function sendToEscrow($ad_id, $from_address, $amount_btc, $CONNECT) {
             'vout' => $utxo['vout']
         ];
         $total_input += $utxo['amount'];
-        if ($total_input >= ($amount_btc * 1.01)) break;
+        if ($total_input >= $amount_btc) break;
     }
 
-    // Оцениваем комиссию
-    $estimate_fee = bitcoinRPC('estimatefee', [2]);
-    if (!is_numeric($estimate_fee) || $estimate_fee <= 0) {
-        $estimate_fee = 0.00001; // fallback
+    if ($total_input < $amount_btc) {
+        return ['success' => false, 'error' => 'Insufficient input funds.'];
     }
+
+    // Получение комиссии
+    $fee_response = bitcoinRPC('estimatesmartfee', [2]);
+    $estimate_fee = is_array($fee_response) && isset($fee_response['feerate']) && is_numeric($fee_response['feerate'])
+        ? $fee_response['feerate']
+        : 0.00001;
     $network_fee = $estimate_fee * 0.25;
 
-    // Сервисная комиссия
-    $service_fee = $amount_btc * 0.01;
+    // Рассчитываем сумму для эскроу (с вычетом комиссии)
+    $escrow_amount = $amount_btc - $network_fee;
 
-    // Расчёт выходов
+    if ($escrow_amount <= $dust_limit) {
+        return ['success' => false, 'error' => 'Escrow amount after fee is below dust limit.'];
+    }
+
+    // Подготовка выходов
     $outputs = [];
-    $outputs[$escrow_address] = number_format($amount_btc, 8, '.', '');
-
-    // Учитываем dust-защиту
-    if ($service_fee >= $dust_limit) {
-        $outputs[$service_fee_address] = number_format($service_fee, 8, '.', '');
-    } else {
-        $network_fee += $service_fee; // не отправляем dust
-    }
-
-    // Общая сумма к выводу
-    $total_output = array_sum(array_map('floatval', $outputs)) + $network_fee;
-
-    if ($total_input < $total_output) {
-        return ['success' => false, 'error' => 'Insufficient input funds (incl. fees).'];
-    }
+    $outputs[$escrow_address] = number_format($escrow_amount, 8, '.', '');
 
     // Расчёт сдачи
-    $change = $total_input - $total_output;
+    $change = $total_input - $amount_btc;
     if ($change >= $dust_limit) {
         $outputs[$from_address] = number_format($change, 8, '.', '');
     } else {
-        $network_fee += $change; // тоже не создаём dust
+        $network_fee += $change; // не создаём dust-сдачу
     }
 
-  
-    // Создаём транзакцию
+    // Создание raw-транзакции
     $raw_tx = bitcoinRPC('createrawtransaction', [$inputs, $outputs]);
     if (!$raw_tx) {
         return ['success' => false, 'error' => 'Failed to create raw transaction.'];
     }
 
-    // Подписываем
+    // Подпись
     $signed_tx = bitcoinRPC('signrawtransactionwithwallet', [$raw_tx]);
-    if (empty($signed_tx['complete']) || !$signed_tx['complete']) {
+    if (!is_array($signed_tx) || empty($signed_tx['complete']) || !$signed_tx['complete']) {
         return ['success' => false, 'error' => 'Transaction signing failed.'];
     }
 
-    // Отправляем
+    // Отправка
     $txid = bitcoinRPC('sendrawtransaction', [$signed_tx['hex']]);
-    if (!$txid || !preg_match('/^[a-f0-9]{64}$/i', $txid)) {
-        return ['success' => false, 'error' => "Failed to send transaction. Error: $txid"];
+    if (!is_string($txid) || !preg_match('/^[a-f0-9]{64}$/i', $txid)) {
+        error_log("sendrawtransaction error: " . print_r($txid, true));
+        return ['success' => false, 'error' => "Failed to send transaction."];
     }
-
-    //addServiceComment($ad_id, "BTC deposited to escrow wallet. TXID: $txid, Amount: $amount_btc BTC <p id='confirmationsResult'>Confirmations: ...</p>", 'deposit');
 
     return ['success' => true, 'txid' => $txid];
 }
+
 
 
 function sendFromCentralWallet($to_address, $amount_btc, $CONNECT) {

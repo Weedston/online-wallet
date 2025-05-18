@@ -37,10 +37,14 @@ if ($result->num_rows === 0) {
 
 $ad = $result->fetch_assoc();
 
-if ($ad['user_id'] != $current_user_id && $ad['buyer_id'] && $ad['seller_id'] != $current_user_id) {
+if (
+    $ad['user_id'] != $current_user_id &&
+    $ad['buyer_id'] != $current_user_id &&
+    $ad['seller_id'] != $current_user_id
+) {
     $_SESSION['flash_message'] = [
         'type' => 'error',
-        'text' => 'У вас нет доступа к этой сделке.'
+        'text' => "У вас нет доступа к этой сделке. Ваш ID: {$current_user_id}, buyer ID: {$ad['buyer_id']}, seller ID: {$ad['seller_id']}"
     ];
     header('Location: /p2p');
     exit();
