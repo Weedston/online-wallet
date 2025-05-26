@@ -1,7 +1,22 @@
 <?php
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: index");
+// Проверка токена авторизации
+if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
+    header("Location: /");
+    exit();
+}
+
+$stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($storedToken);
+$stmt->fetch();
+$stmt->close();
+
+if ($_SESSION['token'] !== $storedToken) {
+    // Токен не совпадает — сессия недействительна
+    session_destroy();
+    header("Location: /");
     exit();
 }
 

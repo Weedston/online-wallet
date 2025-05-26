@@ -4,6 +4,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+$stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($dbToken);
+$stmt->fetch();
+$stmt->close();
+
+if ($dbToken !== $_SESSION['token']) {
+    // Разлогиниваем
+    session_destroy();
+    header("Location: /");
+    exit;
+}
+
 $message = "";
 $user = null;
 
