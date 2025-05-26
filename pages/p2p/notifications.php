@@ -1,10 +1,30 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
+
+// Проверка токена авторизации
+if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
+    header("Location: /");
+    exit();
+}
+
+$stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($storedToken);
+$stmt->fetch();
+$stmt->close();
+
+if ($_SESSION['token'] !== $storedToken) {
+    // Токен не совпадает — сессия недействительна
+    session_destroy();
+    header("Location: /");
+    exit();
 }
 
 $user_id = $_SESSION['user_id'];

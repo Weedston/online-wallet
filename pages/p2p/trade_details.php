@@ -2,9 +2,30 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+
+// Проверка токена авторизации
+if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
+    header("Location: /");
+    exit();
+}
+
+$stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($storedToken);
+$stmt->fetch();
+$stmt->close();
+
+if ($_SESSION['token'] !== $storedToken) {
+    // Токен не совпадает — сессия недействительна
+    session_destroy();
+    header("Location: /");
+    exit();
+}
+
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
 
 require_once 'src/functions.php';
 
@@ -15,7 +36,7 @@ $ad_id = isset($_GET['ad_id']) ? intval($_GET['ad_id']) : 0;
 if ($ad_id === 0) {
     $_SESSION['flash_message'] = [
         'type' => 'error',
-        'text' => 'Некорректный ID сделки.'
+        'text' => 'Invalid ID.'
     ];
     header('Location: /p2p'); // Или куда перенаправлять в случае ошибки
     exit();

@@ -1,6 +1,21 @@
 <?php
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../../index.php");
+// Проверка токена авторизации
+if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
+    header("Location: /");
+    exit();
+}
+
+$stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($storedToken);
+$stmt->fetch();
+$stmt->close();
+
+if ($_SESSION['token'] !== $storedToken) {
+    // Токен не совпадает — сессия недействительна
+    session_destroy();
+    header("Location: /");
     exit();
 }
 
@@ -35,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create_ad"])) {
 // Проверка капчи
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-    $recaptcha_secret = '----------------IY';
+    $recaptcha_secret = '6LdEiTgrAAAAAIkfnAIYE2nM0bqDGhKvVlw7P-IY';
 
     $verify = file_get_contents($recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
     $response_data = json_decode($verify);
