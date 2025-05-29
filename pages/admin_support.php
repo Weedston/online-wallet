@@ -145,7 +145,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
                 $stmt->bind_param("s", $txid);
                 $stmt->execute();
                 $stmt->store_result();
-
+/*
                 if ($stmt->num_rows === 0) {
                     // Сохраняем и отправляем уведомление
                     $stmt = $CONNECT->prepare("INSERT INTO btc_notifications (txid, address, amount, confirmations) VALUES (?, ?, ?, ?)");
@@ -158,7 +158,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'btc_transactions') {
                            "💰 Amount: <b>$amount BTC</b>\n".
                            "⛓ Confirmations: <b>$confirmations</b>";
                     sendTelegram($msg);
-                }
+                } */
             }
         }
 
@@ -184,7 +184,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_i
     $new_users = [];
     while ($row = $result->fetch_assoc()) {
         $new_users[] = $row;
-
+/*
         // Формируем сообщение
         $message = "🆕 <b>Новый пользователь</b>\n"
                  . "🆔 ID: <code>{$row['id']}</code>\n"
@@ -192,8 +192,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'new_users' && isset($_GET['last_i
                  . "💰 Баланс: <b>{$row['balance']} BTC</b>";
 
         // Отправка в Telegram
-        sendTelegram($message);
-    }
+        sendTelegram($message); */
+    } 
 
     echo json_encode(['new_users' => $new_users]);
     exit;

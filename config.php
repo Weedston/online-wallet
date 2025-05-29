@@ -1,6 +1,6 @@
 <?php
 define ('HOST', 'localhost');
-define ('USER', 'wikly');
+define ('USER', 'root');
 define ('PASS', '8A08d423');
 define ('DB', 'wallet_btc');
 
@@ -16,7 +16,7 @@ function bitcoinRPC($method, $params = []) {
     $rpc_user = 'wikly';
     $rpc_password = '8A08d423';
     $rpc_host = '127.0.0.1';
-    $rpc_port = 48332;
+    $rpc_port = 8332;
 
     // Данные для аутентификации и запроса
     $data = json_encode([
@@ -74,4 +74,6 @@ function bitcoinRPC($method, $params = []) {
     return 'Unknown ERROR: ' . $response;
 }
 
+define('TELEGRAM_BOT_TOKEN', '7911312217:AAG-7PrL9_75b159550PM8boBpgc5zsJ4Qw');
+define('TELEGRAM_CHAT_ID', '1727320137');
 ?>

@@ -14,8 +14,11 @@ return [
     'sid_placeholder' => 'Your SID Phrase',
     'log_in' => 'Log In',
     'no_account' => "Don't have an account? <a href=\"/register\">Sign Up</a>",
+	'maintenance_h1' => "The site is temporarily closed for maintenance",
+	'maintenance_text' => "Please come back later.",
 	'dashboard_welcome' => 'Welcome to Your Dashboard',
-	'dashboard_balance' => 'Balance: ',
+	'dashboard_balance' => 'Available balance: ',
+	'dashboard_frozen_balance' => 'Frozen Balance in P2P: ',
 	'dashboard_address' => 'Wallet Address: ',
 	'dashboard_transactions' => 'Transactions: ',
 	'menuwallet_dashboard' => 'Dashboard',
@@ -78,7 +81,7 @@ return [
 	'p2p_menu_notifications' => 'Notifications',
 	'p2p_menu_allnotif' => 'View All Notifications',
 	'p2p_creatad_title' => 'Create P2P Exchange Ad',
-	'p2p_creatad_balance' => 'Your Balance: ',
+	'p2p_creatad_balance' => 'Available balance: ',
 	'p2p_creatad_currate' => 'Current BTC Rates:',
 	'p2p_creatad_h2' => 'Create a P2P Exchange Ad',
 	'p2p_creatad_tradetype' => 'Trade Type:',
@@ -122,6 +125,10 @@ return [
 	'p2p_profile_modal_maxfiat' => 'Max Fiat Amount:',
 	'p2p_profile_modal_save' => 'Save',
 	'p2p_profile_modal_cancel' => 'Cancel',
+	'register_h1' => 'Your SID phrase for accessing the wallet.',
+	'register_h1_2' => 'Attention! This is your passphrase to access your wallet. Write it down and don`t lose it. Recovery is not possible. Use it to log in and manage your BTC wallet.',
+	'register_link_login' => 'Log in to your personal account.',
+	'register_fnc_copy' => 'Copied to the clipboard:',
 	
 	
 ];

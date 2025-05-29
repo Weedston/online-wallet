@@ -1,5 +1,4 @@
 <?php
-
 // Проверка токена авторизации
 if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
     header("Location: /");
@@ -20,8 +19,7 @@ if ($_SESSION['token'] !== $storedToken) {
     exit();
 }
 
-
-if ($_SESSION['user_id'] == "182") {
+if ($_SESSION['user_id'] == "7") {
     $_SESSION['admin'] = true;    
 }
 

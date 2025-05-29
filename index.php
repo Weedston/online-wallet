@@ -1,7 +1,7 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
 
 require_once 'config.php';
 session_start();
@@ -13,7 +13,7 @@ use JsonRPC\Client;
 $rpcUser = 'wikly';
 $rpcPassword = '8A08d423';
 $rpcHost = '127.0.0.1';
-$rpcPort = 48332;
+$rpcPort = 8332;
 
 // Подключаемся к bitcoind
 $client = new Client("http://$rpcHost:$rpcPort/");
@@ -78,7 +78,7 @@ if (isset ($_SESSION['wallet'])) {
 //include 'pages/top.php';
 
 if ($Page == 'index' ) include 'pages/index.php'; 
-else if ($Page == 'login') include 'pages/login.php';
+//else if ($Page == 'login') include 'pages/login.php';
 else if ($Page == 'register') include 'pages/register.php';
 else if ($Page == 'dashboard') include 'pages/dashboard.php';
 else if ($Page == 'logout') include 'pages/logout.php';

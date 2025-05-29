@@ -5,6 +5,9 @@ if (!isset($_SESSION['user_id'], $_SESSION['token'])) {
     exit();
 }
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 $stmt = $CONNECT->prepare("SELECT session_token FROM members WHERE id = ?");
 $stmt->bind_param("i", $_SESSION['user_id']);
 $stmt->execute();
@@ -45,81 +48,141 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = file_get_contents('php://input');
     $request = json_decode($input, true);
 
-    if (isset($request['jsonrpc']) && $request['jsonrpc'] == '2.0') {
-        $response = [];
-        if ($request['method'] == 'deleteAd') {
-            $ad_id = intval($request['params']['ad_id']);
-            $delete_payment_methods_query = "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'";
-			$delete_query = "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'";
+    if (isset($request['jsonrpc']) && $request['jsonrpc'] === '2.0') {
+        header('Content-Type: application/json');
 
-            if (mysqli_query($CONNECT, $delete_payment_methods_query) && mysqli_query($CONNECT, $delete_query)) {
-                $response = [
-                    'jsonrpc' => '2.0',
-                    'result' => 'Ad successfully deleted!',
-                    'id' => $request['id']
-                ];
-            } else {
-                $response = [
-                    'jsonrpc' => '2.0',
-                    'error' => [
-                        'code' => -32000,
-                        'message' => 'Error deleting ad: ' . mysqli_error($CONNECT)
-                    ],
-                    'id' => $request['id']
-                ];
-            }
-        } elseif ($request['method'] == 'editAd') {
-            $ad_id = intval($request['params']['ad_id']);
-            $min_amount_btc = floatval($request['params']['min_amount_btc']);
-            $max_amount_btc = floatval($request['params']['max_amount_btc']);
-            $rate = floatval($request['params']['rate']);
-            $payment_methods = $request['params']['payment_methods'];
-            $trade_type = mysqli_real_escape_string($CONNECT, $request['params']['trade_type']);
-            $comment = mysqli_real_escape_string($CONNECT, $request['params']['comment']);
-            $update_query = "UPDATE ads SET min_amount_btc = '$min_amount_btc', max_amount_btc = '$max_amount_btc', rate = '$rate', trade_type = '$trade_type', comment = '$comment' WHERE id = '$ad_id' AND user_id = '$user_id'";
-
-            if (mysqli_query($CONNECT, $update_query)) {
-                // Удаляем старые методы оплаты
-                mysqli_query($CONNECT, "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'");
-                // Вставляем новые методы оплаты
-                foreach ($payment_methods as $method) {
-                    $method = mysqli_real_escape_string($CONNECT, $method);
-                    mysqli_query($CONNECT, "INSERT INTO ad_payment_methods (ad_id, payment_method) VALUES ('$ad_id', '$method')");
-                }
-                $response = [
-                    'jsonrpc' => '2.0',
-                    'result' => 'Ad successfully updated!',
-                    'id' => $request['id']
-                ];
-            } else {
-                $response = [
-                    'jsonrpc' => '2.0',
-                    'error' => [
-                        'code' => -32000,
-                        'message' => 'Error updating ad: ' . mysqli_error($CONNECT)
-                    ],
-                    'id' => $request['id']
-                ];
-            }
+        if (!isset($request['method']) || !isset($request['params'])) {
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'error' => ['code' => -32602, 'message' => 'Invalid params'],
+                'id' => $request['id'] ?? null
+            ]);
+            exit();
         }
 
-        header('Content-Type: application/json');
-        echo json_encode($response);
+        $method = $request['method'];
+        $params = $request['params'];
+        $id = $request['id'] ?? null;
+
+        if ($method === 'deleteAd') {
+            $ad_id = intval($params['ad_id']);
+
+            // Получаем замороженную сумму BTC из объявления
+            $result = mysqli_query($CONNECT, "SELECT amount_btc FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'");
+            $ad = mysqli_fetch_assoc($result);
+
+            if ($ad) {
+                $amount_btc = floatval($ad['amount_btc']);
+                mysqli_query($CONNECT, "UPDATE members SET frozen_balance = frozen_balance - $amount_btc WHERE id = '$user_id'");
+            }
+
+            // Удаляем объявление и его способы оплаты
+            mysqli_query($CONNECT, "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'");
+            mysqli_query($CONNECT, "DELETE FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'");
+
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'result' => 'Объявление удалено',
+                'id' => $id
+            ]);
+            exit();
+
+        } elseif ($method === 'editAd') {
+            $ad_id = intval($params['ad_id']);
+            $amount_btc = floatval($params['max_amount_btc']); // Общая сумма BTC
+            $rate = floatval($params['rate']);
+            $min_amount_btc = floatval($params['min_amount_btc']);
+            $payment_methods = $params['payment_methods'];
+            $comment = mysqli_real_escape_string($CONNECT, $params['comment']);
+            $trade_type = mysqli_real_escape_string($CONNECT, $params['trade_type']);
+            $date = mysqli_real_escape_string($CONNECT, $params['date']);
+
+            // Получаем старую сумму объявления
+            $old_result = mysqli_query($CONNECT, "SELECT amount_btc FROM ads WHERE id = '$ad_id' AND user_id = '$user_id'");
+            $old_ad = mysqli_fetch_assoc($old_result);
+
+            if (!$old_ad) {
+                echo json_encode([
+                    'jsonrpc' => '2.0',
+                    'error' => ['code' => -32002, 'message' => 'Объявление не найдено.'],
+                    'id' => $id
+                ]);
+                exit();
+            }
+
+            $old_amount_btc = floatval($old_ad['amount_btc']);
+            $diff = $amount_btc - $old_amount_btc;
+
+            if ($diff != 0) {
+                if ($diff > 0) {
+                    $check = mysqli_query($CONNECT, "SELECT balance, frozen_balance FROM members WHERE id = '$user_id'");
+                    $user = mysqli_fetch_assoc($check);
+                    $available = $user['balance'] - $user['frozen_balance'];
+
+                    if ($available < $diff) {
+                        echo json_encode([
+                            'jsonrpc' => '2.0',
+                            'error' => ['code' => -32001, 'message' => 'Недостаточно доступного баланса.'],
+                            'id' => $id
+                        ]);
+                        exit();
+                    }
+                }
+
+                // Обновляем frozen_balance
+                mysqli_query($CONNECT, "
+                    UPDATE members 
+                    SET frozen_balance = frozen_balance + $diff 
+                    WHERE id = '$user_id'
+                ");
+            }
+
+            // Обновляем объявление
+            mysqli_query($CONNECT, "
+                UPDATE ads SET 
+                    amount_btc = $amount_btc,
+                    rate = $rate,
+                    min_amount_btc = $min_amount_btc,
+                    max_amount_btc = $amount_btc,
+                    comment = '$comment',
+                    trade_type = '$trade_type',
+                    updated_at = NOW()
+                WHERE id = '$ad_id' AND user_id = '$user_id'
+            ");
+
+            // Обновляем способы оплаты
+            mysqli_query($CONNECT, "DELETE FROM ad_payment_methods WHERE ad_id = '$ad_id'");
+            foreach ($payment_methods as $method) {
+                $escaped_method = mysqli_real_escape_string($CONNECT, $method);
+                mysqli_query($CONNECT, "INSERT INTO ad_payment_methods (ad_id, method) VALUES ('$ad_id', '$escaped_method')");
+            }
+
+            echo json_encode([
+                'jsonrpc' => '2.0',
+                'result' => 'Объявление обновлено',
+                'id' => $id
+            ]);
+            exit();
+        }
+
+        // Неизвестный метод
+        echo json_encode([
+            'jsonrpc' => '2.0',
+            'error' => ['code' => -32601, 'message' => 'Method not found'],
+            'id' => $id
+        ]);
         exit();
     }
 
-    // If the request is not a valid JSON-RPC request, return an error response
+    // Некорректный JSON-RPC
     header('Content-Type: application/json');
-    $error_response = [
+    echo json_encode([
         'jsonrpc' => '2.0',
-        'error' => [
-            'code' => -32600,
-            'message' => 'Invalid Request'
-        ]
-    ];
-    echo json_encode($error_response);
+        'error' => ['code' => -32600, 'message' => 'Invalid Request']
+    ]);
     exit();
 }
+
 
 // Получение информации о пользователе
 $user = mysqli_fetch_assoc(mysqli_query($CONNECT, "SELECT * FROM members WHERE id = '$user_id'"));
@@ -326,7 +389,7 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
         <p><strong><?= htmlspecialchars($translations['p2p_profile_balance']) ?></strong> <?php echo htmlspecialchars($user['balance']); ?></p>
 		 <div style="border: 2px solid green; padding: 10px; display: inline-block; margin: 0 10%;">
 				<p><strong><?= htmlspecialchars($translations['p2p_profile_seed']) ?></strong> <span id="seedPhrase"><?php echo htmlspecialchars($user["passw"]); ?></span></p>
-				<button onclick="copyToClipboard()"><?= htmlspecialchars($translations['p2p_profile_copy']) ?></button>
+				
 			</div>
 
         <h2><?= htmlspecialchars($translations['p2p_profile_h2']) ?></h2>
@@ -418,8 +481,8 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
             <input type="text" id="edit-trade-type" readonly>
             <label for="edit-comment"><?= htmlspecialchars($translations['p2p_profile_comment']) ?>:</label>
             <textarea id="edit-comment" rows="4"></textarea>
-            <button type="submit" class="btn"><?= htmlspecialchars($translations['p2p_profile_save']) ?></button>
-            <button type="button" class="btn" onclick="closeModal()"><?= htmlspecialchars($translations['p2p_profile_cancel']) ?></button>
+            <button type="submit" class="btn"><?= htmlspecialchars($translations['p2p_profile_modal_save']) ?></button>
+            <button type="button" class="btn" onclick="closeModal()"><?= htmlspecialchars($translations['p2p_profile_modal_cancel']) ?></button>
         </form>
     </div>
 </div>
