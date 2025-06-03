@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_settings">Settings</string>
+    <string name="address_label">Address</string>
+    <string name="balance_label">Balance: </string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="main_menu">Main Menu</string>
+    <string name="no_transactions">No Transactions</string>
+    <string name="retry">Retry</string>
+    <string name="save_pin">Save PIN</string>
+    <string name="sid_copied">SID Copied</string>
+    <string name="transactions_label">Transactions</string>
+    <string name="account_reset">Account Reset</string>
+    <string name="app_name">AnonBTCWallet</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="copy_sid">Copy SID</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Russian</string>
+    <string name="login">Login</string>
+    <string name="logout">Logout</string>
+    <string name="menu_dashboard">Dashboard</string>
+    <string name="menu_logout">Logout</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_support">Support</string>
+    <string name="menu_transfer">Transfer</string>
+    <string name="network_error">Network Error</string>
+    <string name="next">Next</string>
+    <string name="pin_create_hint">Create PIN</string>
+    <string name="pin_enter">Enter PIN</string>
+    <string name="pin_save">Save PIN</string>
+    <string name="privkey_label">Private Key</string>
+    <string name="register_link">Register</string>
+    <string name="sid_hint">Enter SID</string>
+    <string name="sid_info">SID Info</string>
+    <string name="sid_label">SID</string>
+    <string name="splash_error">Splash Error</string>
+    <string name="splash_loading">Loading...</string>
+    <string name="to_login">To Login</string>
+    <string name="wallet_label">Wallet</string>
+    <string name="wrong_pin">Wrong PIN</string>
+    <string name="wrong_sid">Wrong SID</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="transfer">Transfer</string>
+    <string name="support">Support</string>
+    <string name="profile">Profile</string>
+    <string name="error_user_not_authenticated">User not authenticated</string>
+    <string name="error_unable_to_fetch_data">Unable to fetch data</string>
+    <string name="error_response_message">Response error: %1$s</string>
+    <string name="balance_text">Balance: %1$s</string>
+    <string name="address_text">Address: %1$s</string>
+    <string name="error_invalid_data_format">Invalid data format</string>
+</resources>
+

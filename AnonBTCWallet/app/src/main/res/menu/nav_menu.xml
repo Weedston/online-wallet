@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:title="@string/menu_dashboard"
+        android:icon="@android:drawable/ic_menu_view" />
+    <item
+        android:id="@+id/nav_transfer"
+        android:title="@string/menu_transfer"
+        android:icon="@android:drawable/ic_menu_send" />
+    <item
+        android:id="@+id/nav_support"
+        android:title="@string/menu_support"
+        android:icon="@android:drawable/ic_menu_help" />
+    <item
+        android:id="@+id/nav_profile"
+        android:title="@string/menu_profile"
+        android:icon="@android:drawable/ic_menu_myplaces" />
+    <item
+        android:id="@+id/nav_logout"
+        android:title="@string/menu_logout"
+        android:icon="@android:drawable/ic_lock_power_off" />
+</menu>
+

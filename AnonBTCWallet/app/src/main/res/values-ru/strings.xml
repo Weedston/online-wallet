@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">AnonBTCWallet</string>
+    <string name="action_settings">Настройки</string>
+    <string name="change_pin">Сменить PIN</string>
+    <string name="enter_pin">Введите PIN (4 цифры)</string>
+    <string name="save_pin">Сохранить PIN</string>
+    <string name="login">Войти</string>
+    <string name="sid_hint">Введите SID</string>
+    <string name="sid_label">SID</string>
+    <string name="wrong_sid">Неверный SID</string>
+    <string name="wrong_pin">Неверный PIN</string>
+    <string name="network_error">Ошибка сети</string>
+    <string name="retry">Повторить</string>
+    <string name="logout">Выход</string>
+    <string name="account_reset">Сброс учетной записи</string>
+    <string name="language_en">Английский</string>
+    <string name="language_ru">Русский</string>
+    <string name="next">Далее</string>
+    <string name="splash_loading">Загрузка...</string>
+    <string name="splash_error">Ошибка загрузки данных</string>
+    <string name="pin_create_hint">Придумайте PIN (4 цифры)</string>
+    <string name="pin_save">Сохранить PIN</string>
+    <string name="pin_enter">Введите PIN (4 цифры)</string>
+    <string name="main_menu">Меню</string>
+    <string name="register_link">Регистрация</string>
+    <string name="copy_sid">Скопировать SID-фразу</string>
+    <string name="sid_copied">SID-фраза скопирована!</string>
+    <string name="sid_info">Это ваша секретная фраза (SID) для входа в аккаунт. Сохраните её в надёжном месте и никому не показывайте!</string>
+    <string name="to_login">К окну входа</string>
+    <string name="wallet_label">Кошелек: %1$s</string>
+    <string name="privkey_label">Приватный ключ: %1$s</string>
+    <string name="menu_dashboard">Главная</string>
+    <string name="menu_transfer">Перевод</string>
+    <string name="menu_support">Поддержка</string>
+    <string name="menu_profile">Профиль</string>
+    <string name="menu_logout">Выход</string>
+    <string name="balance_label">Баланс: %1$s</string>
+    <string name="address_label">BTC адрес: %1$s</string>
+    <string name="transactions_label">Транзакции</string>
+    <string name="no_transactions">Нет транзакций</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="transfer">Отправить</string>
+    <string name="support">Поддержка</string>
+    <string name="profile">Профиль</string>
+    <string name="error_user_not_authenticated">Пользователь не прошел проверку подлинности</string>
+    <string name="error_unable_to_fetch_data">Данные не получены</string>
+    <string name="error_response_message">Ошибка ответа от сервера: %1$s</string>
+    <string name="balance_text">Баланс: %1$s</string>
+    <string name="address_text">Адрес: %1$s</string>
+    <string name="error_invalid_data_format">Неверный формат данных</string>
+
+</resources>
+

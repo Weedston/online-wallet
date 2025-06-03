@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+    <color name="purple_500">#9C27B0</color>
+    <color name="purple_700">#7B1FA2</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="purple_200">#BB86FC</color>
+    <color name="dashboard_bg">#2D1400</color> <!-- тёмный фон -->
+    <color name="dashboard_orange">#FF8800</color> <!-- оранжевые акценты -->
+    <color name="dashboard_text">#FFFFFF</color> <!-- белый текст -->
+    <color name="textColor">#7A91EB</color>
+</resources>
+

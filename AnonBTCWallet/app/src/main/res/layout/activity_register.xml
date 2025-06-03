@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#181818"
+    android:padding="32dp">
+
+    <TextView
+        android:id="@+id/registerTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/register_link"
+        android:textColor="#FFA94D"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/sidLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SID:"
+        android:textColor="#FFA94D"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/sidPhrase"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FF4444"
+        android:textSize="18sp"
+        android:padding="8dp"
+        android:background="#222"
+        android:layout_marginBottom="16dp"
+        android:textIsSelectable="true" />
+
+    <TextView
+        android:id="@+id/sidInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sid_info"
+        android:textColor="#FFA94D"
+        android:textSize="15sp"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:id="@+id/walletTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFA94D"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/privkeyTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFA94D"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"
+        android:text="" />
+
+    <Button
+        android:id="@+id/copySidButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/copy_sid"
+        android:backgroundTint="#FFA94D"
+        android:textColor="#fff"
+        android:textSize="16sp"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/toLoginButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/to_login"
+        android:backgroundTint="#FFA94D"
+        android:textColor="#fff"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center_horizontal" />
+
+</LinearLayout>
+
