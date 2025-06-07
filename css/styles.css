@@ -101,11 +101,12 @@ nav {
 }
 
 nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    gap: 15px;
+  
+  list-style: none;
+  justify-content: center;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
 }
 
 nav ul li {
@@ -684,4 +685,115 @@ table td button:hover {
 
 #service-log::-webkit-scrollbar-track {
     background-color: #333;
+}
+
+.card,
+.request-card,
+.transaction,
+table td,
+table th {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.break-all {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+/* Базовые стили меню */
+nav {
+  position: relative;
+}
+
+/* Гамбургер скрыт на десктопе */
+.menu-toggle {
+  display: none;
+  font-size: 28px;
+  background: none;
+  border: none;
+  color: orange;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1001;
+}
+
+nav ul {
+  display: flex;
+  list-style: none;
+  justify-content: center;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Адаптация ссылок */
+nav ul li a {
+  color: orange;
+  text-decoration: none;
+  font-size: 18px;
+  transition: text-decoration 0.3s ease;
+}
+nav ul li a:hover {
+  text-decoration: underline;
+}
+nav ul li a.p2p-link {
+  color: #FFD700;
+  font-weight: bold;
+}
+nav ul li a.p2p-link:hover {
+  color: #FF8C00;
+  text-decoration: underline;
+}
+
+/* Мобильные стили */
+@media (max-width: 600px) {
+  nav ul {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    right: 0;
+    top: 48px;
+    background: #121212;
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+    z-index: 1000;
+    border-top: 1px solid #222;
+  }
+  nav ul.open {
+    display: flex;
+  }
+  .menu-toggle {
+    display: block;
+  }
+  nav ul li {
+    margin: 0;
+    padding: 14px 24px;
+    border-bottom: 1px solid #222;
+    text-align: left;
+  }
+  nav ul li:last-child {
+    border-bottom: none;
+  }
+}
+
+.download-button {
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #cc5500; /* тёмно-оранжевый */
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+	margin-top: 20px;
+}
+
+.download-button:hover {
+    background-color: #ff6600; /* ярче при наведении */
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.6);
 }

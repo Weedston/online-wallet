@@ -91,6 +91,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '2') {
         <p><?= htmlspecialchars($translations['dashboard_balance']) ?><span id="balance_o">0.00000000</span> BTC</p>
         <p><strong><?= htmlspecialchars($translations['dashboard_address']) ?></strong> <?php echo $btc_address; ?></p>
 		<p><?php echo '<img src="images/qrcode.png" alt="QR Code" id="qrcode">'; ?></p>
+		
+				<a href="/anonbtcapk" class="download-button">
+			<?= htmlspecialchars($translations['download_apk']) ?>
+		</a>
+
 		<p><?= htmlspecialchars($translations['dashboard_transactions']) ?></p>
 		<div id="transactions">
 			<p>Uploading transactions...</p>
@@ -118,10 +123,10 @@ function fetchTransactions() {
             txContainer.innerHTML = ""; 
 
             data.transactions.forEach(tx => {
-			let txDiv = document.createElement("div");
-			txDiv.className = "transaction " + (tx.amount > 0 ? "received" : "sent");
-			txDiv.innerHTML = `<p><strong>${tx.category === "receive" ? "Received" : "Sent"}:</strong> ${tx.amount} BTC</p><p><strong>TXID:</strong> ${tx.txid}</p><p><strong>Сonfirmations:</strong> ${tx.confirmations}</p> <p><strong>Time:</strong> ${new Date(tx.time * 1000).toLocaleString()}</p>`;
-			txContainer.appendChild(txDiv);
+				let txDiv = document.createElement("div");
+				txDiv.className = "transaction " + (tx.amount > 0 ? "received" : "sent");
+				txDiv.innerHTML = `<p><strong>${tx.category === "receive" ? "Received" : "Sent"}:</strong> ${tx.amount} BTC</p><p><strong>TXID:</strong> <span class="break-all">${tx.txid}</span></p><p><strong>Сonfirmations:</strong> ${tx.confirmations}</p><p><strong>Time:</strong> ${new Date(tx.time * 1000).toLocaleString()}</p>`;
+				txContainer.appendChild(txDiv);
 			});
         })
         .catch(error => {

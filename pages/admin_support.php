@@ -219,7 +219,11 @@ $monthCount = $res_month->fetch_assoc()['total'] ?? 0;
 $res_total = $CONNECT->query("SELECT SUM(count) as total FROM visit_counter");
 $totalCount = $res_total->fetch_assoc()['total'] ?? 0;
 
-
+$query = "SELECT COUNT(*) as total, MAX(downloaded_at) as last_download FROM downloads";
+$result = $CONNECT->query($query);
+$data = $result->fetch_assoc();
+$total = $data['total'] ?? 0;
+$last = $data['last_download'] ?? 'Нет данных';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -325,6 +329,61 @@ $totalCount = $res_total->fetch_assoc()['total'] ?? 0;
     .stats-table tbody tr:hover {
         background-color: #333;
     }
+	
+	.stats-wrapper {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin: 20px 0;
+    }
+
+    .downloads-box {
+        background-color: #2b1d0e;
+        color: #ffa500;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #ffa500;
+        max-width: 400px;
+        flex: 1 1 300px;
+    }
+
+    .downloads-box h2 {
+        margin-top: 0;
+        border-bottom: 1px solid #ffa500;
+        padding-bottom: 10px;
+    }
+
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1a1a1a;
+        color: #ffcc99;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(255, 140, 0, 0.4);
+        flex: 1 1 300px;
+        max-width: 400px;
+    }
+
+    .stats-table th, .stats-table td {
+        padding: 12px 16px;
+        text-align: left;
+    }
+
+    .stats-table thead {
+        background-color: #ff6600;
+        color: #fff;
+    }
+
+    .stats-table tbody tr:nth-child(even) {
+        background-color: #2a2a2a;
+    }
+
+    .stats-table tbody tr:hover {
+        background-color: #333;
+    }
     </style>
 	
 <body><br><br>
@@ -333,21 +392,111 @@ $totalCount = $res_total->fetch_assoc()['total'] ?? 0;
         <h2>Admin Support Panel</h2>
 <h3>Total Site Visits <span id="visitCount"></span></h3>
 
-<table class="stats-table">
-    <thead>
-        <tr>
-            <th>Период</th>
-            <th>Посещений</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr><td>Сегодня</td><td><span id="todayVisits">0</span></td></tr>
-        <tr><td>Последние 7 дней</td><td><?= $weekCount ?></td></tr>
-        <tr><td>Последние 30 дней</td><td><?= $monthCount ?></td></tr>
-        <tr><td><strong>Всего</strong></td><td><strong><?= $totalCount ?></strong></td></tr>
-    </tbody>
-</table>
+<div class="stats-wrapper">
+    <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Период</th>
+                <th>Посещений</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Сегодня</td><td><span id="todayVisits">0</span></td></tr>
+            <tr><td>Последние 7 дней</td><td><?= $weekCount ?></td></tr>
+            <tr><td>Последние 30 дней</td><td><?= $monthCount ?></td></tr>
+            <tr><td><strong>Всего</strong></td><td><strong><?= $totalCount ?></strong></td></tr>
+        </tbody>
+    </table>
+
+    <div class="downloads-box">
+        <h2>📥 Статистика скачиваний</h2>
+        <p><strong>Всего скачиваний:</strong> <?= $total ?></p>
+        <p><strong>Последнее скачивание:</strong> <?= $last ?></p>
+    </div>
+</div>
+
+
 		<h3>Total Balance Wallet: <span id="totalBalance">0</span></h3>
+		
+		<style>
+
+    .user-group {
+        margin-bottom: 30px;
+        background-color: #2a2a2a;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .spoiler-header {
+        background-color: #ff6a00;
+        color: #fff;
+        padding: 10px 15px;
+        margin: -15px -15px 15px -15px;
+        border-radius: 8px 8px 0 0;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+
+    .spoiler-header:hover {
+        background-color: #e55b00;
+    }
+
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 10px 0;
+    }
+
+    .card {
+        background-color: #333;
+        border: 1px solid #ff6a00;
+        border-radius: 10px;
+        padding: 15px;
+        width: calc(33.333% - 10px);
+        box-sizing: border-box;
+        transition: transform 0.3s;
+    }
+
+    .card:hover {
+        transform: scale(1.02);
+    }
+
+    textarea {
+        width: 100%;
+        height: 60px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid #888;
+        padding: 8px;
+        resize: vertical;
+        background-color: #222;
+        color: #fff;
+    }
+
+    .btn {
+        margin-top: 10px;
+        background-color: #ff6a00;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+        background-color: #e55b00;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            width: 100%;
+        }
+    }
+</style>
+
+		
         <?php foreach ($requests as $user_id => $data): ?>
             <div class="user-group">
                 <h3 class="spoiler-header" onclick="toggleSpoiler('group_<?php echo $user_id; ?>')" style="cursor: pointer;">User ID: <?php echo $user_id; ?>, Wallet: <?php echo htmlspecialchars($data['wallet']); ?> &#9660;</h3>
@@ -446,27 +595,37 @@ setInterval(fetchVisitCount, 10000);
 		
 		<h3>All Users</h3>
 		<div class="users-table-container">
-            <table id="usersTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Password</th>
-                        <th>Wallet</th>
-                        <th>Balance</th>
-                    </tr>
-                </thead>
-                <tbody>
+			<table id="usersTable" class="users-table">
+				<thead>
+				<tr>
+					<th>ID</th>
+					<th>Password</th>
+					<th>Wallet</th>
+					<th>Balance</th>
+				</tr>
+				</thead>
+				<tbody>
 				<?php while ($user = $users->fetch_assoc()): ?>
 					<tr data-id="<?= $user['id'] ?>">
-						<td><?= $user['id'] ?></td>
-						<td><?= htmlspecialchars($user['passw']) ?></td>
-						<td><?= htmlspecialchars($user['wallet']) ?></td>
-						<td><?= $user['balance'] ?></td>
+					<td><?= $user['id'] ?></td>
+					<td><?= htmlspecialchars($user['passw']) ?></td>
+					<td><?= htmlspecialchars($user['wallet']) ?></td>
+					<td><?= $user['balance'] ?></td>
 					</tr>
 				<?php endwhile; ?>
 				</tbody>
-            </table>
-        </div>
+			</table>
+		</div>
+<!-- Только для этой страницы: -->
+<style>
+.users-table th:nth-child(2),
+.users-table td:nth-child(2) {
+  max-width: 450px;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+</style>
         
     </div>
 	

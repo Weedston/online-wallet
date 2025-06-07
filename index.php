@@ -93,6 +93,10 @@ else if ($Page == 'p2p-profile') include 'pages/p2p/profile.php';
 else if ($Page == 'p2p-trade_details') include 'pages/p2p/trade_details.php';
 else if ($Page == 'notifications') include 'pages/p2p/notifications.php';
 else if ($Page == 'adm_settings') include 'pages/p2p/admin_settings.php';
+else if ($Page == 'download') include 'pages/download.php';
+else if ($Page == 'privacy') include 'pages/privacy.php';
+else if ($Page == 'anonbtcapk') include 'pages/anonbtc.php';
+else if ($Page == 'review') include 'pages/reviews.php';
 
 
 

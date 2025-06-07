@@ -16,6 +16,7 @@ RewriteRule ^vendor/(.*)$ vendor/$1 [L]
 RewriteRule ^fonts/(.*)$ fonts/$1 [L]
 RewriteRule ^banner/(.*)$ banner/$1 [L]
 RewriteRule ^src/(.*)$ src/$1 [L]
+RewriteRule ^api/(.*)$ api/$1 [L]
 
 # Удаляем конфликтующее правило
 # RewriteRule ^.*$ [NC,L]

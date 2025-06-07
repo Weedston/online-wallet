@@ -171,11 +171,10 @@ $message_display = $settings['message_display'] ?? '0';
 			<p><?= htmlspecialchars($translations['advantages_text3']) ?></p>
 			<p><?= htmlspecialchars($translations['advantages_text4']) ?></p>
 			<p><b><?= htmlspecialchars($translations['advantages_text5']) ?></b></p>
-			<p><?= htmlspecialchars($translations['advantages_text6']) ?></p>
-			
+			<p><?= htmlspecialchars_decode($translations['advantages_text6']) ?></p>
 			<?php if ($message_display == '1' && !empty($message)): ?>
 				<div class="message-box">
-					<p><?= htmlspecialchars($message) ?></p>
+					<p><?= htmlspecialchars_decode($message) ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -203,9 +202,15 @@ if ($maintenance === 'on'): ?>
             <input type="text" name="sid" placeholder="<?= htmlspecialchars($translations['sid_placeholder']) ?>">
             <button class="btn" style="width: 100%; padding: 10px; background-color: #ff8c00; border: none; border-radius: 4px; color: white; cursor: pointer;"><?= htmlspecialchars($translations['log_in']) ?></button>
             <p style="text-align: center; margin-top: 15px;"><?= $translations['no_account'] ?></p>
+			<p style="text-align: center; margin-top: 15px;"><?= $translations['view_rewiew'] ?></p>
         </form>
     </div>
-<?php endif; ?>
+			<?php endif; ?>
+				<a href="/anonbtcapk" class="download-button">
+			<?= htmlspecialchars($translations['download_apk']) ?>
+		</a>
+
+
 
 
 

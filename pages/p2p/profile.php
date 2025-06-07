@@ -378,6 +378,11 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
         .modal-content button:hover {
             background-color: darkorange;
         }
+		
+		
+}
+
+
     </style>
 </head>
 <body>
@@ -391,6 +396,13 @@ $ads = mysqli_query($CONNECT, "SELECT * FROM ads WHERE user_id = '$user_id' AND 
 				<p><strong><?= htmlspecialchars($translations['p2p_profile_seed']) ?></strong> <span id="seedPhrase"><?php echo htmlspecialchars($user["passw"]); ?></span></p>
 				
 			</div>
+			<br>
+			
+				<a href="/anonbtcapk" class="download-button">
+			<?= htmlspecialchars($translations['download_apk']) ?>
+		</a>
+
+
 
         <h2><?= htmlspecialchars($translations['p2p_profile_h2']) ?></h2>
         <table>

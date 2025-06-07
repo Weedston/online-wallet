@@ -24,30 +24,32 @@ if (session_status() == PHP_SESSION_NONE) {
 
 
 <nav>
-    <ul>
-        <li><a href="dashboard"><?= htmlspecialchars($translations['p2p_menu_dash']) ?></a></li>
-        <li><a href="transfer"><?= htmlspecialchars($translations['p2p_menu_transfer']) ?></a></li>
-        <li><a href="support"><?= htmlspecialchars($translations['p2p_menu_support']) ?></a></li>
-        <li><a href="p2p"><?= htmlspecialchars($translations['p2p_menu_p2p_exch']) ?></a></li>
-        <li><a href="p2p-create"><?= htmlspecialchars($translations['p2p_menu_createad']) ?></a></li>
-        <li><a href="p2p-trade_history"><?= htmlspecialchars($translations['p2p_menu_tradehist']) ?></a></li>
-        <li><a href="p2p-profile"><?= htmlspecialchars($translations['p2p_menu_profile']) ?></a></li>
-        <li><a href="logout"><?= htmlspecialchars($translations['p2p_menu_logout']) ?></a></li>
-        <li>
-            <a href="#" id="notification-bell">
-                <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
-                <span class="notification-badge" id="notification-count">0</span>
-            </a>
-            <div id="notification-popup" class="notification-popup">
-                <h4><?= htmlspecialchars($translations['p2p_menu_notifications']) ?></h4>
-                <ul id="notification-list">
-                    <!-- Уведомления будут загружены тут -->
-                </ul>
-                <a href="notifications" class="view-all-link"><?= htmlspecialchars($translations['p2p_menu_allnotif']) ?></a>
-            </div>
-        </li>
-    </ul>
+  <button class="menu-toggle" aria-label="Открыть меню">&#9776;</button>
+  <ul>
+    <li><a href="dashboard"><?= htmlspecialchars($translations['p2p_menu_dash']) ?></a></li>
+    <li><a href="transfer"><?= htmlspecialchars($translations['p2p_menu_transfer']) ?></a></li>
+    <li><a href="support"><?= htmlspecialchars($translations['p2p_menu_support']) ?></a></li>
+    <li><a href="p2p"><?= htmlspecialchars($translations['p2p_menu_p2p_exch']) ?></a></li>
+    <li><a href="p2p-create"><?= htmlspecialchars($translations['p2p_menu_createad']) ?></a></li>
+    <li><a href="p2p-trade_history"><?= htmlspecialchars($translations['p2p_menu_tradehist']) ?></a></li>
+    <li><a href="p2p-profile"><?= htmlspecialchars($translations['p2p_menu_profile']) ?></a></li>
+    <li><a href="logout"><?= htmlspecialchars($translations['p2p_menu_logout']) ?></a></li>
+    <li>
+      <a href="#" id="notification-bell">
+        <img src="../../images/notyf.png" alt="Notifications" width="24" height="24">
+        <span class="notification-badge" id="notification-count">0</span>
+      </a>
+      <div id="notification-popup" class="notification-popup">
+        <h4><?= htmlspecialchars($translations['p2p_menu_notifications']) ?></h4>
+        <ul id="notification-list">
+          <!-- Уведомления будут загружены тут -->
+        </ul>
+        <a href="notifications" class="view-all-link"><?= htmlspecialchars($translations['p2p_menu_allnotif']) ?></a>
+      </div>
+    </li>
+  </ul>
 </nav>
+<script src="/js/menu.js"></script>
 <div class="nav-bar"></div> <!-- Добавление полоски -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
